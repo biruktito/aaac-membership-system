@@ -736,9 +736,21 @@
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            if (!checkAuthentication()) return;
+            console.log('=== DOM CONTENT LOADED ===');
+            console.log('Checking authentication...');
+            
+            const authResult = checkAuthentication();
+            console.log('Authentication result:', authResult);
+            
+            if (!authResult) {
+                console.log('Authentication failed, stopping initialization');
+                return;
+            }
+            
+            console.log('Authentication passed, loading member data...');
             loadMembersData();
             setupEventListeners();
+            console.log('=== INITIALIZATION COMPLETE ===');
         });
 
         function setupEventListeners() {
@@ -763,6 +775,7 @@
         }
 
         function loadMembersData() {
+            console.log('=== STARTING DATA LOAD PROCESS ===');
             console.log('Starting to load member data...');
             
             // Check user role to determine which data to load
@@ -782,31 +795,51 @@
             }
             
             console.log('Attempting to load data file:', dataFile);
+            console.log('Full URL would be:', window.location.origin + window.location.pathname.replace('dashboard.html', '') + dataFile);
             
             fetch(dataFile)
                 .then(response => {
+                    console.log('=== FETCH RESPONSE ===');
                     console.log('Response status:', response.status);
+                    console.log('Response ok:', response.ok);
+                    console.log('Response url:', response.url);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.text();
                 })
                 .then(data => {
+                    console.log('=== DATA RECEIVED ===');
                     console.log('Data loaded successfully from:', dataFile);
                     console.log('Data length:', data.length);
                     console.log('First 200 characters:', data.substring(0, 200));
+                    console.log('Last 200 characters:', data.substring(data.length - 200));
+                    
+                    if (data.length === 0) {
+                        throw new Error('Data file is empty');
+                    }
                     
                     const parsedData = parseAccountantData(data);
+                    console.log('=== PARSING COMPLETE ===');
                     console.log('Data parsed:', parsedData.length, 'members');
+                    
+                    if (parsedData.length === 0) {
+                        throw new Error('No members parsed from data');
+                    }
                     
                     // Use loaded data for display
                     membersData = parsedData;
+                    console.log('=== DISPLAYING MEMBERS ===');
                     displayMembers();
                     updateStats();
+                    console.log('=== DATA LOAD COMPLETE ===');
                 })
                 .catch(error => {
+                    console.error('=== ERROR IN DATA LOADING ===');
                     console.error('Error loading data:', error);
                     console.error('Error details:', error.message);
+                    console.error('Error stack:', error.stack);
+                    
                     // Fallback to demo data if real data fails
                     if (dataFile !== 'data/AAAC_Demo_Data.csv') {
                         console.log('Falling back to demo data');
