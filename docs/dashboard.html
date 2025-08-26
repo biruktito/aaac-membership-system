@@ -44,6 +44,20 @@
             opacity: 0.9;
         }
 
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+            font-size: 14px;
+        }
+
+        .security-notice strong {
+            color: #d63031;
+        }
+
         .controls {
             padding: 30px;
             background: #f8f9fa;
@@ -499,9 +513,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>AAAC Membership Status Tracker</h1>
-            <p>Track payments, assess risk levels, and manage membership status</p>
+            <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
+            <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
             <p><strong>Current Date: August 2025</strong></p>
+        </div>
+        
+        <div class="security-notice">
+            <strong>🔒 Security Notice:</strong> This system uses demo data by default. Real member data is only accessible to authenticated users and is not stored in this public repository. For production use, login as admin and upload your real database.
         </div>
 
         <div class="controls">
@@ -699,79 +717,18 @@
         function loadMembersData() {
             console.log('Starting to load member data...');
             
-            // Load contact list first - this is the authoritative source
-            fetch('AAAC_members_contact_list.xlsx - Sheet1.csv')
+            // Load demo data by default for security
+            fetch('data/AAAC_Demo_Data.csv')
                 .then(response => response.text())
                 .then(data => {
-                    console.log('Contact data loaded successfully');
-                    const contactData = parseContactData(data);
-                    console.log('Contact data parsed:', Object.keys(contactData).length, 'contacts');
+                    console.log('Demo data loaded successfully');
+                    const demoData = parseDemoData(data);
+                    console.log('Demo data parsed:', demoData.length, 'members');
                     
-                    // Initialize all members from contact list
-                    const allMembers = {};
-                    Object.keys(contactData).forEach(memberId => {
-                        const contact = contactData[memberId];
-                        allMembers[memberId] = {
-                            id: memberId,
-                            name: contact.name,
-                            phone: contact.phone,
-                            '2022': {},
-                            '2023': {},
-                            '2024': {},
-                            '2025': {},
-                            '2026': {},
-                            '2027': {}
-                        };
-                    });
-                    
-                    console.log('Initialized', Object.keys(allMembers).length, 'members from contact list');
-                    
-                    // Load all year data files and add payment data to existing members
-                    const yearFiles = ['AAAC_2022.csv', 'AAAC_2023.csv', 'AAAC_2024.csv', 'AAAC_2025.csv', 'AAAC_2026.csv'];
-                    console.log('Loading year files:', yearFiles);
-                    
-                    const yearPromises = yearFiles.map(file => 
-                        fetch(file)
-                            .then(response => {
-                                console.log(`Successfully loaded ${file}`);
-                                return response.text();
-                            })
-                            .catch(error => {
-                                console.warn(`Could not load ${file}:`, error);
-                                return null;
-                            })
-                    );
-                    
-                    Promise.all(yearPromises)
-                        .then(results => {
-                            console.log('All year files loaded, processing payment data...');
-                            
-                            // Process each year's data and add to existing members
-                            results.forEach((csvData, index) => {
-                                if (csvData) {
-                                    const year = 2022 + index;
-                                    console.log(`Processing year ${year} payment data...`);
-                                    addPaymentDataToMembers(csvData, year, allMembers);
-                                }
-                            });
-                            
-                            console.log('Final members data:', Object.keys(allMembers).length, 'members');
-                            
-                            // Check Habtamu's data specifically
-                            if (allMembers['1']) {
-                                console.log('Habtamu data:', allMembers['1']);
-                                console.log('Habtamu 2025 payments:', allMembers['1']['2025']);
-                            }
-                            
-                            // Convert to array format for display
-                            membersData = Object.values(allMembers);
-                            displayMembers();
-                            updateStats();
-                        })
-                        .catch(error => {
-                            console.error('Error loading year data:', error);
-                            loadSampleData(contactData);
-                        });
+                    // Use demo data for display
+                    membersData = demoData;
+                    displayMembers();
+                    updateStats();
                 })
                 .catch(error => {
                     console.error('Error loading contact data:', error);
@@ -779,24 +736,47 @@
                 });
         }
 
-        function parseContactData(csvText) {
+        function parseDemoData(csvText) {
             const lines = csvText.split('\n');
-            const contacts = {};
+            const members = [];
             
             for (let i = 1; i < lines.length; i++) {
                 if (lines[i].trim()) {
                     const values = lines[i].split(',').map(v => v.trim());
-                    if (values[1] && values[1] !== 'Full Name Clean') {
-                        contacts[values[0]] = {
+                    if (values[1] && values[1] !== 'NAME') {
+                        const member = {
                             id: values[0],
                             name: values[1],
-                            phone: values[2] || ''
+                            phone: values[2],
+                            registration_fee: parseFloat(values[3]) || 0,
+                            first_payment_year: values[4],
+                            first_payment_month: values[5],
+                            '2022': {},
+                            '2023': {},
+                            '2024': {},
+                            '2025': {},
+                            '2026': {},
+                            incidentals: parseFloat(values[values.length - 1]) || 0
                         };
+                        
+                        // Parse payment data for each year
+                        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                        for (let year = 2022; year <= 2026; year++) {
+                            const yearIndex = 6 + (year - 2022) * 12;
+                            for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+                                const payment = parseFloat(values[yearIndex + monthIndex]) || 0;
+                                if (payment > 0) {
+                                    member[year][months[monthIndex]] = payment;
+                                }
+                            }
+                        }
+                        
+                        members.push(member);
                     }
                 }
             }
             
-            return contacts;
+            return members;
         }
 
         function addPaymentDataToMembers(csvText, year, allMembers) {
