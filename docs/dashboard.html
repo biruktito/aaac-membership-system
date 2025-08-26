@@ -532,9 +532,6 @@
             <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
             <p><strong>Current Date: August 2025</strong></p>
         </div>
-        <div class="security-notice">
-            <strong>🔒 Security Notice:</strong> This system uses role-based data access. Demo users see demo data, while authenticated users (admin/board/aaacuser) see real member data. Real data is pre-loaded and secure.
-        </div>
 
         <div class="controls">
             <div class="search-section">
@@ -729,9 +726,11 @@
 
         // Logout function
         function logout() {
+            console.log('Logout function called');
             sessionStorage.removeItem('aaacAuthenticated');
             sessionStorage.removeItem('aaacUserRole');
             sessionStorage.removeItem('aaacLoginTime');
+            console.log('Session storage cleared, redirecting to login...');
             window.location.href = 'login.html';
         }
 
@@ -751,6 +750,16 @@
                 e.preventDefault();
                 recordPayment();
             });
+
+            // Add logout button event listener
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Logout button clicked');
+                    logout();
+                });
+            }
         }
 
         function loadMembersData() {
