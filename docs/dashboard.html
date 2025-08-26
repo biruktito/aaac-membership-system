@@ -32,6 +32,34 @@
             color: white;
             padding: 30px;
             text-align: center;
+            position: relative;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 5px;
+            text-align: center;
         }
 
         .header h1 {
@@ -42,20 +70,6 @@
         .header p {
             font-size: 1.1em;
             opacity: 0.9;
-        }
-
-        .security-notice {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            color: #856404;
-            font-size: 14px;
-        }
-
-        .security-notice strong {
-            color: #d63031;
         }
 
         .controls {
@@ -513,16 +527,11 @@
 <body>
     <div class="container">
         <div class="header">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
-                    <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
-                    <p><strong>Current Date: August 2025</strong></p>
-                </div>
-                <button class="btn btn-danger" onclick="logout()" style="margin-left: 20px;">🚪 Logout</button>
-            </div>
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+            <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
+            <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
+            <p><strong>Current Date: August 2025</strong></p>
         </div>
-        
         <div class="security-notice">
             <strong>🔒 Security Notice:</strong> This system uses role-based data access. Demo users see demo data, while authenticated users (admin/board/aaacuser) see real member data. Real data is pre-loaded and secure.
         </div>
@@ -625,7 +634,7 @@
                 <strong>Payment Instructions:</strong><br>
                 • Monthly fee: $15 per member<br>
                 • Initial registration: $200<br>
-                • Send payment via Zelle to organization email<br>
+                • Send payment via Zelle to: aaaichicago@gmail.com<br>
                 • Include member name in payment description
             </div>
             <form id="paymentForm">
@@ -702,8 +711,29 @@
         const CURRENT_YEAR = CURRENT_DATE.getFullYear();
         const CURRENT_MONTH = CURRENT_DATE.getMonth();
 
+        // Authentication check
+        function checkAuthentication() {
+            const isAuthenticated = sessionStorage.getItem('aaacAuthenticated');
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            
+            if (!isAuthenticated || !userRole) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem('aaacAuthenticated');
+            sessionStorage.removeItem('aaacUserRole');
+            sessionStorage.removeItem('aaacLoginTime');
+            window.location.href = 'login.html';
+        }
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            if (!checkAuthentication()) return;
             loadMembersData();
             setupEventListeners();
         });
@@ -717,16 +747,6 @@
                 e.preventDefault();
                 recordPayment();
             });
-        }
-
-        function logout() {
-            // Clear session storage
-            sessionStorage.removeItem('aaacAuthenticated');
-            sessionStorage.removeItem('aaacUserRole');
-            sessionStorage.removeItem('aaacLoginTime');
-            
-            // Redirect to login page
-            window.location.href = 'login.html';
         }
 
         function loadMembersData() {
@@ -752,7 +772,7 @@
                 .then(response => response.text())
                 .then(data => {
                     console.log('Data loaded successfully from:', dataFile);
-                    const parsedData = parseDemoData(data);
+                    const parsedData = parseAccountantData(data);
                     console.log('Data parsed:', parsedData.length, 'members');
                     
                     // Use loaded data for display
@@ -771,45 +791,101 @@
                     }
                 });
         }
+                    loadSampleData();
+                });
+        }
 
-        function parseDemoData(csvText) {
+        function parseContactData(csvText) {
             const lines = csvText.split('\n');
-            const members = [];
+            const contacts = {};
             
             for (let i = 1; i < lines.length; i++) {
                 if (lines[i].trim()) {
                     const values = lines[i].split(',').map(v => v.trim());
-                    if (values[1] && values[1] !== 'NAME') {
-                        const member = {
+                    if (values[1] && values[1] !== 'Full Name Clean') {
+                        contacts[values[0]] = {
                             id: values[0],
                             name: values[1],
-                            phone: values[2],
-                            registration_fee: parseFloat(values[3]) || 0,
-                            first_payment_year: values[4],
-                            first_payment_month: values[5],
-                            '2022': {},
-                            '2023': {},
-                            '2024': {},
-                            '2025': {},
-                            '2026': {},
-                            incidentals: parseFloat(values[values.length - 1]) || 0
+                            phone: values[2] || ''
                         };
-                        
-                        // Parse payment data for each year
-                        const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                        for (let year = 2022; year <= 2026; year++) {
-                            const yearIndex = 6 + (year - 2022) * 12;
-                            for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
-                                const payment = parseFloat(values[yearIndex + monthIndex]) || 0;
-                                if (payment > 0) {
-                                    member[year][months[monthIndex]] = payment;
-                                }
-                            }
-                        }
-                        
-                        members.push(member);
                     }
                 }
+            }
+            
+            return contacts;
+        }
+
+        function parseAccountantData(csvText) {
+            const lines = csvText.split('\n');
+            const members = [];
+            
+            // Skip header line
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const columns = line.split(',');
+                if (columns.length < 10) continue;
+                
+                const member = {
+                    id: columns[0],
+                    name: columns[1],
+                    phone: columns[2],
+                    status: columns[3],
+                    firstPaymentYear: columns[4],
+                    registrationFeePaid: columns[5],
+                    registrationFeeAmount: columns[6],
+                    lastPaymentDate: columns[7],
+                    notes: columns[8],
+                    '2022': {},
+                    '2023': {},
+                    '2024': {},
+                    '2025': {},
+                    '2026': {},
+                    incidentals: {}
+                };
+                
+                // Parse monthly payments for each year
+                const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                
+                // 2022 payments (columns 9-20)
+                for (let j = 0; j < 12; j++) {
+                    const value = parseFloat(columns[9 + j]) || 0;
+                    member['2022'][monthNames[j]] = value;
+                }
+                
+                // 2023 payments (columns 21-32)
+                for (let j = 0; j < 12; j++) {
+                    const value = parseFloat(columns[21 + j]) || 0;
+                    member['2023'][monthNames[j]] = value;
+                }
+                
+                // 2024 payments (columns 33-44)
+                for (let j = 0; j < 12; j++) {
+                    const value = parseFloat(columns[33 + j]) || 0;
+                    member['2024'][monthNames[j]] = value;
+                }
+                
+                // 2025 payments (columns 45-56)
+                for (let j = 0; j < 12; j++) {
+                    const value = parseFloat(columns[45 + j]) || 0;
+                    member['2025'][monthNames[j]] = value;
+                }
+                
+                // 2026 payments (columns 57-68)
+                for (let j = 0; j < 12; j++) {
+                    const value = parseFloat(columns[57 + j]) || 0;
+                    member['2026'][monthNames[j]] = value;
+                }
+                
+                // Parse incidentals (columns 69-78)
+                for (let j = 0; j < 5; j++) {
+                    const year = 2022 + j;
+                    const value = parseFloat(columns[69 + j]) || 0;
+                    member.incidentals[year] = value;
+                }
+                
+                members.push(member);
             }
             
             return members;
@@ -1578,7 +1654,7 @@
 • አባል: ${memberName}
 • የቀሪ ሂሳብ: $${balance}
 • ቀን: ${new Date().toLocaleDateString()}
-• የክፍያ ዘዴ: Zelle (organization email)
+• የክፍያ ዘዴ: Zelle (aaaichicago@gmail.com)
 
 ከምስጋና ጋር
 የአዲስ አበባ ማሕበር በቺካጎ ቦርድ`;
@@ -1591,7 +1667,7 @@
 
 የአዲስ አበባ ማሕበር በቺካጎ  አባልነትዎ ቀሪ ሂሳብ $${Math.abs(balance)} ነው።
 
-ክፍያውን በ Zelle ለመላክ: organization email ይጠቀሙና ሒሳቦትን ይከፍሉ ዘንድ በትሕትና እንጠይቃለን።
+ክፍያውን በ Zelle  ለመላክ: aaaichicago@gmail.com ይጠቀሙና ሒሳቦትን ይከፍሉ ዘንድ በትሕትና እንጠይቃለን።
 
 ከምስጋና ጋር
 የአዲስ አበባ ማሕበር በቺካጎ ቦርድ`;
