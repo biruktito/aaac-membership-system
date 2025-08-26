@@ -513,9 +513,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
-            <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
-            <p><strong>Current Date: August 2025</strong></p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
+                    <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
+                    <p><strong>Current Date: August 2025</strong></p>
+                </div>
+                <button class="btn btn-danger" onclick="logout()" style="margin-left: 20px;">🚪 Logout</button>
+            </div>
         </div>
         
         <div class="security-notice">
@@ -712,6 +717,16 @@
                 e.preventDefault();
                 recordPayment();
             });
+        }
+
+        function logout() {
+            // Clear session storage
+            sessionStorage.removeItem('aaacAuthenticated');
+            sessionStorage.removeItem('aaacUserRole');
+            sessionStorage.removeItem('aaacLoginTime');
+            
+            // Redirect to login page
+            window.location.href = 'login.html';
         }
 
         function loadMembersData() {
@@ -1005,7 +1020,7 @@
 
         function calculateDetailedBalance(member) {
             // Debug for Habtamu
-            if (member.id === '1') {
+            if (member.id === '17') {
                 console.log('=== HABTAMU BALANCE CALCULATION ===');
                 console.log('Member data:', member);
                 console.log('2025 payments:', member['2025']);
@@ -1097,7 +1112,7 @@
             isActiveMember = hasAnyPayments && isRecentPayment && !isTooLongInactive;
             
             // Debug for Habtamu
-            if (member.id === '1') {
+            if (member.id === '17') {
                 console.log('=== HABTAMU ACTIVE STATUS DEBUG ===');
                 console.log('First payment year:', firstPaymentYear);
                 console.log('First payment month:', firstPaymentMonth);
@@ -1193,7 +1208,7 @@
             }
             
             // Debug for Habtamu
-            if (member.id === '1') {
+            if (member.id === '17') {
                 console.log('Total paid:', totalPaid);
                 console.log('Total due:', totalDue);
                 console.log('First payment:', firstPaymentMonth, firstPaymentYear);
@@ -1232,7 +1247,7 @@
             }
             
             // Debug for Habtamu
-            if (member.id === '1') {
+            if (member.id === '17') {
                 console.log('Current balance:', currentBalance);
                 console.log('Balance details:', balanceDetails);
                 console.log('=== END HABTAMU CALCULATION ===');
