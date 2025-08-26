@@ -32,17 +32,27 @@
 
         .logo {
             margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .logo img {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 15px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .logo h1 {
             color: #2c3e50;
-            font-size: 2em;
+            font-size: 1.8em;
             margin-bottom: 10px;
+            font-weight: bold;
         }
 
         .logo p {
             color: #7f8c8d;
-            font-size: 1.1em;
+            font-size: 1em;
         }
 
         .form-group {
@@ -117,7 +127,8 @@
 <body>
     <div class="login-container">
         <div class="logo">
-            <h1>AAAC</h1>
+            <img src="images/aaac_logo.png" alt="AAAC Logo" onerror="this.style.display='none'">
+            <h1>የአዲስ አበባ ማሕበር በቺካጎ</h1>
             <p>Membership Management System</p>
         </div>
         
@@ -139,14 +150,7 @@
             Invalid username or password. Please try again.
         </div>
         
-        <div class="credentials-info">
-            <h4>🔐 Secure Access</h4>
-            <p><em>Please contact your administrator for login credentials.</em></p>
-            <p><strong>Demo Access:</strong> Available for demonstration purposes</p>
-            <p><strong>Member Access:</strong> View-only access for AAAC members</p>
-            <p><strong>Board Access:</strong> Enhanced access for board members</p>
-            <p><strong>Admin Access:</strong> Full system control</p>
-        </div>
+
     </div>
 
     <script>
