@@ -716,9 +716,13 @@
             const isAuthenticated = sessionStorage.getItem('aaacAuthenticated');
             const userRole = sessionStorage.getItem('aaacUserRole');
             
+            // If no authentication, set as demo user and continue
             if (!isAuthenticated || !userRole) {
-                window.location.href = 'login.html';
-                return false;
+                console.log('No authentication found, setting as demo user');
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'demo');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                return true;
             }
             return true;
         }
@@ -768,10 +772,21 @@
                 console.log('Loading demo data for demo user or unauthenticated');
             }
             
+            console.log('Attempting to load data file:', dataFile);
+            
             fetch(dataFile)
-                .then(response => response.text())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
                 .then(data => {
                     console.log('Data loaded successfully from:', dataFile);
+                    console.log('Data length:', data.length);
+                    console.log('First 200 characters:', data.substring(0, 200));
+                    
                     const parsedData = parseAccountantData(data);
                     console.log('Data parsed:', parsedData.length, 'members');
                     
@@ -782,11 +797,13 @@
                 })
                 .catch(error => {
                     console.error('Error loading data:', error);
+                    console.error('Error details:', error.message);
                     // Fallback to demo data if real data fails
                     if (dataFile !== 'data/AAAC_Demo_Data.csv') {
                         console.log('Falling back to demo data');
                         loadMembersData(); // This will load demo data
                     } else {
+                        console.log('Loading sample data as final fallback');
                         loadSampleData();
                     }
                 });
