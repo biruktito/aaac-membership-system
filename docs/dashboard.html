@@ -1020,7 +1020,7 @@
 
         function calculateDetailedBalance(member) {
             // Debug for Habtamu
-            if (member.id === '17') {
+            if (member.id === '1') {
                 console.log('=== HABTAMU BALANCE CALCULATION ===');
                 console.log('Member data:', member);
                 console.log('2025 payments:', member['2025']);
@@ -1112,7 +1112,7 @@
             isActiveMember = hasAnyPayments && isRecentPayment && !isTooLongInactive;
             
             // Debug for Habtamu
-            if (member.id === '17') {
+            if (member.id === '1') {
                 console.log('=== HABTAMU ACTIVE STATUS DEBUG ===');
                 console.log('First payment year:', firstPaymentYear);
                 console.log('First payment month:', firstPaymentMonth);
@@ -1208,7 +1208,7 @@
             }
             
             // Debug for Habtamu
-            if (member.id === '17') {
+            if (member.id === '1') {
                 console.log('Total paid:', totalPaid);
                 console.log('Total due:', totalDue);
                 console.log('First payment:', firstPaymentMonth, firstPaymentYear);
@@ -1247,7 +1247,7 @@
             }
             
             // Debug for Habtamu
-            if (member.id === '17') {
+            if (member.id === '1') {
                 console.log('Current balance:', currentBalance);
                 console.log('Balance details:', balanceDetails);
                 console.log('=== END HABTAMU CALCULATION ===');
