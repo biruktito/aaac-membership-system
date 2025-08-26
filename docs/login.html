@@ -174,7 +174,7 @@
                 sessionStorage.setItem('aaacLoginTime', new Date().getTime());
                 
                 // Redirect to main system
-                window.location.href = 'aaac_membership_system.html';
+                window.location.href = 'dashboard.html';
             } else if (username === 'board' && password === 'board2025') {
                 // Board member access - can view phone numbers and send reminders
                 sessionStorage.setItem('aaacAuthenticated', 'true');
@@ -182,7 +182,7 @@
                 sessionStorage.setItem('aaacLoginTime', new Date().getTime());
                 
                 // Redirect to main system
-                window.location.href = 'aaac_membership_system.html';
+                window.location.href = 'dashboard.html';
             } else if (username === 'admin' && password === 'admin2025') {
                 // Admin access - full control
                 sessionStorage.setItem('aaacAuthenticated', 'true');
@@ -190,7 +190,7 @@
                 sessionStorage.setItem('aaacLoginTime', new Date().getTime());
                 
                 // Redirect to main system
-                window.location.href = 'aaac_membership_system.html';
+                window.location.href = 'dashboard.html';
             } else {
                 errorMessage.style.display = 'block';
                 document.getElementById('password').value = '';
@@ -205,7 +205,7 @@
             const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
             
             if (currentTime - loginTime < sessionDuration) {
-                window.location.href = 'aaac_membership_system.html';
+                window.location.href = 'dashboard.html';
             } else {
                 // Session expired, clear storage
                 sessionStorage.removeItem('aaacAuthenticated');
