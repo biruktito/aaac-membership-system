@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAAC Membership System - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .error-message {
+            color: #e74c3c;
+            margin-top: 15px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .credentials-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .credentials-info h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .credentials-info p {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>AAAC</h1>
+            <p>Membership Management System</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="login-btn">Login</button>
+        </form>
+        
+        <div id="errorMessage" class="error-message">
+            Invalid username or password. Please try again.
+        </div>
+        
+        <div class="credentials-info">
+            <h4>Access Credentials</h4>
+            <p><strong>Member Access:</strong></p>
+            <p>Username: <strong>aaac</strong></p>
+            <p>Password: <strong>members2025</strong></p>
+            <p><em>Share these credentials with AAAC members for viewing only.</em></p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
+            <p><strong>Board Member Access:</strong></p>
+            <p>Username: <strong>board</strong></p>
+            <p>Password: <strong>board2025</strong></p>
+            <p><em>For board members - can view phone numbers and send reminders.</em></p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
+            <p><strong>Admin Access:</strong></p>
+            <p>Username: <strong>admin</strong></p>
+            <p>Password: <strong>admin2025</strong></p>
+            <p><em>Keep these credentials private - for database uploads only.</em></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Three-tier authentication system
+            if (username === 'aaac' && password === 'members2025') {
+                // Member access - view only
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'member');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                
+                // Redirect to main system
+                window.location.href = 'aaac_membership_system.html';
+            } else if (username === 'board' && password === 'board2025') {
+                // Board member access - can view phone numbers and send reminders
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'board');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                
+                // Redirect to main system
+                window.location.href = 'aaac_membership_system.html';
+            } else if (username === 'admin' && password === 'admin2025') {
+                // Admin access - full control
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'admin');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                
+                // Redirect to main system
+                window.location.href = 'aaac_membership_system.html';
+            } else {
+                errorMessage.style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        });
+
+        // Check if already authenticated
+        if (sessionStorage.getItem('aaacAuthenticated') === 'true') {
+            // Check if session is still valid (24 hours)
+            const loginTime = parseInt(sessionStorage.getItem('aaacLoginTime'));
+            const currentTime = new Date().getTime();
+            const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+            
+            if (currentTime - loginTime < sessionDuration) {
+                window.location.href = 'aaac_membership_system.html';
+            } else {
+                // Session expired, clear storage
+                sessionStorage.removeItem('aaacAuthenticated');
+                sessionStorage.removeItem('aaacUserRole');
+                sessionStorage.removeItem('aaacLoginTime');
+            }
+        }
+    </script>
+</body>
+</html>
