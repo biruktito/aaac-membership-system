@@ -76,11 +76,17 @@ A comprehensive, live payment tracking system for AAAC (Addis Ababa Association 
 
 ### Authentication
 
-The system uses a three-tier authentication system:
+The system uses a four-tier authentication system with role-based data access:
 
-- **Member Access**: `aaac` / `members2025` (view only)
-- **Board Member Access**: `board` / `board2025` (view phone numbers, send reminders)
-- **Admin Access**: `admin` / `admin2025` (full control, upload database)
+- **Demo Access**: `demo` / `demo2025` (demo data only - for demonstrations)
+- **Member Access**: `aaacuser` / `members2025` (view only, real data)
+- **Board Member Access**: `board` / `board2025` (view phone numbers, send reminders, real data)
+- **Admin Access**: `admin` / `admin2025` (full control, upload database, real data)
+
+**Data Access:**
+- **Demo users** see demo data only
+- **Authenticated users** (admin/board/aaacuser) see real member data
+- **Real data is pre-loaded** and secure on GitHub Pages
 
 ## Usage Guide
 
@@ -128,7 +134,7 @@ The system uses a three-tier authentication system:
 ### For Members
 
 Members can view their payment status by:
-1. Login as member (`aaac` / `members2025`)
+1. Login as member (`aaacuser` / `members2025`)
 2. Search for their name, phone number, or member ID
 3. Check their balance (green = positive, red = negative)
 4. See which month they're paid up to
