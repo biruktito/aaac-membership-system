@@ -10,8 +10,8 @@
 // Google Sheets API Configuration
 const GOOGLE_SHEETS_CONFIG = {
     // Replace with your actual Google Sheet ID
-    SHEET_ID: 'YOUR_GOOGLE_SHEET_ID_HERE',
-    API_KEY: 'YOUR_GOOGLE_API_KEY_HERE',
+    SHEET_ID: '1r3SF2Ba1UIEYS28rCX8j2S7BsAsJsWRzw9v4M37-jHw',
+    API_KEY: 'AIzaSyCLpLGtV9ui3Bm9o-ElkaIMKvk6wQk_Mtc',
     SHEETS: {
         MEMBERS: 'Members',
         PAYMENT_LOG: 'Payment_Log',
