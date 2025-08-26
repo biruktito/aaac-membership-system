@@ -519,7 +519,7 @@
         </div>
         
         <div class="security-notice">
-            <strong>🔒 Security Notice:</strong> This system uses demo data by default. Real member data is only accessible to authenticated users and is not stored in this public repository. For production use, login as admin and upload your real database.
+            <strong>🔒 Security Notice:</strong> This system uses role-based data access. Demo users see demo data, while authenticated users (admin/board/aaacuser) see real member data. Real data is pre-loaded and secure.
         </div>
 
         <div class="controls">
@@ -717,22 +717,43 @@
         function loadMembersData() {
             console.log('Starting to load member data...');
             
-            // Load demo data by default for security
-            fetch('data/AAAC_Demo_Data.csv')
+            // Check user role to determine which data to load
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            console.log('User role:', userRole);
+            
+            let dataFile = 'data/AAAC_Demo_Data.csv'; // Default to demo data
+            
+            if (userRole === 'admin' || userRole === 'board' || userRole === 'member') {
+                // Load real data for authenticated users
+                dataFile = 'data/AAAC_Real_Data.csv';
+                console.log('Loading real data for authenticated user:', userRole);
+            } else {
+                // Load demo data for demo users or unauthenticated
+                dataFile = 'data/AAAC_Demo_Data.csv';
+                console.log('Loading demo data for demo user or unauthenticated');
+            }
+            
+            fetch(dataFile)
                 .then(response => response.text())
                 .then(data => {
-                    console.log('Demo data loaded successfully');
-                    const demoData = parseDemoData(data);
-                    console.log('Demo data parsed:', demoData.length, 'members');
+                    console.log('Data loaded successfully from:', dataFile);
+                    const parsedData = parseDemoData(data);
+                    console.log('Data parsed:', parsedData.length, 'members');
                     
-                    // Use demo data for display
-                    membersData = demoData;
+                    // Use loaded data for display
+                    membersData = parsedData;
                     displayMembers();
                     updateStats();
                 })
                 .catch(error => {
-                    console.error('Error loading contact data:', error);
-                    loadSampleData();
+                    console.error('Error loading data:', error);
+                    // Fallback to demo data if real data fails
+                    if (dataFile !== 'data/AAAC_Demo_Data.csv') {
+                        console.log('Falling back to demo data');
+                        loadMembersData(); // This will load demo data
+                    } else {
+                        loadSampleData();
+                    }
                 });
         }
 

@@ -141,8 +141,13 @@
         
         <div class="credentials-info">
             <h4>Access Credentials</h4>
+            <p><strong>Demo Access:</strong></p>
+            <p>Username: <strong>demo</strong></p>
+            <p>Password: <strong>demo2025</strong></p>
+            <p><em>For demonstration purposes - shows demo data only.</em></p>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
             <p><strong>Member Access:</strong></p>
-            <p>Username: <strong>aaac</strong></p>
+            <p>Username: <strong>aaacuser</strong></p>
             <p>Password: <strong>members2025</strong></p>
             <p><em>Share these credentials with AAAC members for viewing only.</em></p>
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
@@ -166,8 +171,16 @@
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
             
-            // Three-tier authentication system
-            if (username === 'aaac' && password === 'members2025') {
+            // Four-tier authentication system
+            if (username === 'demo' && password === 'demo2025') {
+                // Demo access - demo data only
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'demo');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                
+                // Redirect to main system
+                window.location.href = 'dashboard.html';
+            } else if (username === 'aaacuser' && password === 'members2025') {
                 // Member access - view only
                 sessionStorage.setItem('aaacAuthenticated', 'true');
                 sessionStorage.setItem('aaacUserRole', 'member');
