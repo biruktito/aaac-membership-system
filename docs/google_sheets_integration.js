@@ -181,41 +181,31 @@ function processGoogleSheetsData(data) {
             // Parse monthly payments for each year
             const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
             
-            // 2022 payments (columns 9-20)
-            for (let j = 0; j < 12; j++) {
-                const value = parseFloat(values[9 + j]) || 0;
-                member['2022'][monthNames[j]] = value;
-            }
-            
-            // 2023 payments (columns 21-32)
-            for (let j = 0; j < 12; j++) {
-                const value = parseFloat(values[21 + j]) || 0;
-                member['2023'][monthNames[j]] = value;
-            }
-            
-            // 2024 payments (columns 33-44)
-            for (let j = 0; j < 12; j++) {
-                const value = parseFloat(values[33 + j]) || 0;
-                member['2024'][monthNames[j]] = value;
-            }
-            
-            // 2025 payments (columns 45-56)
-            for (let j = 0; j < 12; j++) {
-                const value = parseFloat(values[45 + j]) || 0;
-                member['2025'][monthNames[j]] = value;
-            }
-            
-            // 2026 payments (columns 57-68)
-            for (let j = 0; j < 12; j++) {
-                const value = parseFloat(values[57 + j]) || 0;
-                member['2026'][monthNames[j]] = value;
+            // Find the correct column indices for each year's months
+            for (let year = 2022; year <= 2026; year++) {
+                monthNames.forEach((month, monthIndex) => {
+                    const columnName = `${year}_${month}`;
+                    const columnIndex = headers.indexOf(columnName);
+                    if (columnIndex !== -1) {
+                        const value = parseFloat(values[columnIndex]) || 0;
+                        member[year.toString()][month] = value;
+                    } else {
+                        member[year.toString()][month] = 0;
+                    }
+                });
             }
             
             // Parse incidentals (columns 69-78)
             for (let j = 0; j < 5; j++) {
                 const year = 2022 + j;
-                const value = parseFloat(values[69 + j]) || 0;
-                member.incidentals[year] = value;
+                const incidentalColumnName = `${year}_Incidentals`;
+                const incidentalColumnIndex = headers.indexOf(incidentalColumnName);
+                if (incidentalColumnIndex !== -1) {
+                    const value = parseFloat(values[incidentalColumnIndex]) || 0;
+                    member.incidentals[year] = value;
+                } else {
+                    member.incidentals[year] = 0;
+                }
             }
         }
         
