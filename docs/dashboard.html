@@ -759,25 +759,29 @@
             // Try Google Sheets integration first
             console.log('Checking for Google Sheets integration...');
             console.log('GoogleSheetsIntegration available:', !!window.GoogleSheetsIntegration);
+            console.log('GoogleSheetsIntegration object:', window.GoogleSheetsIntegration);
             
-            if (window.GoogleSheetsIntegration) {
-                console.log('🔄 Attempting Google Sheets integration...');
-                window.GoogleSheetsIntegration.initialize().then(success => {
-                    if (success) {
-                        console.log('✅ Using Google Sheets data');
-                    } else {
-                        console.log('⚠️ Google Sheets failed, using local data');
+            // Wait a moment for scripts to load
+            setTimeout(() => {
+                if (window.GoogleSheetsIntegration) {
+                    console.log('🔄 Attempting Google Sheets integration...');
+                    window.GoogleSheetsIntegration.initialize().then(success => {
+                        if (success) {
+                            console.log('✅ Using Google Sheets data');
+                        } else {
+                            console.log('⚠️ Google Sheets failed, using local data');
+                            loadMembersData();
+                        }
+                    }).catch(error => {
+                        console.error('❌ Google Sheets integration error:', error);
+                        console.log('⚠️ Falling back to local data');
                         loadMembersData();
-                    }
-                }).catch(error => {
-                    console.error('❌ Google Sheets integration error:', error);
-                    console.log('⚠️ Falling back to local data');
+                    });
+                } else {
+                    console.log('⚠️ Google Sheets integration not available, using local data');
                     loadMembersData();
-                });
-            } else {
-                console.log('⚠️ Google Sheets integration not available, using local data');
-                loadMembersData();
-            }
+                }
+            }, 100);
             
             setupEventListeners();
             console.log('=== INITIALIZATION COMPLETE ===');
