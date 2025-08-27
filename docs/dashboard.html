@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AAAC Membership Status Tracker</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         * {
             margin: 0;
@@ -1496,6 +1497,9 @@
 
         function displayMembers(data = window.membersData || membersData) {
             console.log('=== DISPLAY MEMBERS DEBUG ===');
+            console.log('Data parameter:', data);
+            console.log('window.membersData:', window.membersData);
+            console.log('local membersData:', membersData);
             console.log('Total members data:', data.length);
             console.log('Sample member data:', data[0]);
             

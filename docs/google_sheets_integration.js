@@ -48,9 +48,10 @@ async function loadDataFromGoogleSheets() {
         console.log('✅ Global membersData set:', window.membersData.length, 'members');
         console.log('✅ Sample member in global data:', window.membersData[0]);
         
-        // Force a small delay to ensure data is set
+        // Force a delay to ensure data is set
         setTimeout(() => {
             console.log('🔄 Calling displayMembers function...');
+            console.log('🔄 window.membersData length:', window.membersData ? window.membersData.length : 'undefined');
             console.log('🔄 displayMembers function exists:', typeof displayMembers);
             console.log('🔄 updateStats function exists:', typeof updateStats);
             
@@ -68,7 +69,7 @@ async function loadDataFromGoogleSheets() {
             } else {
                 console.error('❌ updateStats function not found');
             }
-        }, 100);
+        }, 500);
         
         console.log('✅ Google Sheets data loaded successfully');
         return true;
