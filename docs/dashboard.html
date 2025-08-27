@@ -1494,7 +1494,7 @@
             };
         }
 
-        function displayMembers(data = membersData) {
+        function displayMembers(data = window.membersData || membersData) {
             console.log('=== DISPLAY MEMBERS DEBUG ===');
             console.log('Total members data:', data.length);
             console.log('Sample member data:', data[0]);
@@ -1636,12 +1636,13 @@
         }
 
         function updateStats() {
-            const activeMembers = membersData.filter(member => {
+            const dataToUse = window.membersData || membersData;
+            const activeMembers = dataToUse.filter(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 return balanceInfo.isActiveMember;
             });
             
-            const inactiveMembers = membersData.filter(member => {
+            const inactiveMembers = dataToUse.filter(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 return !balanceInfo.isActiveMember;
             });
@@ -1696,7 +1697,8 @@
                 return;
             }
             
-            const filteredData = membersData.filter(member => {
+            const dataToUse = window.membersData || membersData;
+            const filteredData = dataToUse.filter(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 return balanceInfo.status === status;
             });
@@ -1706,7 +1708,8 @@
 
         function searchMembers() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filteredData = membersData.filter(member => 
+            const dataToUse = window.membersData || membersData;
+            const filteredData = dataToUse.filter(member => 
                 member.name.toLowerCase().includes(searchTerm) ||
                 member.phone.includes(searchTerm) ||
                 member.id.toString().includes(searchTerm)
@@ -1728,7 +1731,8 @@
             const paymentNotes = document.getElementById('paymentNotes').value;
 
             // Find the member and update their payment
-            const member = membersData.find(m => m.name === memberName);
+            const dataToUse = window.membersData || membersData;
+            const member = dataToUse.find(m => m.name === memberName);
             if (member) {
                 if (!member[paymentYear]) {
                     member[paymentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 };
@@ -1830,7 +1834,8 @@
             const headers = ['ID', 'NAME', 'PHONE', 'REGISTRATION', 'STATUS', 'BALANCE', 'PAID_UP_TO', 'MONTHS_BEHIND'];
             const rows = [headers];
             
-            membersData.forEach(member => {
+            const dataToUse = window.membersData || membersData;
+            dataToUse.forEach(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 rows.push([
                     member.id,
