@@ -1758,11 +1758,14 @@
                 }
             });
             
-            const totalMembers = dataToUse.length;
+            // Calculate total active members (excluding inactive ones)
+            const totalActiveMembers = currentCount + issueCount + riskCount + riskOfRemovalCount;
+            const totalMembers = totalActiveMembers; // Total Members = only active members
             
             // Debug logging for total balance calculation
             console.log('=== TOTAL BALANCE CALCULATION DEBUG ===');
-            console.log('Total members:', totalMembers);
+            console.log('Total active members (excluding inactive):', totalMembers);
+            console.log('Total all members (including inactive):', dataToUse.length);
             console.log('Active members with negative balances:', totalBalance);
             console.log('Status breakdown:');
             console.log('  Current:', currentCount);
