@@ -1630,7 +1630,7 @@
             `;
             
             data.forEach(member => {
-                const balanceInfo = calculateBalanceSimple(member);
+                const balanceInfo = calculateDetailedBalance(member);
                 const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
                 
                 html += `
@@ -1666,40 +1666,51 @@
 
         function updateStats() {
             const dataToUse = window.membersData || membersData;
-            const activeMembers = dataToUse.filter(member => {
-                const balanceInfo = calculateBalanceSimple(member);
-                return balanceInfo.isActiveMember;
-            });
-            
-            const inactiveMembers = dataToUse.filter(member => {
-                const balanceInfo = calculateBalanceSimple(member);
-                return !balanceInfo.isActiveMember;
-            });
             
             let currentCount = 0;
             let issueCount = 0;
             let riskCount = 0;
             let riskOfRemovalCount = 0;
             let totalBalance = 0;
+            let inactiveCount = 0;
             
-            activeMembers.forEach(member => {
-                const balanceInfo = calculateBalanceSimple(member);
+            dataToUse.forEach(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                
+                // Count by status
+                switch (balanceInfo.status) {
+                    case 'current':
+                        currentCount++;
+                        break;
+                    case 'issue':
+                        issueCount++;
+                        break;
+                    case 'risk':
+                        riskCount++;
+                        break;
+                    case 'risk-of-removal':
+                        riskOfRemovalCount++;
+                        break;
+                    case 'inactive':
+                        inactiveCount++;
+                        break;
+                }
+                
                 // Only add negative balances (what they owe) to the total
                 if (balanceInfo.currentBalance < 0) {
                     totalBalance += Math.abs(balanceInfo.currentBalance);
                 }
-                
-                // For simplified calculation, all active members are current
-                currentCount++;
             });
             
-            document.getElementById('total-members').textContent = activeMembers.length;
+            const totalMembers = dataToUse.length;
+            
+            document.getElementById('total-members').textContent = totalMembers;
             document.getElementById('current-members').textContent = currentCount;
             document.getElementById('issue-members').textContent = issueCount;
             document.getElementById('risk-members').textContent = riskCount;
             document.getElementById('risk-of-removal-members').textContent = riskOfRemovalCount;
             document.getElementById('total-balance').textContent = `$${totalBalance.toFixed(2)} (Total Owed)`;
-            document.getElementById('inactive-members').textContent = inactiveMembers.length;
+            document.getElementById('inactive-members').textContent = inactiveCount;
         }
 
         function filterByStatus(status) {
@@ -1716,7 +1727,7 @@
             
             const dataToUse = window.membersData || membersData;
             const filteredData = dataToUse.filter(member => {
-                const balanceInfo = calculateBalanceSimple(member);
+                const balanceInfo = calculateDetailedBalance(member);
                 return balanceInfo.status === status;
             });
             
