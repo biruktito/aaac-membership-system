@@ -740,11 +740,6 @@
                 • Monthly fee: $15 per member<br>
                 • Initial registration: $200<br>
                 • Send payment via Zelle to: aaaichicago@gmail.com<br>
-                <br>
-                <strong>Quick Payment Options:</strong><br>
-                <button onclick="quickPayment('monthly')" class="btn btn-primary">Record Monthly Fee ($15)</button>
-                <button onclick="quickPayment('registration')" class="btn btn-success">Record Registration ($200)</button>
-                <button onclick="quickPayment('custom')" class="btn btn-info">Custom Amount</button>
                 • Include member name in payment description
             </div>
             <form id="paymentForm">
@@ -2242,50 +2237,11 @@
             alert(`Event "${eventTitle}" has been added successfully!`);
         }
 
-        function quickPayment(type) {
-            const memberName = sessionStorage.getItem('currentPaymentMember');
-            if (!memberName) {
-                alert('No member selected for payment.');
-                return;
-            }
-            
-            let amount = 0;
-            let description = '';
-            
-            switch(type) {
-                case 'monthly':
-                    amount = 15;
-                    description = 'Monthly membership fee';
-                    break;
-                case 'registration':
-                    amount = 200;
-                    description = 'Initial registration fee';
-                    break;
-                case 'custom':
-                    const customAmount = prompt('Enter payment amount:');
-                    if (!customAmount || isNaN(customAmount)) {
-                        alert('Please enter a valid amount.');
-                        return;
-                    }
-                    amount = parseFloat(customAmount);
-                    description = 'Custom payment';
-                    break;
-            }
-            
-            // Auto-fill the payment form
-            document.getElementById('paymentAmount').value = amount;
-            document.getElementById('paymentDescription').value = description;
-            
-            // Focus on the description field for any additional notes
-            document.getElementById('paymentDescription').focus();
-        }
+
 
         function recordPaymentForMember(memberName) {
             console.log('=== RECORD PAYMENT FOR MEMBER CALLED ===');
             console.log('Member name:', memberName);
-            
-            // Store member name for quick payment functions
-            sessionStorage.setItem('currentPaymentMember', memberName);
             
             // Show payment modal
             const modal = document.getElementById('paymentModal');
