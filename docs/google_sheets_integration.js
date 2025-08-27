@@ -203,8 +203,7 @@ function processGoogleSheetsData(data) {
                 '2023': {},
                 '2024': {},
                 '2025': {},
-                '2026': {},
-                incidentals: {}
+                '2026': {}
             };
             
             // Parse monthly payments for each year
@@ -244,9 +243,16 @@ function processGoogleSheetsData(data) {
                 const incidentalColumnIndex = headers.indexOf(incidentalColumnName);
                 if (incidentalColumnIndex !== -1) {
                     const value = parseFloat(values[incidentalColumnIndex]) || 0;
-                    member.incidentals[year] = value;
-                } else {
-                    member.incidentals[year] = 0;
+                    if (value > 0) {
+                        // Add incidentals to the year data as an array of objects
+                        if (!member[year.toString()].incidentals) {
+                            member[year.toString()].incidentals = [];
+                        }
+                        member[year.toString()].incidentals.push({
+                            amount: value,
+                            description: `Incidental payment for ${year}`
+                        });
+                    }
                 }
             }
         }
@@ -266,7 +272,11 @@ function processGoogleSheetsData(data) {
             console.log('2024 payments:', member['2024']);
             console.log('2025 payments:', member['2025']);
             console.log('2026 payments:', member['2026']);
-            console.log('Incidentals:', member.incidentals);
+            console.log('2022 incidentals:', member['2022'].incidentals);
+            console.log('2023 incidentals:', member['2023'].incidentals);
+            console.log('2024 incidentals:', member['2024'].incidentals);
+            console.log('2025 incidentals:', member['2025'].incidentals);
+            console.log('2026 incidentals:', member['2026'].incidentals);
             console.log('=== END MEMBER ${index + 1} STRUCTURE ===');
         }
         
