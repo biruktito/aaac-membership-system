@@ -40,13 +40,30 @@ async function loadDataFromGoogleSheets() {
         console.log('✅ Processed members:', processedMembers.length);
         console.log('Sample processed member:', processedMembers[0]);
         
-        // Update global data
+        // Set global data
         window.membersData = processedMembers;
+        console.log('✅ Global membersData set:', window.membersData.length, 'members');
+        console.log('✅ Sample member in global data:', window.membersData[0]);
+        
+        // Debug: Check if the first member has payment data
+        if (window.membersData.length > 0) {
+            const firstMember = window.membersData[0];
+            console.log('=== FIRST MEMBER PAYMENT DATA CHECK ===');
+            console.log('Member ID:', firstMember.id);
+            console.log('Member Name:', firstMember.name);
+            console.log('Has 2022 data:', !!firstMember['2022']);
+            console.log('Has 2023 data:', !!firstMember['2023']);
+            console.log('Has 2024 data:', !!firstMember['2024']);
+            console.log('Has 2025 data:', !!firstMember['2025']);
+            console.log('Has 2026 data:', !!firstMember['2026']);
+            console.log('2022 payments:', firstMember['2022']);
+            console.log('2025 payments:', firstMember['2025']);
+            console.log('=== END FIRST MEMBER CHECK ===');
+        }
+        
         window.systemSettings = processSettings(settings);
         
         console.log('🔄 Updating dashboard...');
-        console.log('✅ Global membersData set:', window.membersData.length, 'members');
-        console.log('✅ Sample member in global data:', window.membersData[0]);
         
         // Force a delay to ensure data is set
         setTimeout(() => {
@@ -207,6 +224,19 @@ function processGoogleSheetsData(data) {
         member.name = member.name || member.Name || member['Member Name'] || 'Unknown';
         member.phone = member.phone || member.Phone || member['Phone Number'] || '';
         member.status = member.status || member.Status || 'Active';
+        
+        // Debug: Show complete member structure for first 3 members
+        if (index < 3) {
+            console.log(`=== COMPLETE MEMBER ${index + 1} STRUCTURE ===`);
+            console.log('Member object:', member);
+            console.log('2022 payments:', member['2022']);
+            console.log('2023 payments:', member['2023']);
+            console.log('2024 payments:', member['2024']);
+            console.log('2025 payments:', member['2025']);
+            console.log('2026 payments:', member['2026']);
+            console.log('Incidentals:', member.incidentals);
+            console.log('=== END MEMBER ${index + 1} STRUCTURE ===');
+        }
         
         console.log(`Processed member ${index + 1}:`, {
             id: member.id,
