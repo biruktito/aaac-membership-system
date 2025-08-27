@@ -1816,13 +1816,30 @@
         }
 
         function searchMembers() {
+            console.log('=== SEARCH FUNCTION CALLED ===');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            console.log('Search term:', searchTerm);
+            
             const dataToUse = window.membersData || membersData;
-            const filteredData = dataToUse.filter(member => 
-                member.name.toLowerCase().includes(searchTerm) ||
-                member.phone.includes(searchTerm) ||
-                member.id.toString().includes(searchTerm)
-            );
+            console.log('Data to use length:', dataToUse ? dataToUse.length : 'undefined');
+            console.log('Sample member:', dataToUse && dataToUse.length > 0 ? dataToUse[0] : 'no data');
+            
+            const filteredData = dataToUse.filter(member => {
+                const nameMatch = member.name.toLowerCase().includes(searchTerm);
+                const phoneMatch = member.phone.includes(searchTerm);
+                const idMatch = member.id.toString().includes(searchTerm);
+                
+                if (nameMatch || phoneMatch || idMatch) {
+                    console.log(`Match found: ID ${member.id}, Name: ${member.name}, Phone: ${member.phone}`);
+                }
+                
+                return nameMatch || phoneMatch || idMatch;
+            });
+            
+            console.log('Filtered data length:', filteredData.length);
+            console.log('Filtered results:', filteredData);
+            console.log('=== END SEARCH FUNCTION ===');
+            
             displayMembers(filteredData);
         }
 
