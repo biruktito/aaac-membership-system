@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>AAAC Membership Status Tracker</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
@@ -111,6 +114,8 @@
             transition: all 0.3s;
             text-decoration: none;
             display: inline-block;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .btn-primary { background: #667eea; color: white; }
@@ -137,6 +142,8 @@
             cursor: pointer;
             font-weight: 500;
             transition: all 0.3s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .filter-tab.active {
@@ -305,6 +312,8 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .events-section {
@@ -565,11 +574,233 @@
         }
 
         @media (max-width: 768px) {
-            .search-section { flex-direction: column; }
-            .stats { grid-template-columns: 1fr; }
-            .member-table { font-size: 14px; }
-            .member-table th, .member-table td { padding: 10px 8px; }
-            .year-tabs { justify-content: center; }
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 10px;
+                margin: 0;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+                margin-bottom: 8px;
+            }
+            
+            .header p {
+                font-size: 1em;
+            }
+            
+            .logout-btn {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 15px;
+                width: 100%;
+                padding: 12px;
+                font-size: 16px;
+            }
+            
+            .controls {
+                padding: 20px 15px;
+            }
+            
+            .search-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-input {
+                min-width: auto;
+                width: 100%;
+                font-size: 16px;
+                padding: 15px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 16px;
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+            
+            #adminActions {
+                display: flex !important;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 10px;
+            }
+            
+            #adminActions .btn {
+                width: 100%;
+                margin: 0;
+            }
+            
+            .filter-tabs {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+            
+            .filter-tab {
+                padding: 10px 15px;
+                font-size: 14px;
+                min-height: 44px;
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-number {
+                font-size: 1.5em;
+            }
+            
+            .stat-label {
+                font-size: 0.9em;
+            }
+            
+            .members-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .member-card {
+                padding: 15px;
+                margin: 0;
+            }
+            
+            .member-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .member-name {
+                font-size: 16px;
+            }
+            
+            .member-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .btn-record, .btn-reminder {
+                width: 100%;
+                padding: 12px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 20px auto;
+                padding: 20px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .modal h2 {
+                font-size: 1.5em;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 12px;
+                font-size: 16px;
+                min-height: 44px;
+            }
+            
+            .modal-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .modal-actions .btn {
+                width: 100%;
+                margin: 0;
+            }
+            
+            .events-section {
+                margin-top: 20px;
+                padding: 15px;
+            }
+            
+            .events-section h3 {
+                font-size: 1.3em;
+            }
+            
+            .event-card {
+                padding: 12px;
+            }
+            
+            .event-title {
+                font-size: 16px;
+            }
+            
+            .event-description {
+                font-size: 14px;
+            }
+            
+            .member-table {
+                display: none;
+            }
+            
+            .balance-amount {
+                font-size: 18px;
+            }
+            
+            .balance-details {
+                font-size: 13px;
+            }
+            
+            .paid-up-to {
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-tab {
+                min-width: 100px;
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .member-card {
+                padding: 12px;
+            }
+            
+            .modal-content {
+                width: 98%;
+                margin: 10px auto;
+                padding: 15px;
+            }
         }
     </style>
 </head>
