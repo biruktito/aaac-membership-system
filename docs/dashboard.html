@@ -1426,9 +1426,10 @@
             // - No requirement for "recent" payments since 2022
             isActiveMember = hasAnyPayments && !isTooLongInactive;
             
-            // Debug for Habtamu
-            if (member.id === '1') {
-                console.log('=== HABTAMU ACTIVE STATUS DEBUG ===');
+            // Debug for specific members to understand inactive logic
+            if (member.id === '1' || member.id === '54' || member.id === '97' || member.id === '98' || member.id === '99') {
+                console.log(`=== MEMBER ${member.id} ACTIVE STATUS DEBUG ===`);
+                console.log('Member name:', member.name);
                 console.log('First payment year:', firstPaymentYear);
                 console.log('First payment month:', firstPaymentMonth);
                 console.log('Last payment year:', lastPaidYear);
@@ -1446,7 +1447,7 @@
                     const yearTotal = Object.values(yearData).reduce((sum, val) => sum + (val || 0), 0);
                     console.log(`  ${year}: $${yearTotal}`, yearData);
                 });
-                console.log('=== END HABTAMU DEBUG ===');
+                console.log('=== END MEMBER DEBUG ===');
             }
             
             // Calculate what's due from their first payment to current date
