@@ -30,6 +30,19 @@ async function loadDataFromGoogleSheets() {
         const membersData = await fetchSheetData(GOOGLE_SHEETS_CONFIG.SHEETS.MEMBERS);
         console.log(`✅ Loaded ${membersData.length} members from Google Sheets`);
         
+        // Debug: Show the structure of membersData
+        console.log('=== MEMBERS DATA STRUCTURE DEBUG ===');
+        console.log('membersData type:', typeof membersData);
+        console.log('membersData length:', membersData.length);
+        console.log('membersData is array:', Array.isArray(membersData));
+        if (membersData.length > 0) {
+            console.log('First row type:', typeof membersData[0]);
+            console.log('First row is array:', Array.isArray(membersData[0]));
+            console.log('First row length:', membersData[0] ? membersData[0].length : 'undefined');
+            console.log('First row:', membersData[0]);
+        }
+        console.log('=== END MEMBERS DATA STRUCTURE DEBUG ===');
+        
         // Load settings
         const settings = await fetchSheetData(GOOGLE_SHEETS_CONFIG.SHEETS.SETTINGS);
         console.log('✅ Loaded settings from Google Sheets');
@@ -121,12 +134,28 @@ async function fetchSheetData(sheetName) {
 function processGoogleSheetsData(data) {
     console.log('🔄 Processing Google Sheets data...');
     
-    if (!data || !data.values || data.values.length === 0) {
+    // Check if data is already an array (values) or needs to be extracted
+    let rows;
+    if (Array.isArray(data)) {
+        // Data is already the values array
+        rows = data;
+        console.log('Data is already an array of rows');
+    } else if (data && data.values && Array.isArray(data.values)) {
+        // Data is the full response object
+        rows = data.values;
+        console.log('Data contains values array');
+    } else {
         console.error('❌ No data to process');
+        console.log('Data type:', typeof data);
+        console.log('Data:', data);
         return [];
     }
     
-    const rows = data.values;
+    if (rows.length === 0) {
+        console.error('❌ No rows to process');
+        return [];
+    }
+    
     const headers = rows[0];
     const totalRows = rows.length - 1; // Exclude header
     
