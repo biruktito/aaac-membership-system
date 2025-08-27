@@ -99,15 +99,19 @@ function processGoogleSheetsData(sheetData) {
         
         // If we have multiple columns, use them
         if (headers.length > 1 && row.length > 1) {
+            console.log(`Using multi-column format for member ${index + 1}`);
             headers.forEach((header, headerIndex) => {
                 member[header] = row[headerIndex] || '';
             });
         } else {
             // If we have a single column with CSV data, parse it
+            console.log(`Using CSV parsing for member ${index + 1}`);
             const csvString = row[0] || '';
             const csvValues = csvString.split(',');
             
             console.log(`Parsing CSV for member ${index + 1}:`, csvString.substring(0, 100) + '...');
+            console.log(`CSV values length:`, csvValues.length);
+            console.log(`First few CSV values:`, csvValues.slice(0, 5));
             
             // Map CSV values to expected fields
             member.Member_ID = csvValues[0] || '';
