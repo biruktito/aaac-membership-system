@@ -96,9 +96,53 @@ function processGoogleSheetsData(sheetData) {
     
     return rows.map((row, index) => {
         const member = {};
-        headers.forEach((header, headerIndex) => {
-            member[header] = row[headerIndex] || '';
-        });
+        
+        // If we have multiple columns, use them
+        if (headers.length > 1 && row.length > 1) {
+            headers.forEach((header, headerIndex) => {
+                member[header] = row[headerIndex] || '';
+            });
+        } else {
+            // If we have a single column with CSV data, parse it
+            const csvString = row[0] || '';
+            const csvValues = csvString.split(',');
+            
+            console.log(`Parsing CSV for member ${index + 1}:`, csvString.substring(0, 100) + '...');
+            
+            // Map CSV values to expected fields
+            member.Member_ID = csvValues[0] || '';
+            member.Name = csvValues[1] || '';
+            member.Phone = csvValues[2] || '';
+            member.Status = csvValues[3] || '';
+            member.First_Payment_Year = csvValues[4] || '';
+            member.Registration_Fee_Paid = csvValues[5] || '';
+            member.Registration_Fee_Amount = csvValues[6] || '';
+            member.Last_Payment_Date = csvValues[7] || '';
+            member.Notes = csvValues[8] || '';
+            
+            // Add all the payment months (2022_JAN through 2026_DEC)
+            for (let year = 2022; year <= 2026; year++) {
+                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                months.forEach(month => {
+                    const fieldName = `${year}_${month}`;
+                    const valueIndex = 9 + (year - 2022) * 12 + months.indexOf(month);
+                    member[fieldName] = csvValues[valueIndex] || '0.0';
+                });
+            }
+            
+            // Add incidentals
+            const incidentalStartIndex = 9 + 5 * 12; // After all payment months
+            member['2022_Incidentals'] = csvValues[incidentalStartIndex] || '0';
+            member['2022_Incidental_Notes'] = csvValues[incidentalStartIndex + 1] || '';
+            member['2023_Incidentals'] = csvValues[incidentalStartIndex + 2] || '0';
+            member['2023_Incidental_Notes'] = csvValues[incidentalStartIndex + 3] || '';
+            member['2024_Incidentals'] = csvValues[incidentalStartIndex + 4] || '0';
+            member['2024_Incidental_Notes'] = csvValues[incidentalStartIndex + 5] || '';
+            member['2025_Incidentals'] = csvValues[incidentalStartIndex + 6] || '0';
+            member['2025_Incidental_Notes'] = csvValues[incidentalStartIndex + 7] || '';
+            member['2026_Incidentals'] = csvValues[incidentalStartIndex + 8] || '0';
+            member['2026_Incidental_Notes'] = csvValues[incidentalStartIndex + 9] || '';
+        }
         
         // Map Google Sheets fields to expected dashboard fields
         member.id = member.Member_ID || member['Member ID'] || (index + 1);
