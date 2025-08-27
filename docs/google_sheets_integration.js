@@ -45,10 +45,21 @@ async function loadDataFromGoogleSheets() {
         window.systemSettings = processSettings(settings);
         
         console.log('🔄 Updating dashboard...');
+        console.log('✅ Global membersData set:', window.membersData.length, 'members');
+        console.log('✅ Sample member in global data:', window.membersData[0]);
         
         // Update dashboard
-        displayMembers();
-        updateStats();
+        if (typeof displayMembers === 'function') {
+            displayMembers();
+        } else {
+            console.error('❌ displayMembers function not found');
+        }
+        
+        if (typeof updateStats === 'function') {
+            updateStats();
+        } else {
+            console.error('❌ updateStats function not found');
+        }
         
         console.log('✅ Google Sheets data loaded successfully');
         return true;
