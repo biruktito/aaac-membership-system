@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAAC Accountant Interface - Payment Entry</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .payment-form {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .recent-payments {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .recent-payments h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .payment-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .payment-item .member-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .payment-item .payment-details {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-success {
+            background: #28a745;
+        }
+
+        .status-pending {
+            background: #ffc107;
+        }
+
+        .status-error {
+            background: #dc3545;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .success {
+            background: #28a745;
+        }
+
+        .error {
+            background: #dc3545;
+        }
+
+        .info {
+            background: #17a2b8;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💰 AAAC Payment Entry</h1>
+            <p>Record payments and update member accounts in real-time</p>
+        </div>
+
+        <div class="content">
+            <!-- Payment Entry Form -->
+            <div class="payment-form">
+                <h2>📝 Record New Payment</h2>
+                <form id="paymentForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="memberSelect">Member</label>
+                            <select id="memberSelect" required>
+                                <option value="">Select a member...</option>
+                                <!-- Will be populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentType">Payment Type</label>
+                            <select id="paymentType" required>
+                                <option value="">Select payment type...</option>
+                                <option value="Monthly">Monthly Dues ($15)</option>
+                                <option value="Registration">Registration Fee</option>
+                                <option value="Incidental">Incidental</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="amount">Amount ($)</label>
+                            <input type="number" id="amount" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentMethod">Payment Method</label>
+                            <select id="paymentMethod" required>
+                                <option value="">Select method...</option>
+                                <option value="Zelle">Zelle</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Check">Check</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="month">Month</label>
+                            <select id="month" required>
+                                <option value="">Select month...</option>
+                                <option value="JAN">January</option>
+                                <option value="FEB">February</option>
+                                <option value="MAR">March</option>
+                                <option value="APR">April</option>
+                                <option value="MAY">May</option>
+                                <option value="JUN">June</option>
+                                <option value="JUL">July</option>
+                                <option value="AUG">August</option>
+                                <option value="SEP">September</option>
+                                <option value="OCT">October</option>
+                                <option value="NOV">November</option>
+                                <option value="DEC">December</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="year">Year</label>
+                            <select id="year" required>
+                                <option value="">Select year...</option>
+                                <option value="2022">2022</option>
+                                <option value="2023">2023</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes (Optional)</label>
+                        <textarea id="notes" rows="3" placeholder="Additional notes about this payment..."></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">
+                        💾 Record Payment
+                    </button>
+                </form>
+            </div>
+
+            <!-- Recent Payments -->
+            <div class="recent-payments">
+                <h3>📋 Recent Payments</h3>
+                <div id="recentPaymentsList">
+                    <p style="color: #6c757d; text-align: center;">No recent payments to display</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="google_sheets_integration.js"></script>
+    <script>
+        // Initialize the accountant interface
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing Accountant Interface...');
+            
+            // Load member data for dropdown
+            loadMemberData();
+            
+            // Set up form handlers
+            setupFormHandlers();
+            
+            // Initialize Google Sheets integration
+            initializeGoogleSheets();
+        });
+
+        async function loadMemberData() {
+            try {
+                // Try to load from Google Sheets first
+                const success = await GoogleSheetsIntegration.loadData();
+                
+                if (!success) {
+                    // Fallback to local CSV
+                    console.log('Loading from local CSV...');
+                    // This would load from your existing CSV data
+                }
+                
+                populateMemberDropdown();
+                
+            } catch (error) {
+                console.error('Error loading member data:', error);
+            }
+        }
+
+        function populateMemberDropdown() {
+            const memberSelect = document.getElementById('memberSelect');
+            const members = window.membersData || [];
+            
+            // Clear existing options
+            memberSelect.innerHTML = '<option value="">Select a member...</option>';
+            
+            // Add member options
+            members.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.Member_ID;
+                option.textContent = `${member.Member_ID} - ${member.Name}`;
+                memberSelect.appendChild(option);
+            });
+        }
+
+        function setupFormHandlers() {
+            const form = document.getElementById('paymentForm');
+            
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const paymentData = {
+                    memberId: formData.get('memberSelect'),
+                    memberName: getMemberName(formData.get('memberSelect')),
+                    paymentType: formData.get('paymentType'),
+                    amount: parseFloat(formData.get('amount')),
+                    paymentMethod: formData.get('paymentMethod'),
+                    month: formData.get('month'),
+                    year: formData.get('year'),
+                    notes: formData.get('notes')
+                };
+                
+                // Handle payment submission
+                await GoogleSheetsIntegration.handlePayment(paymentData);
+            });
+            
+            // Auto-fill amount based on payment type
+            document.getElementById('paymentType').addEventListener('change', function() {
+                const amountField = document.getElementById('amount');
+                const paymentType = this.value;
+                
+                if (paymentType === 'Monthly') {
+                    amountField.value = '15.00';
+                } else if (paymentType === 'Registration') {
+                    amountField.value = '200.00';
+                }
+            });
+        }
+
+        function getMemberName(memberId) {
+            const members = window.membersData || [];
+            const member = members.find(m => m.Member_ID === memberId);
+            return member ? member.Name : '';
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initialize Google Sheets integration
+        async function initializeGoogleSheets() {
+            const success = await GoogleSheetsIntegration.initialize();
+            
+            if (success) {
+                showNotification('Connected to Google Sheets!', 'success');
+            } else {
+                showNotification('Using local data (Google Sheets not configured)', 'info');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,3370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <title>AAAC Membership Status Tracker</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 50%, #40916C 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 8px 32px rgba(27, 67, 50, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .ethiopian-flag {
+            width: 80px;
+            height: 60px;
+            margin: 0 auto 20px;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .flag-stripe {
+            height: 33.33%;
+            width: 100%;
+        }
+
+        .flag-stripe.green { background: #009A49; }
+        .flag-stripe.yellow { background: #FEDD00; }
+        .flag-stripe.red { background: #EF3340; }
+
+
+
+        .location {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+        }
+
+        .logout-btn:hover {
+            background: #c82333;
+        }
+
+        .security-notice {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 30px;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+            border-bottom: 1px solid #DEE2E6;
+            position: relative;
+        }
+
+        .controls::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
+        }
+
+        .search-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary { 
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%); 
+            color: white; 
+        }
+        .btn-success { 
+            background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%); 
+            color: white; 
+        }
+        .btn-warning { 
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); 
+            color: white; 
+        }
+        .btn-danger { 
+            background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); 
+            color: white; 
+        }
+        .btn-info { 
+            background: linear-gradient(135deg, #FFD23F 0%, #F7931E 100%); 
+            color: #212529; 
+        }
+        .btn-secondary { 
+            background: linear-gradient(135deg, #6C757D 0%, #495057 100%); 
+            color: white; 
+        }
+
+        .btn:hover { transform: translateY(-2px); }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .filter-tab.active {
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(27, 154, 170, 0.3);
+        }
+
+        .filter-tab:hover {
+            background: linear-gradient(135deg, #06FFA5 0%, #1B9AAA 100%);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            padding: 20px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 2.2em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .members-section {
+            margin: 20px 0;
+        }
+        
+        .members-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding: 10px 0;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .member-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .member-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
+        }
+        
+        .member-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .member-card.inactive {
+            opacity: 0.7;
+            background: #f8f9fa;
+        }
+        
+        .member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .member-id {
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 12px;
+            box-shadow: 0 2px 8px rgba(27, 154, 170, 0.3);
+        }
+        
+        .member-status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .member-status.current { 
+            background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(45, 106, 79, 0.3);
+        }
+        .member-status.issue { 
+            background: linear-gradient(135deg, #FFD23F 0%, #F7931E 100%); 
+            color: #212529; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(255, 210, 63, 0.3);
+        }
+        .member-status.risk { 
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        }
+        .member-status.risk-of-removal { 
+            background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+        .member-status.inactive { 
+            background: linear-gradient(135deg, #6C757D 0%, #495057 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+        }
+        
+        .member-info {
+            margin-bottom: 15px;
+        }
+        
+        .member-name {
+            font-weight: bold;
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .member-id {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .member-balance {
+            margin-bottom: 15px;
+        }
+        
+        .balance-amount {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .balance-amount.positive { 
+            color: #2D6A4F; 
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(45, 106, 79, 0.2);
+        }
+        .balance-amount.negative { 
+            color: #DC3545; 
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(220, 53, 69, 0.2);
+        }
+        
+        .balance-details {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .paid-up-to {
+            color: #495057;
+            font-size: 13px;
+            font-style: italic;
+        }
+        
+        .debug-info {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .member-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-record, .btn-reminder {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-record {
+            background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%);
+            color: white;
+        }
+
+        .btn-reminder {
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            color: white;
+        }
+
+        .events-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .events-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
+        }
+
+        .events-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .events-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .event-card {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #1B9AAA;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .event-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .event-date {
+            font-weight: bold;
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .event-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .event-description {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        .btn-record {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-reminder {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-record:hover, .btn-reminder:hover {
+            transform: translateY(-1px);
+        }
+        
+        .inactive-section {
+            border-top: 2px solid #e9ecef;
+            padding-top: 20px;
+        }
+
+        .member-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .member-table th {
+            background: #f8f9fa;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .member-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
+        }
+
+        .member-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-current { background: #d4edda; color: #155724; }
+        .status-issue { background: #fff3cd; color: #856404; }
+        .status-risk { background: #f8d7da; color: #721c24; }
+        .status-removed { background: #e2e3e5; color: #383d41; }
+
+        .balance {
+            font-weight: bold;
+        }
+
+        .balance-positive { color: #28a745; }
+        .balance-negative { color: #dc3545; }
+
+        .balance-details {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        .close:hover { color: #000; }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .member-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .member-details h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .detail-value {
+            color: #6c757d;
+        }
+
+        .year-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .year-tab {
+            padding: 8px 16px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .year-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .year-tab:hover {
+            background: #5a6fd8;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 10px;
+                margin: 0;
+            }
+            
+            .header {
+                padding: 20px 15px;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+                margin-bottom: 8px;
+            }
+            
+            .header p {
+                font-size: 1em;
+            }
+            
+            .logout-btn {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin-bottom: 15px;
+                width: 100%;
+                padding: 12px;
+                font-size: 16px;
+            }
+            
+            .controls {
+                padding: 20px 15px;
+            }
+            
+            .search-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-input {
+                min-width: auto;
+                width: 100%;
+                font-size: 16px;
+                padding: 15px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 16px;
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+            
+            #adminActions {
+                display: flex !important;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 10px;
+            }
+            
+            #adminActions .btn {
+                width: 100%;
+                margin: 0;
+            }
+            
+            .filter-tabs {
+                flex-wrap: wrap;
+                gap: 8px;
+                justify-content: center;
+            }
+            
+            .filter-tab {
+                padding: 10px 15px;
+                font-size: 14px;
+                min-height: 44px;
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-number {
+                font-size: 1.5em;
+            }
+            
+            .stat-label {
+                font-size: 0.9em;
+            }
+            
+            .members-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .member-card {
+                padding: 15px;
+                margin: 0;
+            }
+            
+            .member-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .member-name {
+                font-size: 16px;
+            }
+            
+            .member-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .btn-record, .btn-reminder {
+                width: 100%;
+                padding: 12px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+            
+            .modal-content {
+                width: 95%;
+                margin: 20px auto;
+                padding: 20px;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            
+            .modal h2 {
+                font-size: 1.5em;
+            }
+            
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                padding: 12px;
+                font-size: 16px;
+                min-height: 44px;
+            }
+            
+            .modal-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .modal-actions .btn {
+                width: 100%;
+                margin: 0;
+            }
+            
+            .events-section {
+                margin-top: 20px;
+                padding: 15px;
+            }
+            
+            .events-section h3 {
+                font-size: 1.3em;
+            }
+            
+            .event-card {
+                padding: 12px;
+            }
+            
+            .event-title {
+                font-size: 16px;
+            }
+            
+            .event-description {
+                font-size: 14px;
+            }
+            
+            .member-table {
+                display: none;
+            }
+            
+            .balance-amount {
+                font-size: 18px;
+            }
+            
+            .balance-details {
+                font-size: 13px;
+            }
+            
+            .paid-up-to {
+                font-size: 12px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-tab {
+                min-width: 100px;
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            .member-card {
+                padding: 12px;
+            }
+            
+            .modal-content {
+                width: 98%;
+                margin: 10px auto;
+                padding: 15px;
+            }
+        }
+
+        .modal-actions .btn {
+            margin: 5px;
+        }
+
+        /* Copy Message Modal Styles */
+        .copy-message-modal {
+            max-width: 600px !important;
+        }
+
+        .message-preview {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .message-preview h3 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .message-text {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #212529;
+            white-space: pre-line;
+        }
+
+        .copy-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .copy-actions .btn {
+            padding: 12px 15px;
+            font-size: 14px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .copy-instructions {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .copy-instructions p {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            color: #1976d2;
+        }
+
+        .copy-instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .copy-instructions li {
+            margin-bottom: 5px;
+            color: #424242;
+        }
+
+        /* Mobile Responsive for Copy Modal */
+        @media (max-width: 768px) {
+            .copy-message-modal {
+                width: 95% !important;
+                margin: 10px auto !important;
+                padding: 20px !important;
+            }
+
+            .message-preview {
+                padding: 15px;
+                max-height: 250px;
+            }
+
+            .copy-actions {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .copy-actions .btn {
+                width: 100%;
+                padding: 15px;
+                font-size: 16px;
+                min-height: 50px;
+            }
+
+            .copy-instructions {
+                padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .copy-message-modal {
+                width: 98% !important;
+                padding: 15px !important;
+            }
+
+            .message-preview {
+                padding: 12px;
+                max-height: 200px;
+            }
+
+            .copy-actions .btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Payment Success Modal Styles */
+        .payment-success-modal {
+            max-width: 500px !important;
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 4em;
+            margin: 20px 0;
+            animation: bounce 0.6s ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .payment-success-modal h2 {
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+
+        .payment-details {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .success-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .success-actions .btn {
+            min-width: 120px;
+        }
+
+        /* Mobile Responsive for Payment Success Modal */
+        @media (max-width: 768px) {
+            .payment-success-modal {
+                width: 95% !important;
+                margin: 10px auto !important;
+                padding: 20px !important;
+            }
+
+            .success-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .success-actions .btn {
+                width: 100%;
+                padding: 15px;
+                font-size: 16px;
+                min-height: 50px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .payment-success-modal {
+                width: 98% !important;
+                padding: 15px !important;
+            }
+
+            .success-icon {
+                font-size: 3em;
+            }
+
+            .payment-details {
+                padding: 15px;
+            }
+        }
+
+        .form-help {
+            display: block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .form-actions .btn {
+            min-width: 120px;
+        }
+
+        /* Payment form improvements */
+        .payment-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .payment-info strong {
+            color: #1976d2;
+        }
+
+        /* Mobile responsive for payment form */
+        @media (max-width: 768px) {
+            .form-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .form-actions .btn {
+                width: 100%;
+                padding: 15px;
+                font-size: 16px;
+                min-height: 50px;
+            }
+
+            .form-group input, .form-group select {
+                font-size: 16px; /* Prevents zoom on iOS */
+                padding: 15px;
+            }
+
+            .payment-info {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+            <div class="header-content">
+                <div class="ethiopian-flag">
+                    <div class="flag-stripe green"></div>
+                    <div class="flag-stripe yellow"></div>
+                    <div class="flag-stripe red"></div>
+                </div>
+                <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
+                <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
+                <p class="location">📍 Chicago, Illinois | 🇺🇸 United States</p>
+                <p><strong>Current Date: <span id="currentDate">August 2025</span></strong></p>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="search-section">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search by name, phone number, or member ID...">
+                <button class="btn btn-primary" onclick="searchMembers()">Search</button>
+                <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+                <div id="adminActions" style="display: none;">
+                    <button class="btn btn-success" onclick="addNewMember()">Add New Member</button>
+                    <button class="btn btn-info" onclick="addEvent()">Add Event</button>
+                    <button class="btn btn-warning" onclick="exportData()">Export Data</button>
+                </div>
+            </div>
+
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterByStatus('all')">All Members</button>
+                <button class="filter-tab" onclick="filterByStatus('current')">✅ Current</button>
+                <button class="filter-tab" onclick="filterByStatus('issue')">⚠️ Issues (6-12 months)</button>
+                <button class="filter-tab" onclick="filterByStatus('risk')">❌ Risk (1-2 years)</button>
+                <button class="filter-tab" onclick="filterByStatus('removed')">🚫 Removed (2+ years)</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-members">0</div>
+                    <div class="stat-label">Total Members</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="current-members">0</div>
+                    <div class="stat-label">✅ Current</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="issue-members">0</div>
+                    <div class="stat-label">⚠️ Issues</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="risk-members">0</div>
+                    <div class="stat-label">❌ Risk</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="risk-of-removal-members">0</div>
+                    <div class="stat-label">🚨 Risk of Removal</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="total-balance">0</div>
+                    <div class="stat-label">Total Balance</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="inactive-members">0</div>
+                    <div class="stat-label">Inactive Members</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading member data...</p>
+            </div>
+            
+            <div id="members-container">
+                <!-- Members will be displayed here -->
+            </div>
+            
+            <table class="member-table" id="memberTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Registration</th>
+                        <th>Paid Up To</th>
+                        <th>Current Balance</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="memberTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Member Details Modal -->
+    <div id="memberDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Member Payment Details</h2>
+            <div id="memberDetailsContent">
+                <!-- Member details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Add New Member</h2>
+            <div class="form-group">
+                <label for="newMemberId">Member ID:</label>
+                <input type="text" id="newMemberId" readonly>
+            </div>
+            <div class="form-group">
+                <label for="newMemberName">Full Name:</label>
+                <input type="text" id="newMemberName" required>
+            </div>
+            <div class="form-group">
+                <label for="newMemberPhone">Phone Number:</label>
+                <input type="text" id="newMemberPhone" required>
+            </div>
+            <div class="form-group">
+                <label for="newMemberStartYear">Start Year:</label>
+                <select id="newMemberStartYear">
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button onclick="saveNewMember()" class="btn btn-success">Save Member</button>
+                <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Event Modal -->
+    <div id="addEventModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Add New Event</h2>
+            <div class="form-group">
+                <label for="eventDate">Event Date:</label>
+                <input type="date" id="eventDate" required>
+            </div>
+            <div class="form-group">
+                <label for="eventTitle">Event Title:</label>
+                <input type="text" id="eventTitle" required placeholder="e.g., Monthly Meeting">
+            </div>
+            <div class="form-group">
+                <label for="eventDescription">Description:</label>
+                <textarea id="eventDescription" rows="3" placeholder="Event details, location, etc."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button onclick="saveEvent()" class="btn btn-success">Save Event</button>
+                <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Record Payment</h2>
+            <div class="payment-info">
+                <strong>Payment Instructions:</strong><br>
+                • Monthly fee: $15 per member<br>
+                • Initial registration: $200<br>
+                • Send payment via Zelle to: aaaichicago@gmail.com<br>
+                • Include member name in payment description
+            </div>
+            <form id="paymentForm">
+                <div class="form-group">
+                    <label for="memberName">Member Name:</label>
+                    <input type="text" id="memberName" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="paymentYear">Payment Year:</label>
+                    <select id="paymentYear" required>
+                        <option value="">Select Year</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentType">Payment Type:</label>
+                    <select id="paymentType" required onchange="updatePaymentAmount()">
+                        <option value="">Select Type</option>
+                        <option value="monthly">Monthly Payment ($15)</option>
+                        <option value="incidental">Incidental (Variable)</option>
+                        <option value="registration">Registration Fee ($200)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentMonth">Payment Month:</label>
+                    <select id="paymentMonth" required>
+                        <option value="">Select Month</option>
+                        <option value="JAN">January</option>
+                        <option value="FEB">February</option>
+                        <option value="MAR">March</option>
+                        <option value="APR">April</option>
+                        <option value="MAY">May</option>
+                        <option value="JUNE">June</option>
+                        <option value="JULY">July</option>
+                        <option value="AUG">August</option>
+                        <option value="SEPT">September</option>
+                        <option value="OCT">October</option>
+                        <option value="NOV">November</option>
+                        <option value="DEC">December</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentAmount">Payment Amount ($):</label>
+                    <input type="number" id="paymentAmount" value="15" min="0" step="0.01" required>
+                    <small class="form-help">Standard monthly fee is $15, registration is $200</small>
+                </div>
+                <div class="form-group">
+                    <label for="paymentNotes">Notes (optional):</label>
+                    <input type="text" id="paymentNotes" placeholder="Payment reference, Zelle confirmation, or notes">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">✅ Record Payment</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Configuration -->
+    <script src="config.js"></script>
+    
+    <!-- Google Sheets Integration -->
+    <script src="google_sheets_integration.js?v=20250203"></script>
+
+    <script>
+        let membersData = [];
+        let currentYear = new Date().getFullYear();
+        let currentMonth = new Date().getMonth();
+        const MONTHLY_FEE = 15;
+        const OLD_REGISTRATION_FEE = 100; // For existing members
+        const NEW_REGISTRATION_FEE = 200; // For new members (2023+)
+        const INCIDENTAL_FEE = 10; // For funeral contributions, etc.
+        const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        // Set the current date to August 2025 for testing
+        // In production, this would be the actual current date
+        const CURRENT_DATE = new Date(2025, 7, 1); // August 1, 2025
+        const CURRENT_YEAR = CURRENT_DATE.getFullYear();
+        const CURRENT_MONTH = CURRENT_DATE.getMonth();
+
+        // Authentication check
+        function checkAuthentication() {
+            const isAuthenticated = sessionStorage.getItem('aaacAuthenticated');
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            
+            // If no authentication, set as demo user and continue
+            if (!isAuthenticated || !userRole) {
+                console.log('No authentication found, setting as demo user');
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'demo');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                return true;
+            }
+            return true;
+        }
+
+        // Logout function
+        function logout() {
+            console.log('Logout function called');
+            sessionStorage.removeItem('aaacAuthenticated');
+            sessionStorage.removeItem('aaacUserRole');
+            sessionStorage.removeItem('aaacLoginTime');
+            console.log('Session storage cleared, redirecting to login...');
+            window.location.href = 'login.html';
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== DOM CONTENT LOADED ===');
+            
+            // Update current date and events
+            updateCurrentDate();
+            updateEventsDisplay();
+            
+            console.log('Checking authentication...');
+            
+            const authResult = checkAuthentication();
+            console.log('Authentication result:', authResult);
+            
+            if (!authResult) {
+                console.log('Authentication failed, stopping initialization');
+                return;
+            }
+            
+            console.log('Authentication passed, loading member data...');
+            
+            // Simplified, robust data loading system
+            loadDataRobustly();
+            
+            setupEventListeners();
+            console.log('=== INITIALIZATION COMPLETE ===');
+        });
+
+        function setupEventListeners() {
+            document.getElementById('searchInput').addEventListener('input', function() {
+                searchMembers();
+            });
+
+            document.getElementById('paymentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                recordPayment();
+            });
+
+            // Add logout button event listener
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Logout button clicked');
+                    logout();
+                });
+            }
+        }
+
+        // Simplified, robust data loading system
+        function loadDataRobustly() {
+            console.log('=== ROBUST DATA LOADING SYSTEM ===');
+            console.log('GoogleSheetsIntegration available:', !!window.GoogleSheetsIntegration);
+            console.log('GoogleSheetsIntegration.initialize available:', !!(window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function'));
+            
+            // Try Google Sheets first
+            if (window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function') {
+                console.log('🔄 Attempting Google Sheets integration...');
+                window.GoogleSheetsIntegration.initialize().then(success => {
+                    console.log('Google Sheets initialize result:', success);
+                    console.log('window.membersData:', window.membersData);
+                    console.log('window.membersData length:', window.membersData ? window.membersData.length : 'undefined');
+                    
+                    if (success && window.membersData && window.membersData.length > 0) {
+                        console.log('✅ Using Google Sheets data:', window.membersData.length, 'members');
+                        displayMembers();
+                        updateStats();
+                    } else {
+                        console.log('⚠️ Google Sheets failed or returned no data, using local CSV');
+                        loadLocalCSVData();
+                    }
+                }).catch(error => {
+                    console.log('⚠️ Google Sheets integration error, using local CSV:', error);
+                    loadLocalCSVData();
+                });
+            } else {
+                console.log('⚠️ Google Sheets integration not available, using local CSV');
+                loadLocalCSVData();
+            }
+        }
+
+        function loadLocalCSVData() {
+            console.log('🔄 Loading local CSV data...');
+            
+            fetch('complete_data_for_google_sheet.csv')
+                .then(response => {
+                    console.log('CSV fetch response status:', response.status);
+                    console.log('CSV fetch response ok:', response.ok);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    console.log('✅ Local CSV loaded successfully');
+                    console.log('CSV data length:', data.length);
+                    console.log('CSV data preview:', data.substring(0, 200));
+                    
+                    const parsedData = parseAccountantData(data);
+                    console.log('Parsed data length:', parsedData.length);
+                    console.log('Sample parsed member:', parsedData[0]);
+                    
+                    if (parsedData.length > 0) {
+                        window.membersData = parsedData;
+                        console.log('✅ Local data set:', window.membersData.length, 'members');
+                        displayMembers();
+                        updateStats();
+                    } else {
+                        throw new Error('No members parsed from local CSV');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Local CSV loading failed:', error);
+                    console.log('🔄 Loading sample data as fallback...');
+                    // Load sample data as final fallback
+                    loadSampleData();
+                });
+        }
+
+        function parseContactData(csvText) {
+            const lines = csvText.split('\n');
+            const contacts = {};
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim()) {
+                    const values = lines[i].split(',').map(v => v.trim());
+                    if (values[1] && values[1] !== 'Full Name Clean') {
+                        contacts[values[0]] = {
+                            id: values[0],
+                            name: values[1],
+                            phone: values[2] || ''
+                        };
+                    }
+                }
+            }
+            
+            return contacts;
+        }
+
+        function parseAccountantData(csvText) {
+            const lines = csvText.split('\n');
+            const members = [];
+            
+            console.log('Parsing accountant data, total lines:', lines.length);
+            
+            if (lines.length < 2) {
+                console.error('CSV file is empty or has no data rows');
+                return [];
+            }
+            
+            // Parse header to get column positions
+            const headerLine = lines[0];
+            const headerColumns = headerLine.split(',');
+            console.log('Header columns:', headerColumns);
+            
+            // Find column positions for each year and month
+            const columnMap = {};
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            
+            // Map basic member info columns
+            columnMap.id = 0; // Member_ID
+            columnMap.name = 1; // Name
+            columnMap.phone = 2; // Phone
+            columnMap.status = 3; // Status
+            columnMap.firstPaymentYear = 4; // First_Payment_Year
+            columnMap.registrationFeePaid = 5; // Registration_Fee_Paid
+            columnMap.registrationFeeAmount = 6; // Registration_Fee_Amount
+            columnMap.lastPaymentDate = 7; // Last_Payment_Date
+            columnMap.notes = 8; // Notes
+            
+            // Map payment columns for each year
+            for (let year = 2022; year <= 2026; year++) {
+                columnMap[year] = {};
+                for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+                    const monthName = monthNames[monthIndex];
+                    const columnName = `${year}_${monthName}`;
+                    const columnIndex = headerColumns.findIndex(col => col === columnName);
+                    if (columnIndex !== -1) {
+                        columnMap[year][monthName] = columnIndex;
+                    } else {
+                        console.warn(`Column not found: ${columnName}`);
+                    }
+                }
+            }
+            
+            // Map incidental columns
+            columnMap.incidentals = {};
+            for (let year = 2022; year <= 2026; year++) {
+                const columnName = `${year}_Incidentals`;
+                const columnIndex = headerColumns.findIndex(col => col === columnName);
+                if (columnIndex !== -1) {
+                    columnMap.incidentals[year] = columnIndex;
+                } else {
+                    console.warn(`Incidental column not found: ${columnName}`);
+                }
+            }
+            
+            console.log('Column mapping:', columnMap);
+            
+            // Parse data rows
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const columns = line.split(',');
+                if (columns.length < 10) continue;
+                
+                const member = {
+                    id: columns[columnMap.id] || '',
+                    name: columns[columnMap.name] || '',
+                    phone: columns[columnMap.phone] || '',
+                    status: columns[columnMap.status] || '',
+                    firstPaymentYear: columns[columnMap.firstPaymentYear] || '',
+                    registrationFeePaid: columns[columnMap.registrationFeePaid] || '0',
+                    registrationFeeAmount: columns[columnMap.registrationFeeAmount] || '0',
+                    lastPaymentDate: columns[columnMap.lastPaymentDate] || '',
+                    notes: columns[columnMap.notes] || '',
+                    '2022': {},
+                    '2023': {},
+                    '2024': {},
+                    '2025': {},
+                    '2026': {},
+                    incidentals: {}
+                };
+                
+                // Parse monthly payments for each year
+                for (let year = 2022; year <= 2026; year++) {
+                    for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+                        const monthName = monthNames[monthIndex];
+                        const columnIndex = columnMap[year][monthName];
+                        if (columnIndex !== undefined && columnIndex < columns.length) {
+                            const value = parseFloat(columns[columnIndex]) || 0;
+                            member[year][monthName] = value;
+                        } else {
+                            member[year][monthName] = 0;
+                        }
+                    }
+                }
+                
+                // Parse incidentals
+                for (let year = 2022; year <= 2026; year++) {
+                    const columnIndex = columnMap.incidentals[year];
+                    if (columnIndex !== undefined && columnIndex < columns.length) {
+                        const value = parseFloat(columns[columnIndex]) || 0;
+                        member.incidentals[year] = value;
+                    } else {
+                        member.incidentals[year] = 0;
+                    }
+                }
+                
+                // Debug for Habtamu
+                if (member.id === '1') {
+                    console.log('=== HABTAMU PARSED DATA ===');
+                    console.log('Member:', member);
+                    console.log('2025 payments:', member['2025']);
+                }
+                
+                members.push(member);
+            }
+            
+            console.log('Total members parsed:', members.length);
+            console.log('Sample member:', members[0]);
+            
+            // Test the first member's payment data
+            if (members.length > 0) {
+                const firstMember = members[0];
+                console.log('=== FIRST MEMBER PAYMENT TEST ===');
+                console.log('Member ID:', firstMember.id);
+                console.log('Member Name:', firstMember.name);
+                console.log('2022 payments:', firstMember['2022']);
+                console.log('2023 payments:', firstMember['2023']);
+                console.log('2024 payments:', firstMember['2024']);
+                console.log('2025 payments:', firstMember['2025']);
+                console.log('2026 payments:', firstMember['2026']);
+                
+                // Test a specific payment
+                console.log('2022 JAN payment:', firstMember['2022']['JAN']);
+                console.log('2025 AUG payment:', firstMember['2025']['AUG']);
+                console.log('=== END FIRST MEMBER TEST ===');
+            }
+            
+            return members;
+        }
+
+        function addPaymentDataToMembers(csvText, year, allMembers) {
+            console.log(`Adding payment data for year ${year}...`);
+            const lines = csvText.split('\n');
+            console.log(`Year ${year} has ${lines.length} lines`);
+            
+            // Get the header to determine month column format
+            const headerLine = lines[0];
+            const headerColumns = headerLine.split(',');
+            console.log(`Year ${year} header:`, headerColumns);
+            
+            // Determine month column mapping based on header
+            const monthMapping = {};
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            const possibleMonthNames = [
+                ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUNE', 'JULY', 'AUG', 'SEPT', 'OCT', 'NOV', 'DEC'], // 2025 format
+                ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']  // 2023 format
+            ];
+            
+            // Find which format this CSV uses
+            let csvMonthFormat = null;
+            for (const format of possibleMonthNames) {
+                const foundInHeader = format.every(month => headerColumns.includes(month));
+                if (foundInHeader) {
+                    csvMonthFormat = format;
+                    break;
+                }
+            }
+            
+            if (!csvMonthFormat) {
+                console.error(`Could not determine month format for year ${year}`);
+                return;
+            }
+            
+            console.log(`Year ${year} uses month format:`, csvMonthFormat);
+            
+            // Create mapping from CSV column index to our month keys
+            csvMonthFormat.forEach((csvMonth, index) => {
+                const columnIndex = headerColumns.indexOf(csvMonth);
+                if (columnIndex !== -1) {
+                    monthMapping[columnIndex] = monthNames[index];
+                }
+            });
+            
+            console.log(`Year ${year} month mapping:`, monthMapping);
+            
+            // Skip header line
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const columns = line.split(',');
+                if (columns.length < 16) continue;
+                
+                const memberId = columns[0];
+                const name = columns[1];
+                const phone = columns[2];
+                
+                // Skip rows without valid member ID or name
+                if (!memberId || !name || memberId === 'Total' || name === 'Total') continue;
+                
+                // Debug Habtamu specifically
+                if (memberId === '1') {
+                    console.log(`=== HABTAMU CSV PARSING DEBUG - YEAR ${year} ===`);
+                    console.log('Raw line:', line);
+                    console.log('Columns:', columns);
+                    console.log('Header columns:', headerColumns);
+                    console.log('Month mapping:', monthMapping);
+                    console.log('Monthly payments:', {
+                        JAN: columns[4],
+                        FEB: columns[5],
+                        MAR: columns[6],
+                        APR: columns[7],
+                        MAY: columns[8],
+                        JUNE: columns[9],
+                        JULY: columns[10],
+                        AUG: columns[11],
+                        SEPT: columns[12],
+                        OCT: columns[13],
+                        NOV: columns[14],
+                        DEC: columns[15]
+                    });
+                }
+                
+                // Find the member in our existing members list
+                let targetMember = null;
+                
+                // First try exact ID match
+                if (allMembers[memberId]) {
+                    targetMember = allMembers[memberId];
+                } else {
+                    // Try phone number match
+                    const cleanPhone = phone.replace(/\D/g, '');
+                    for (const existingId in allMembers) {
+                        const existingMember = allMembers[existingId];
+                        const existingCleanPhone = existingMember.phone.replace(/\D/g, '');
+                        if (existingCleanPhone === cleanPhone) {
+                            targetMember = existingMember;
+                            break;
+                        }
+                    }
+                    
+                    // If still no match, try name similarity
+                    if (!targetMember) {
+                        const cleanName = name.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+                        for (const existingId in allMembers) {
+                            const existingMember = allMembers[existingId];
+                            const existingCleanName = existingMember.name.toLowerCase().replace(/[^a-z\s]/g, '').trim();
+                            
+                            // Check if names are similar
+                            if (existingCleanName.includes(cleanName) || cleanName.includes(existingCleanName) || 
+                                existingCleanName.split(' ').some(word => cleanName.includes(word)) ||
+                                cleanName.split(' ').some(word => existingCleanName.includes(word))) {
+                                targetMember = existingMember;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // If we found a matching member, add the payment data
+                if (targetMember) {
+                    const yearData = targetMember[year.toString()];
+                    
+                    // Initialize all months to 0
+                    monthNames.forEach(month => {
+                        yearData[month] = 0;
+                    });
+                    
+                    // Map CSV columns to our month keys using the mapping
+                    Object.keys(monthMapping).forEach(csvIndex => {
+                        const ourMonth = monthMapping[csvIndex];
+                        const paymentAmount = parseFloat(columns[parseInt(csvIndex)]) || 0;
+                        yearData[ourMonth] = paymentAmount;
+                    });
+                    
+                    // Handle registration fee if present (usually in REGIST column)
+                    if (headerColumns.includes('REGIST') || headerColumns.includes('RegistratioN')) {
+                        const registIndex = headerColumns.indexOf('REGIST') !== -1 ? 
+                            headerColumns.indexOf('REGIST') : headerColumns.indexOf('RegistratioN');
+                        if (registIndex !== -1 && columns[registIndex]) {
+                            const registrationFee = parseFloat(columns[registIndex]) || 0;
+                            if (registrationFee > 0) {
+                                yearData.registration = registrationFee;
+                                console.log(`Member ${memberId} paid registration fee $${registrationFee} in ${year}`);
+                            }
+                        }
+                    }
+                    
+                    // Debug Habtamu's payment data
+                    if (memberId === '1') {
+                        console.log(`Added Habtamu ${year} payments:`, yearData);
+                        console.log(`Total for ${year}:`, Object.values(yearData).reduce((sum, val) => sum + val, 0));
+                    }
+                } else {
+                    console.log(`No matching member found for payment data: ID ${memberId}, Name ${name}`);
+                }
+            }
+            
+            console.log(`Year ${year} payment data processed`);
+        }
+
+        function loadSampleData() {
+            console.log('🔄 Loading sample data as fallback...');
+            console.log('Setting up sample member data...');
+            window.membersData = [
+                {
+                    id: '1',
+                    name: 'Demo Member 1',
+                    phone: '555-0101',
+                    status: 'Active',
+                    firstPaymentYear: '2022',
+                    registrationFeePaid: '0',
+                    registrationFeeAmount: '200',
+                    lastPaymentDate: 'AUG 2025',
+                    notes: '',
+                    '2022': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    '2023': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    '2024': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    '2025': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                    '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                    incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
+                }
+            ];
+            console.log('✅ Sample data loaded:', window.membersData.length, 'members');
+            console.log('Sample member:', window.membersData[0]);
+            displayMembers();
+            updateStats();
+        }
+
+        // Simplified balance calculation that works with any data structure
+        function calculateBalanceSimple(member) {
+            console.log('=== SIMPLIFIED BALANCE CALCULATION ===');
+            console.log('Member:', member.name, '(ID:', member.id, ')');
+            
+            // Debug: Show the actual member data structure
+            console.log('Member object keys:', Object.keys(member));
+            console.log('2022 data:', member['2022']);
+            console.log('2023 data:', member['2023']);
+            console.log('2024 data:', member['2024']);
+            console.log('2025 data:', member['2025']);
+            console.log('2026 data:', member['2026']);
+            
+            let totalPaid = 0;
+            let lastPaymentYear = null;
+            let lastPaymentMonth = null;
+            
+            // Calculate total paid and find last payment
+            const years = ['2022', '2023', '2024', '2025', '2026'];
+            years.forEach(year => {
+                const yearData = member[year];
+                console.log(`Processing ${year} data:`, yearData);
+                if (yearData && typeof yearData === 'object') {
+                    console.log(`${year} keys:`, Object.keys(yearData));
+                    MONTHS.forEach(month => {
+                        const payment = parseFloat(yearData[month]) || 0;
+                        console.log(`${year} ${month}: $${payment}`);
+                        totalPaid += payment;
+                        if (payment > 0) {
+                            lastPaymentYear = year;
+                            lastPaymentMonth = month;
+                        }
+                    });
+                } else {
+                    console.log(`${year} data is not an object:`, yearData);
+                }
+            });
+            
+            // Calculate what they owe based on their membership start date
+            const currentYear = 2025;
+            const currentMonth = 7; // August (0-indexed, so 7 = August)
+            const monthlyFee = 15;
+            
+            const startYear = member.firstPaymentYear ? parseInt(member.firstPaymentYear) : 2022;
+            
+            let totalDue = 0;
+            for (let year = startYear; year <= currentYear; year++) {
+                const monthsInYear = year === currentYear ? currentMonth + 1 : 12;
+                totalDue += monthsInYear * monthlyFee;
+            }
+            
+            console.log('Monthly fee:', monthlyFee);
+            console.log('Current year:', currentYear);
+            console.log('Current month:', currentMonth);
+            console.log('Member start year:', startYear);
+            console.log('Total due calculation:', totalDue);
+            
+            const balance = totalPaid - totalDue;
+            const isActive = totalPaid > 0 && lastPaymentYear && parseInt(lastPaymentYear) >= 2022;
+            
+            console.log('Total paid:', totalPaid);
+            console.log('Total due:', totalDue);
+            console.log('Balance:', balance);
+            console.log('Last payment:', lastPaymentMonth, lastPaymentYear);
+            console.log('Is active:', isActive);
+            console.log('=== END SIMPLIFIED CALCULATION ===');
+            
+            return {
+                currentBalance: balance,
+                totalPaid: totalPaid,
+                totalDue: totalDue,
+                lastPaymentYear: lastPaymentYear,
+                lastPaymentMonth: lastPaymentMonth,
+                isActiveMember: isActive,
+                status: isActive ? 'current' : 'inactive',
+                statusText: isActive ? '✅ Current' : '🚫 Inactive',
+                paidUpTo: lastPaymentMonth && lastPaymentYear ? `${lastPaymentMonth} ${lastPaymentYear}` : 'Never',
+                balanceDetails: balance >= 0 ? `Paid up to date` : `Owes $${Math.abs(balance)}`
+            };
+        }
+
+        // Add comprehensive debugging function
+        function debugMemberData(member) {
+            console.log('=== COMPREHENSIVE MEMBER DEBUG ===');
+            console.log('Member ID:', member.id);
+            console.log('Member Name:', member.name);
+            console.log('Raw member object:', member);
+            
+            // Check payment data structure
+            console.log('2022 payments:', member['2022']);
+            console.log('2023 payments:', member['2023']);
+            console.log('2024 payments:', member['2024']);
+            console.log('2025 payments:', member['2025']);
+            console.log('2026 payments:', member['2026']);
+            
+            // Check if payment data exists
+            const years = ['2022', '2023', '2024', '2025', '2026'];
+            let totalPayments = 0;
+            
+            years.forEach(year => {
+                const yearData = member[year];
+                if (yearData && typeof yearData === 'object') {
+                    console.log(`${year} data type:`, typeof yearData);
+                    console.log(`${year} keys:`, Object.keys(yearData));
+                    
+                    // Sum payments for this year
+                    let yearTotal = 0;
+                    MONTHS.forEach(month => {
+                        const payment = yearData[month] || 0;
+                        yearTotal += payment;
+                        if (payment > 0) {
+                            console.log(`${year} ${month}: $${payment}`);
+                        }
+                    });
+                    console.log(`${year} total: $${yearTotal}`);
+                    totalPayments += yearTotal;
+                } else {
+                    console.log(`${year} data:`, yearData);
+                }
+            });
+            
+            console.log('Total payments across all years: $', totalPayments);
+            console.log('=== END COMPREHENSIVE DEBUG ===');
+        }
+
+        function calculateDetailedBalance(member) {
+            console.log('=== CALCULATE DETAILED BALANCE CALLED ===');
+            console.log('Member:', member.name, 'ID:', member.id);
+            
+            // Get current date
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const currentMonth = now.getMonth(); // 0-11 (January = 0)
+            const currentMonthName = MONTH_NAMES[currentMonth];
+            
+            console.log(`Current date: ${currentMonthName} ${currentYear}`);
+            
+            // Initialize variables
+            let totalPaid = 0;
+            let totalIncidentals = 0;
+            let firstPaymentYear = null;
+            let firstPaymentMonth = null;
+            let lastPaidMonth = null;
+            let lastPaidYear = null;
+            let monthsBehind = 0;
+            
+            // Calculate total paid and find payment history
+            const years = ['2022', '2023', '2024', '2025', '2026', '2027'];
+            
+            years.forEach(year => {
+                const yearData = member[year] || {};
+                
+                MONTHS.forEach((month, monthIndex) => {
+                    const monthPayment = yearData[month] || 0;
+                    totalPaid += monthPayment;
+                    
+                    // Track first payment
+                    if (monthPayment > 0 && firstPaymentYear === null) {
+                        firstPaymentYear = year;
+                        firstPaymentMonth = month;
+                    }
+                    
+                    // Track last payment
+                    if (monthPayment > 0) {
+                        lastPaidMonth = month;
+                        lastPaidYear = year;
+                    }
+                });
+                
+                // Add incidentals
+                if (yearData.incidentals) {
+                    yearData.incidentals.forEach(incidental => {
+                        totalIncidentals += incidental.amount;
+                        totalPaid += incidental.amount;
+                    });
+                }
+            });
+            
+            // SIMPLIFIED CALCULATION: What they owe as of current month
+            let totalDue = 0;
+            let paidUpTo = 'Not Started';
+            
+            if (firstPaymentYear && firstPaymentMonth) {
+                // Calculate dues from first payment month to current month
+                const firstMonthIndex = MONTHS.indexOf(firstPaymentMonth);
+                const firstYearNum = parseInt(firstPaymentYear);
+                
+                for (let year = firstYearNum; year <= currentYear; year++) {
+                    const startMonth = year === firstYearNum ? firstMonthIndex : 0;
+                    const endMonth = year === currentYear ? currentMonth : 11;
+                    
+                    for (let month = startMonth; month <= endMonth; month++) {
+                        totalDue += MONTHLY_FEE;
+                    }
+                }
+                
+                // Determine paid up to month
+                if (lastPaidYear && lastPaidMonth) {
+                    const monthIndex = MONTHS.indexOf(lastPaidMonth);
+                    paidUpTo = `${MONTH_NAMES[monthIndex]} ${lastPaidYear}`;
+                }
+                
+                // Calculate months behind (simplified)
+                if (lastPaidYear && lastPaidMonth) {
+                    const lastPaidMonthIndex = MONTHS.indexOf(lastPaidMonth);
+                    const lastPaidYearNum = parseInt(lastPaidYear);
+                    
+                    if (lastPaidYearNum < currentYear) {
+                        monthsBehind = (currentYear - lastPaidYearNum - 1) * 12 + (12 - lastPaidMonthIndex - 1) + (currentMonth + 1);
+                    } else if (lastPaidYearNum === currentYear) {
+                        monthsBehind = Math.max(0, currentMonth - lastPaidMonthIndex);
+                    } else {
+                        monthsBehind = 0; // Paid ahead
+                    }
+                }
+            } else {
+                // No payments - count from 2023 to current
+                const monthsFrom2023 = (currentYear - 2023) * 12 + currentMonth + 1;
+                totalDue = monthsFrom2023 * MONTHLY_FEE;
+                monthsBehind = monthsFrom2023;
+            }
+            
+            // Calculate current balance
+            const currentBalance = totalPaid - totalDue;
+            
+            // Determine member status based on months behind
+            let status = 'current';
+            let statusText = '✅ Current';
+            
+            if (monthsBehind >= 24) {
+                status = 'risk-of-removal';
+                statusText = '🚨 Risk of Removal';
+            } else if (monthsBehind >= 12) {
+                status = 'risk';
+                statusText = '❌ Risk';
+            } else if (monthsBehind >= 6) {
+                status = 'issue';
+                statusText = '⚠️ Issues';
+            } else if (monthsBehind > 0) {
+                status = 'current';
+                statusText = '✅ Current';
+            } else if (monthsBehind === 0) {
+                status = 'current';
+                statusText = '✅ Current';
+            } else {
+                status = 'current';
+                statusText = '✅ Current (Paid Ahead)';
+            }
+            
+            // Determine if member is active (simplified logic)
+            const hasAnyPayments = totalPaid > 0;
+            const monthsSinceLastPayment = monthsBehind;
+            const isTooLongInactive = monthsSinceLastPayment >= 36;
+            const isActiveMember = hasAnyPayments && !isTooLongInactive;
+            
+            // Create balance details
+            let balanceDetails = '';
+            if (currentBalance > 0) {
+                balanceDetails = `Paid ahead by $${currentBalance}`;
+            } else if (currentBalance < 0) {
+                balanceDetails = `Owes $${Math.abs(currentBalance)} (${monthsBehind} months behind)`;
+            } else {
+                balanceDetails = 'Up to date';
+            }
+            
+            if (totalIncidentals > 0) {
+                balanceDetails += ` | Incidentals: $${totalIncidentals}`;
+            }
+            
+            // Debug logging for specific members
+            if (member.id === '1' || member.id === '24') {
+                console.log(`=== ${member.name} FINANCIAL SUMMARY ===`);
+                console.log(`Total Paid: $${totalPaid}`);
+                console.log(`Total Due (as of ${currentMonthName} ${currentYear}): $${totalDue}`);
+                console.log(`Current Balance: $${currentBalance}`);
+                console.log(`Months Behind: ${monthsBehind}`);
+                console.log(`Paid Up To: ${paidUpTo}`);
+                console.log(`Status: ${statusText}`);
+                console.log(`Active Member: ${isActiveMember}`);
+                console.log('=== END FINANCIAL SUMMARY ===');
+            }
+            
+            // Return inactive status if not active, but still calculate balance
+            if (!isActiveMember) {
+                return {
+                    currentBalance: currentBalance,
+                    totalDue: totalDue,
+                    totalPaid: totalPaid,
+                    totalIncidentals: totalIncidentals,
+                    paidUpTo: 'Inactive Member',
+                    balanceDetails: 'No recent payments or inactive 36+ months',
+                    status: 'inactive',
+                    statusText: '🚫 Inactive',
+                    monthsBehind: monthsBehind,
+                    firstPaymentMonth: firstPaymentMonth,
+                    firstPaymentYear: firstPaymentYear,
+                    lastPaidMonth: lastPaidMonth,
+                    lastPaidYear: lastPaidYear,
+                    isActiveMember: false
+                };
+            }
+            
+            // Debug for Habtamu
+            if (member.id === '1') {
+                console.log('Total paid:', totalPaid);
+                console.log('Total due:', totalDue);
+                console.log('First payment:', firstPaymentMonth, firstPaymentYear);
+                console.log('Last paid month:', lastPaidMonth);
+                console.log('Last paid year:', lastPaidYear);
+                console.log('Months behind:', monthsBehind);
+                console.log('Paid up to:', paidUpTo);
+                console.log('Is active member:', isActiveMember);
+            }
+            
+            // Calculate registration fee based on when they started
+            if (firstPaymentYear) {
+                const startYear = parseInt(firstPaymentYear);
+                if (startYear >= 2023) {
+                    totalRegistrationPaid = NEW_REGISTRATION_FEE;
+                } else {
+                    totalRegistrationPaid = OLD_REGISTRATION_FEE;
+                }
+            }
+            
+            // Debug for Habtamu
+            if (member.id === '1') {
+                console.log('Current balance:', currentBalance);
+                console.log('Balance details:', balanceDetails);
+                console.log('=== END HABTAMU CALCULATION ===');
+            }
+            
+            // Debug status determination for first few members
+            if (member.id === '1' || member.id === '2' || member.id === '3') {
+                console.log(`=== STATUS DETERMINATION FOR MEMBER ${member.id} ===`);
+                console.log('Member name:', member.name);
+                console.log('Months behind:', monthsBehind);
+                console.log('Is active member:', isActiveMember);
+                console.log('Current balance:', currentBalance);
+                console.log('Final status:', status);
+                console.log('Status text:', statusText);
+                console.log('=== END STATUS DETERMINATION ===');
+            }
+            
+            return {
+                currentBalance: currentBalance,
+                totalDue: totalDue,
+                totalPaid: totalPaid,
+                totalIncidentals: totalIncidentals,
+                paidUpTo: paidUpTo,
+                balanceDetails: balanceDetails,
+                status: status,
+                statusText: statusText,
+                monthsBehind: monthsBehind,
+                firstPaymentMonth: firstPaymentMonth,
+                firstPaymentYear: firstPaymentYear,
+                lastPaidMonth: lastPaidMonth,
+                lastPaidYear: lastPaidYear,
+                isActiveMember: isActiveMember
+            };
+        }
+
+        function displayMembers(data = window.membersData || membersData) {
+            console.log('=== DISPLAY MEMBERS DEBUG ===');
+            console.log('Data parameter:', data);
+            console.log('window.membersData:', window.membersData);
+            console.log('local membersData:', membersData);
+            console.log('Total members data:', data.length);
+            console.log('Sample member data:', data[0]);
+            
+            const container = document.getElementById('members-container');
+            
+            // Hide loading spinner
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="members-section"><h3>No members found</h3></div>';
+                return;
+            }
+            
+            const activeMembers = data.filter(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                return balanceInfo.isActiveMember;
+            });
+            
+            const inactiveMembers = data.filter(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                return !balanceInfo.isActiveMember;
+            });
+            
+            console.log(`Active members: ${activeMembers.length}, Inactive members: ${inactiveMembers.length}`);
+            
+            // Get user role to determine what to display
+            const userRole = sessionStorage.getItem('aaacUserRole') || 'member';
+            const isAdminOrBoard = userRole === 'admin' || userRole === 'board';
+            
+            console.log('User role:', userRole, 'Can view inactive members:', isAdminOrBoard);
+            
+            // Show active members section
+            let html = `
+                <div class="members-section">
+                    <h3>Active Members (${activeMembers.length})</h3>
+                    <div class="members-grid">
+            `;
+            
+            activeMembers.forEach(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
+                
+                html += `
+                    <div class="member-card">
+                        <div class="member-header">
+                            <span class="member-id">${member.id}</span>
+                            <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
+                        </div>
+                        <div class="member-info">
+                            <div class="member-name">${member.name}</div>
+                            <div class="member-id">ID: ${member.id}</div>
+                        </div>
+                        <div class="member-balance">
+                            <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
+                            <div class="balance-details">${balanceInfo.balanceDetails}</div>
+                            <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
+                        </div>
+                        <div class="member-actions">
+                            <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
+                            <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            // Check if this is a member login (personalized view)
+            const memberId = sessionStorage.getItem('aaacMemberId');
+            const isMemberLogin = userRole === 'member' && memberId;
+            
+            // Hide search and filter options for members
+            const searchSection = document.querySelector('.search-section');
+            const filterSection = document.querySelector('.filter-section');
+            const adminActions = document.getElementById('adminActions');
+            
+            if (isMemberLogin) {
+                if (searchSection) searchSection.style.display = 'none';
+                if (filterSection) filterSection.style.display = 'none';
+                if (adminActions) adminActions.style.display = 'none';
+                
+                // Hide filter tabs for members
+                const filterTabs = document.querySelector('.filter-tabs');
+                if (filterTabs) filterTabs.style.display = 'none';
+            } else {
+                if (searchSection) searchSection.style.display = 'block';
+                if (filterSection) filterSection.style.display = 'block';
+                // Show admin actions only for admin/board users
+                if (adminActions && (userRole === 'admin' || userRole === 'board')) {
+                    adminActions.style.display = 'block';
+                }
+                
+                // Show filter tabs for admin/board users
+                const filterTabs = document.querySelector('.filter-tabs');
+                if (filterTabs) filterTabs.style.display = 'flex';
+            }
+            
+            if (isMemberLogin) {
+                // Find the specific member
+                const member = data.find(m => m.id === memberId);
+                if (member) {
+                    const balanceInfo = calculateDetailedBalance(member);
+                    const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
+                    
+                    html = `
+                        <div class="members-section">
+                            <h3>Your Membership Information</h3>
+                            <div class="members-grid">
+                                <div class="member-card personal-view">
+                                    <div class="member-header">
+                                        <span class="member-id">${member.id}</span>
+                                        <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
+                                    </div>
+                                    <div class="member-info">
+                                        <div class="member-name">${member.name}</div>
+                                        <div class="member-id">Member ID: ${member.id}</div>
+                                    </div>
+                                    <div class="member-balance">
+                                        <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
+                                        <div class="balance-details">${balanceInfo.balanceDetails}</div>
+                                        <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
+                                    </div>
+                                    <div class="member-actions">
+                                        <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="events-section">
+                            <h3>📅 Upcoming Events</h3>
+                            <div class="events-list">
+                                <div class="event-card">
+                                    <div class="event-date">August 15, 2025</div>
+                                    <div class="event-title">Monthly Meeting</div>
+                                    <div class="event-description">Regular monthly membership meeting at Ethiopian Community Center</div>
+                                </div>
+                                <div class="event-card">
+                                    <div class="event-date">August 31, 2025</div>
+                                    <div class="event-title">Payment Due</div>
+                                    <div class="event-description">Monthly membership fee due - $15</div>
+                                </div>
+                                <div class="event-card">
+                                    <div class="event-date">September 15, 2025</div>
+                                    <div class="event-title">Monthly Meeting</div>
+                                    <div class="event-description">Regular monthly membership meeting at Ethiopian Community Center</div>
+                                </div>
+                                <div class="event-card">
+                                    <div class="event-date">September 30, 2025</div>
+                                    <div class="event-title">Payment Due</div>
+                                    <div class="event-description">Monthly membership fee due - $15</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="members-section">
+                            <h3>Member Not Found</h3>
+                            <p>Member ID ${memberId} was not found in our records. Please contact the administrator.</p>
+                        </div>
+                    `;
+                }
+            } else {
+                // Show inactive members section only for admin/board users
+                if (isAdminOrBoard && inactiveMembers.length > 0) {
+                    html += `
+                        <div class="members-section inactive-section">
+                            <h3>Inactive Members (${inactiveMembers.length}) - Board/Admin View Only</h3>
+                            <div class="members-grid">
+                    `;
+                    
+                    inactiveMembers.forEach(member => {
+                        const balanceInfo = calculateDetailedBalance(member);
+                        const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
+                        
+                        html += `
+                            <div class="member-card inactive">
+                                <div class="member-header">
+                                    <span class="member-id">${member.id}</span>
+                                    <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-name">${member.name}</div>
+                                    <div class="member-id">ID: ${member.id}</div>
+                                </div>
+                                <div class="member-balance">
+                                    <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
+                                    <div class="balance-details">${balanceInfo.balanceDetails}</div>
+                                    <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
+                                </div>
+                                <div class="member-actions">
+                                    <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
+                                    <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function updateStats() {
+            console.log('=== UPDATE STATS FUNCTION CALLED ===');
+            const dataToUse = window.membersData || membersData;
+            console.log('Data to use:', dataToUse);
+            console.log('Data length:', dataToUse ? dataToUse.length : 'undefined');
+            console.log('Sample member:', dataToUse && dataToUse.length > 0 ? dataToUse[0] : 'no data');
+            
+            let currentCount = 0;
+            let issueCount = 0;
+            let riskCount = 0;
+            let riskOfRemovalCount = 0;
+            let totalBalance = 0;
+            let inactiveCount = 0;
+            
+            dataToUse.forEach(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                
+                // Debug first few members
+                if (member.id === '1' || member.id === '2' || member.id === '3') {
+                    console.log(`=== UPDATE STATS FOR MEMBER ${member.id} ===`);
+                    console.log('Member name:', member.name);
+                    console.log('Status:', balanceInfo.status);
+                    console.log('Status text:', balanceInfo.statusText);
+                    console.log('Months behind:', balanceInfo.monthsBehind);
+                    console.log('Is active:', balanceInfo.isActiveMember);
+                    console.log('Current balance:', balanceInfo.currentBalance);
+                }
+                
+                // Count by status
+                switch (balanceInfo.status) {
+                    case 'current':
+                        currentCount++;
+                        break;
+                    case 'issue':
+                        issueCount++;
+                        break;
+                    case 'risk':
+                        riskCount++;
+                        break;
+                    case 'risk-of-removal':
+                        riskOfRemovalCount++;
+                        break;
+                    case 'inactive':
+                        inactiveCount++;
+                        break;
+                }
+                
+                // Only add negative balances from ACTIVE members (what they owe) to the total
+                // Inactive members are not expected to pay, so don't include their balances
+                if (balanceInfo.currentBalance < 0 && balanceInfo.isActiveMember) {
+                    totalBalance += Math.abs(balanceInfo.currentBalance);
+                }
+            });
+            
+            // Calculate total active members (excluding inactive ones)
+            const totalActiveMembers = currentCount + issueCount + riskCount + riskOfRemovalCount;
+            const totalMembers = totalActiveMembers; // Total Members = only active members
+            
+            // Debug logging for total balance calculation
+            console.log('=== TOTAL BALANCE CALCULATION DEBUG ===');
+            console.log('Total active members (excluding inactive):', totalMembers);
+            console.log('Total all members (including inactive):', dataToUse.length);
+            console.log('Active members with negative balances:', totalBalance);
+            console.log('Status breakdown:');
+            console.log('  Current:', currentCount);
+            console.log('  Issues:', issueCount);
+            console.log('  Risk:', riskCount);
+            console.log('  Risk of Removal:', riskOfRemovalCount);
+            console.log('  Inactive:', inactiveCount);
+            console.log('=== END TOTAL BALANCE DEBUG ===');
+            
+            // Show inactive members list
+            console.log('=== INACTIVE MEMBERS LIST ===');
+            dataToUse.forEach(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                if (balanceInfo.status === 'inactive') {
+                    console.log(`Inactive: ID ${member.id}, ${member.name}, Total Paid: $${balanceInfo.totalPaid}, Last Payment: ${balanceInfo.lastPaidMonth} ${balanceInfo.lastPaidYear}`);
+                }
+            });
+            console.log('=== END INACTIVE MEMBERS LIST ===');
+            
+            // Get user role to determine what stats to show
+            const userRole = sessionStorage.getItem('aaacUserRole') || 'member';
+            const isAdminOrBoard = userRole === 'admin' || userRole === 'board';
+            
+            // Check if this is a member login
+            const memberId = sessionStorage.getItem('aaacMemberId');
+            const isMemberLogin = userRole === 'member' && memberId;
+            
+            if (isMemberLogin) {
+                // For member login, show total members but hide individual status counts
+                document.getElementById('total-members').textContent = totalMembers;
+                document.getElementById('current-members').parentElement.style.display = 'none';
+                document.getElementById('issue-members').parentElement.style.display = 'none';
+                document.getElementById('risk-members').parentElement.style.display = 'none';
+                document.getElementById('risk-of-removal-members').parentElement.style.display = 'none';
+                
+                // Hide total balance from members for privacy
+                document.getElementById('total-balance').parentElement.style.display = 'none';
+                document.getElementById('inactive-members').parentElement.style.display = 'none';
+            } else {
+                // For admin/board/demo users, show full stats
+                document.getElementById('total-members').textContent = totalMembers;
+                document.getElementById('current-members').textContent = currentCount;
+                document.getElementById('issue-members').textContent = issueCount;
+                document.getElementById('risk-members').textContent = riskCount;
+                document.getElementById('risk-of-removal-members').textContent = riskOfRemovalCount;
+                document.getElementById('total-balance').textContent = `$${totalBalance.toFixed(2)} (Total Owed)`;
+                
+                // Show inactive count only to admin/board users
+                const inactiveElement = document.getElementById('inactive-members');
+                if (isAdminOrBoard) {
+                    inactiveElement.textContent = inactiveCount;
+                    inactiveElement.parentElement.style.display = 'block';
+                } else {
+                    inactiveElement.parentElement.style.display = 'none';
+                }
+            }
+        }
+
+        function filterByStatus(status) {
+            // Update active tab
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            if (status === 'all') {
+                displayMembers();
+                return;
+            }
+            
+            const dataToUse = window.membersData || membersData;
+            const filteredData = dataToUse.filter(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                return balanceInfo.status === status;
+            });
+            
+            displayMembers(filteredData);
+        }
+
+        function searchMembers() {
+            console.log('=== SEARCH FUNCTION CALLED ===');
+            const searchInput = document.getElementById('searchInput').value;
+            const searchTerm = searchInput.toLowerCase();
+            console.log('Search input:', searchInput);
+            console.log('Search term (lowercase):', searchTerm);
+            
+            const dataToUse = window.membersData || membersData;
+            console.log('Data to use length:', dataToUse ? dataToUse.length : 'undefined');
+            console.log('Sample member:', dataToUse && dataToUse.length > 0 ? dataToUse[0] : 'no data');
+            
+            const filteredData = dataToUse.filter(member => {
+                // Search by name (case insensitive)
+                const nameMatch = member.name.toLowerCase().includes(searchTerm);
+                
+                // Search by phone (exact match)
+                const phoneMatch = member.phone && member.phone.includes(searchInput);
+                
+                // Search by ID (exact match or partial match)
+                const memberId = member.id.toString();
+                const idMatch = memberId === searchInput || memberId.includes(searchInput);
+                
+                if (nameMatch || phoneMatch || idMatch) {
+                    console.log(`Match found: ID ${member.id}, Name: ${member.name}, Phone: ${member.phone}`);
+                    console.log(`  - Name match: ${nameMatch}`);
+                    console.log(`  - Phone match: ${phoneMatch}`);
+                    console.log(`  - ID match: ${idMatch}`);
+                }
+                
+                return nameMatch || phoneMatch || idMatch;
+            });
+            
+            console.log('Filtered data length:', filteredData.length);
+            console.log('Filtered results:', filteredData);
+            console.log('=== END SEARCH FUNCTION ===');
+            
+            displayMembers(filteredData);
+        }
+
+        function clearSearch() {
+            console.log('=== CLEAR SEARCH CALLED ===');
+            document.getElementById('searchInput').value = '';
+            displayMembers(); // Show all members
+            console.log('Search cleared, showing all members');
+        }
+
+        function addNewMember() {
+            console.log('=== ADD NEW MEMBER CALLED ===');
+            
+            // Check if user has permission
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            if (userRole !== 'admin' && userRole !== 'board') {
+                alert('Only administrators and board members can add new members.');
+                return;
+            }
+            
+            // Get the next available member ID
+            const dataToUse = window.membersData || membersData;
+            const maxId = Math.max(...dataToUse.map(m => parseInt(m.id)));
+            const newMemberId = (maxId + 1).toString();
+            
+            // Show add member modal
+            const modal = document.getElementById('addMemberModal');
+            if (modal) {
+                document.getElementById('newMemberId').value = newMemberId;
+                modal.style.display = 'block';
+            } else {
+                alert('Add member functionality is not available in this view.');
+            }
+        }
+
+        function saveNewMember() {
+            const memberId = document.getElementById('newMemberId').value;
+            const memberName = document.getElementById('newMemberName').value;
+            const memberPhone = document.getElementById('newMemberPhone').value;
+            const startYear = document.getElementById('newMemberStartYear').value;
+            
+            if (!memberName || !memberPhone) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Create new member object
+            const newMember = {
+                id: memberId,
+                name: memberName,
+                phone: memberPhone,
+                status: 'Active',
+                firstPaymentYear: startYear || '2025',
+                registrationFeePaid: '0',
+                registrationFeeAmount: '200',
+                lastPaymentDate: '',
+                notes: '',
+                '2022': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2023': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2024': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2025': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
+            };
+            
+            // Add to data
+            const dataToUse = window.membersData || membersData;
+            dataToUse.push(newMember);
+            
+            // Update display
+            displayMembers();
+            updateStats();
+            
+            // Close modal
+            closeModal();
+            
+            alert(`New member ${memberName} (ID: ${memberId}) has been added successfully!\n\nPlease record their initial registration fee and monthly payments using the "Record Payment" function.`);
+        }
+
+        function addEvent() {
+            console.log('=== ADD EVENT CALLED ===');
+            
+            // Check if user has permission
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            if (userRole !== 'admin' && userRole !== 'board') {
+                alert('Only administrators and board members can add events.');
+                return;
+            }
+            
+            // Show add event modal
+            const modal = document.getElementById('addEventModal');
+            if (modal) {
+                modal.style.display = 'block';
+            } else {
+                alert('Add event functionality is not available.');
+            }
+        }
+
+        function saveEvent() {
+            const eventDate = document.getElementById('eventDate').value;
+            const eventTitle = document.getElementById('eventTitle').value;
+            const eventDescription = document.getElementById('eventDescription').value;
+            
+            if (!eventDate || !eventTitle) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Store event in sessionStorage for now (in a real app, this would go to a database)
+            const events = JSON.parse(sessionStorage.getItem('aaacEvents') || '[]');
+            events.push({
+                date: eventDate,
+                title: eventTitle,
+                description: eventDescription
+            });
+            sessionStorage.setItem('aaacEvents', JSON.stringify(events));
+            
+            // Close modal
+            closeModal();
+            
+            // Refresh events display to show new event
+            updateEventsDisplay();
+            
+            alert(`Event "${eventTitle}" has been added successfully!`);
+        }
+
+
+
+        function recordPaymentForMember(memberName) {
+            console.log('=== RECORD PAYMENT FOR MEMBER CALLED ===');
+            console.log('Member name:', memberName);
+            
+            // Show payment modal
+            const modal = document.getElementById('paymentModal');
+            if (modal) {
+                modal.style.display = 'block';
+                // Set the member name in the modal
+                document.getElementById('memberName').value = memberName;
+                
+                // Auto-fill current year and month
+                const currentDate = new Date();
+                document.getElementById('paymentYear').value = currentDate.getFullYear();
+                document.getElementById('paymentMonth').value = MONTHS[currentDate.getMonth()];
+                
+                // Focus on amount field for quick entry
+                setTimeout(() => {
+                    document.getElementById('paymentAmount').focus();
+                }, 100);
+            } else {
+                alert('Payment modal not found.');
+            }
+        }
+
+        function recordPayment() {
+            const memberName = document.getElementById('memberName').value;
+            const paymentYear = document.getElementById('paymentYear').value;
+            const paymentType = document.getElementById('paymentType').value;
+            const paymentMonth = document.getElementById('paymentMonth').value;
+            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
+            const paymentNotes = document.getElementById('paymentNotes').value;
+
+            // Use improved validation
+            if (!validatePaymentForm()) {
+                return;
+            }
+
+            // Find the member and update their payment
+            const dataToUse = window.membersData || membersData;
+            const member = dataToUse.find(m => m.name === memberName);
+            if (member) {
+                if (!member[paymentYear]) {
+                    member[paymentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 };
+                }
+                
+                if (paymentType === 'incidental') {
+                    // For incidentals, add to a special field
+                    if (!member[paymentYear].incidentals) {
+                        member[paymentYear].incidentals = [];
+                    }
+                    member[paymentYear].incidentals.push({
+                        amount: paymentAmount,
+                        month: paymentMonth,
+                        notes: paymentNotes,
+                        date: new Date().toISOString()
+                    });
+                } else {
+                    // For regular monthly payments
+                    member[paymentYear][paymentMonth] = (member[paymentYear][paymentMonth] || 0) + paymentAmount;
+                }
+                
+                console.log(`Payment recorded: ${memberName} - ${paymentMonth} ${paymentYear} - $${paymentAmount}`);
+                
+                // Update display
+                displayMembers();
+                updateStats();
+                closeModal();
+                
+                // Show success message with details
+                showPaymentSuccessModal(memberName, paymentAmount, paymentMonth, paymentYear, paymentType);
+            } else {
+                alert(`Member "${memberName}" not found. Please check the member name.`);
+            }
+        }
+
+        function showPaymentSuccessModal(memberName, amount, month, year, type) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            
+            modal.innerHTML = `
+                <div class="modal-content payment-success-modal">
+                    <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                    <div class="success-icon">✅</div>
+                    <h2>Payment Recorded Successfully!</h2>
+                    
+                    <div class="payment-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Member:</span>
+                            <span class="detail-value">${memberName}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Amount:</span>
+                            <span class="detail-value">$${amount}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Type:</span>
+                            <span class="detail-value">${type}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Period:</span>
+                            <span class="detail-value">${month} ${year}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="success-actions">
+                        <button class="btn btn-success" onclick="this.parentElement.parentElement.parentElement.remove()">
+                            Continue
+                        </button>
+                        <button class="btn btn-info" onclick="recordPaymentForMember('${memberName}')">
+                            Record Another Payment
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function sendReminder(memberName, balance) {
+            let message, messageType;
+            
+            if (balance >= 0) {
+                // They have paid ahead or are current - send thank you message
+                messageType = "Receipt";
+                message = `የአዲስ አበባ ማሕበር በቺካጎ ክፍያ ደረሰኝ
+
+ውድ ${memberName}
+
+የአዲስ አበባ ማሕበር በቺካጎ አባልነትዎ ክፍያ በመፈጸምዎ አመሰግናለሁ።
+
+የአባልነትዎ ሂሳብ የተሟላ ነው። የቀሪ ሂሳብዎ $${balance} ነው።
+
+📋 የክፍያ ደረሰኝ:
+• አባል: ${memberName}
+• የቀሪ ሂሳብ: $${balance}
+• ቀን: ${new Date().toLocaleDateString()}
+• የክፍያ ዘዴ: Zelle (aaaichicago@gmail.com)
+
+ከምስጋና ጋር
+የአዲስ አበባ ማሕበር በቺካጎ ቦርድ`;
+            } else {
+                // They owe money - send payment reminder
+                messageType = "Payment Reminder";
+                message = `የአዲስ አበባ ማሕበር በቺካጎ ክፍያ ማስታወሻ
+
+ውድ ${memberName}
+
+የአዲስ አበባ ማሕበር በቺካጎ አባልነትዎ ቀሪ ሂሳብ $${Math.abs(balance)} ነው።
+
+ክፍያውን በ Zelle  ለመላክ: aaaichicago@gmail.com ይጠቀሙና ሒሳቦትን ይከፍሉ ዘንድ በትሕትና እንጠይቃለን።
+
+ከምስጋና ጋር
+የአዲስ አበባ ማሕበር በቺካጎ ቦርድ`;
+            }
+            
+            // Create a mobile-friendly copy interface
+            showCopyMessageModal(message, messageType, memberName);
+        }
+
+        function showCopyMessageModal(message, messageType, memberName) {
+            // Create modal for message copying
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            
+            modal.innerHTML = `
+                <div class="modal-content copy-message-modal">
+                    <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                    <h2>📱 ${messageType} for ${memberName}</h2>
+                    
+                    <div class="message-preview">
+                        <h3>Message Preview:</h3>
+                        <div class="message-text">${message.replace(/\n/g, '<br>')}</div>
+                    </div>
+                    
+                    <div class="copy-actions">
+                        <button class="btn btn-success" onclick="copyToClipboard('${message.replace(/'/g, "\\'")}', this)">
+                            📋 Copy to Clipboard
+                        </button>
+                        <button class="btn btn-info" onclick="shareViaWhatsApp('${message.replace(/'/g, "\\'")}')">
+                            📱 WhatsApp
+                        </button>
+                        <button class="btn btn-primary" onclick="shareViaTelegram('${message.replace(/'/g, "\\'")}')">
+                            📲 Telegram
+                        </button>
+                        <button class="btn btn-secondary" onclick="shareViaSMS('${message.replace(/'/g, "\\'")}')">
+                            💬 SMS
+                        </button>
+                    </div>
+                    
+                    <div class="copy-instructions">
+                        <p><strong>Instructions:</strong></p>
+                        <ul>
+                            <li>Click "Copy to Clipboard" to copy the message</li>
+                            <li>Then paste it in your preferred messaging app</li>
+                            <li>Or use the direct share buttons above</li>
+                        </ul>
+                    </div>
+                    
+                    <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">
+                        Close
+                    </button>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        function copyToClipboard(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '';
+                }, 2000);
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const originalText = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.style.background = '';
+                }, 2000);
+            });
+        }
+
+        function shareViaWhatsApp(message) {
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/?text=${encodedMessage}`, '_blank');
+        }
+
+        function shareViaTelegram(message) {
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://t.me/share/url?url=&text=${encodedMessage}`, '_blank');
+        }
+
+        function shareViaSMS(message) {
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`sms:?body=${encodedMessage}`, '_blank');
+        }
+
+        function updatePaymentAmount() {
+            const paymentType = document.getElementById('paymentType').value;
+            const amountField = document.getElementById('paymentAmount');
+            
+            switch(paymentType) {
+                case 'monthly':
+                    amountField.value = '15';
+                    break;
+                case 'registration':
+                    amountField.value = '200';
+                    break;
+                case 'incidental':
+                    amountField.value = '';
+                    amountField.placeholder = 'Enter amount';
+                    break;
+                default:
+                    amountField.value = '15';
+            }
+        }
+
+        function validatePaymentForm() {
+            const memberName = document.getElementById('memberName').value;
+            const paymentYear = document.getElementById('paymentYear').value;
+            const paymentType = document.getElementById('paymentType').value;
+            const paymentMonth = document.getElementById('paymentMonth').value;
+            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
+
+            if (!memberName) {
+                alert('Please select a member.');
+                return false;
+            }
+            if (!paymentYear) {
+                alert('Please select a payment year.');
+                return false;
+            }
+            if (!paymentType) {
+                alert('Please select a payment type.');
+                return false;
+            }
+            if (!paymentMonth) {
+                alert('Please select a payment month.');
+                return false;
+            }
+            if (!paymentAmount || paymentAmount <= 0) {
+                alert('Please enter a valid payment amount.');
+                return false;
+            }
+
+            return true;
+        }
+
+        function exportData() {
+            const csvContent = generateCSV();
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AAAC_Membership_Status_${currentYear}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function generateCSV() {
+            const headers = ['ID', 'NAME', 'PHONE', 'REGISTRATION', 'STATUS', 'BALANCE', 'PAID_UP_TO', 'MONTHS_BEHIND'];
+            const rows = [headers];
+            
+            const dataToUse = window.membersData || membersData;
+            dataToUse.forEach(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                rows.push([
+                    member.id,
+                    member.name,
+                    member.phone,
+                    member.registration,
+                    balanceInfo.statusText,
+                    balanceInfo.currentBalance,
+                    balanceInfo.paidUpTo,
+                    balanceInfo.monthsBehind
+                ]);
+            });
+            
+            return rows.map(row => row.join(',')).join('\n');
+        }
+
+        function closeModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            document.getElementById('memberDetailsModal').style.display = 'none';
+            document.getElementById('addMemberModal').style.display = 'none';
+            document.getElementById('addEventModal').style.display = 'none';
+            document.getElementById('paymentForm').reset();
+        }
+
+        // Update current date
+        function updateCurrentDate() {
+            const currentDateElement = document.getElementById('currentDate');
+            if (currentDateElement) {
+                const now = new Date();
+                const currentDate = now.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+                currentDateElement.textContent = currentDate;
+            }
+        }
+
+        // Generate upcoming events based on current date
+        function generateUpcomingEvents() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const events = [];
+            
+            // Generate events for current month and next 2 months
+            for (let i = 0; i < 3; i++) {
+                const month = currentMonth + i;
+                const year = currentYear + Math.floor(month / 12);
+                const actualMonth = month % 12;
+                
+                const monthName = new Date(year, actualMonth).toLocaleDateString('en-US', { month: 'long' });
+                
+                // Monthly meeting (15th of each month)
+                events.push({
+                    date: `${monthName} 15, ${year}`,
+                    title: 'Monthly Meeting',
+                    description: 'Regular monthly membership meeting at Ethiopian Community Center'
+                });
+                
+                // Payment due (last day of each month)
+                const lastDay = new Date(year, actualMonth + 1, 0).getDate();
+                events.push({
+                    date: `${monthName} ${lastDay}, ${year}`,
+                    title: 'Payment Due',
+                    description: 'Monthly membership fee due - $15'
+                });
+            }
+            
+            return events;
+        }
+
+        // Update events display
+        function updateEventsDisplay() {
+            const eventsContainer = document.querySelector('.events-list');
+            if (eventsContainer) {
+                // Get auto-generated events
+                const autoEvents = generateUpcomingEvents();
+                
+                // Get custom events from sessionStorage
+                const customEvents = JSON.parse(sessionStorage.getItem('aaacEvents') || '[]');
+                
+                // Combine and sort all events by date
+                const allEvents = [...autoEvents, ...customEvents].sort((a, b) => {
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    return dateA - dateB;
+                });
+                
+                let eventsHTML = '';
+                
+                allEvents.forEach(event => {
+                    eventsHTML += `
+                        <div class="event-card">
+                            <div class="event-date">${event.date}</div>
+                            <div class="event-title">${event.title}</div>
+                            <div class="event-description">${event.description}</div>
+                        </div>
+                    `;
+                });
+                
+                eventsContainer.innerHTML = eventsHTML;
+            }
+        }
+
+        // Test function to check if JavaScript is working
+        console.log('=== JAVASCRIPT IS LOADING ===');
+        console.log('Dashboard script loaded successfully');
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
