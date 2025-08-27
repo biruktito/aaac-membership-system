@@ -542,6 +542,7 @@
             <div class="search-section">
                 <input type="text" id="searchInput" class="search-input" placeholder="Search by name, phone number, or member ID...">
                 <button class="btn btn-primary" onclick="searchMembers()">Search</button>
+                <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
                 <button class="btn btn-success" onclick="addNewMember()">Add New Member</button>
                 <button class="btn btn-info" onclick="viewMemberDetails()">View Details</button>
                 <button class="btn btn-warning" onclick="exportData()">Export Data</button>
@@ -1817,20 +1818,31 @@
 
         function searchMembers() {
             console.log('=== SEARCH FUNCTION CALLED ===');
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            console.log('Search term:', searchTerm);
+            const searchInput = document.getElementById('searchInput').value;
+            const searchTerm = searchInput.toLowerCase();
+            console.log('Search input:', searchInput);
+            console.log('Search term (lowercase):', searchTerm);
             
             const dataToUse = window.membersData || membersData;
             console.log('Data to use length:', dataToUse ? dataToUse.length : 'undefined');
             console.log('Sample member:', dataToUse && dataToUse.length > 0 ? dataToUse[0] : 'no data');
             
             const filteredData = dataToUse.filter(member => {
+                // Search by name (case insensitive)
                 const nameMatch = member.name.toLowerCase().includes(searchTerm);
-                const phoneMatch = member.phone.includes(searchTerm);
-                const idMatch = member.id.toString().includes(searchTerm);
+                
+                // Search by phone (exact match)
+                const phoneMatch = member.phone && member.phone.includes(searchInput);
+                
+                // Search by ID (exact match or partial match)
+                const memberId = member.id.toString();
+                const idMatch = memberId === searchInput || memberId.includes(searchInput);
                 
                 if (nameMatch || phoneMatch || idMatch) {
                     console.log(`Match found: ID ${member.id}, Name: ${member.name}, Phone: ${member.phone}`);
+                    console.log(`  - Name match: ${nameMatch}`);
+                    console.log(`  - Phone match: ${phoneMatch}`);
+                    console.log(`  - ID match: ${idMatch}`);
                 }
                 
                 return nameMatch || phoneMatch || idMatch;
@@ -1841,6 +1853,13 @@
             console.log('=== END SEARCH FUNCTION ===');
             
             displayMembers(filteredData);
+        }
+
+        function clearSearch() {
+            console.log('=== CLEAR SEARCH CALLED ===');
+            document.getElementById('searchInput').value = '';
+            displayMembers(); // Show all members
+            console.log('Search cleared, showing all members');
         }
 
         function recordPaymentForMember(memberName) {
