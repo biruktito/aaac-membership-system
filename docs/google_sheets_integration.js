@@ -88,8 +88,11 @@ function processGoogleSheetsData(sheetData) {
     
     console.log('🔄 Processing Google Sheets data...');
     console.log('Headers:', headers);
+    console.log('Headers length:', headers.length);
     console.log('Total rows:', rows.length);
     console.log('Sample row:', rows[0]);
+    console.log('Sample row length:', rows[0] ? rows[0].length : 0);
+    console.log('First 3 rows:', rows.slice(0, 3));
     
     return rows.map((row, index) => {
         const member = {};
