@@ -195,6 +195,19 @@ function processGoogleSheetsData(data) {
                 });
             }
             
+            // Debug: Show column mapping for first member
+            if (index === 0) {
+                console.log('=== HEADER DEBUG FOR FIRST MEMBER ===');
+                console.log('Headers array:', headers);
+                console.log('Looking for columns like 2022_JAN, 2022_FEB, etc.');
+                monthNames.forEach(month => {
+                    const columnName = `2022_${month}`;
+                    const columnIndex = headers.indexOf(columnName);
+                    console.log(`${columnName}: index ${columnIndex}, value: ${columnIndex !== -1 ? values[columnIndex] : 'NOT FOUND'}`);
+                });
+                console.log('=== END HEADER DEBUG ===');
+            }
+            
             // Parse incidentals (columns 69-78)
             for (let j = 0; j < 5; j++) {
                 const year = 2022 + j;
@@ -226,6 +239,24 @@ function processGoogleSheetsData(data) {
             console.log('2026 payments:', member['2026']);
             console.log('Incidentals:', member.incidentals);
             console.log('=== END MEMBER ${index + 1} STRUCTURE ===');
+        }
+        
+        // Additional debug for first member to show total payments
+        if (index === 0) {
+            console.log('=== FIRST MEMBER PAYMENT TOTALS ===');
+            let total2022 = 0, total2023 = 0, total2024 = 0, total2025 = 0, total2026 = 0;
+            Object.values(member['2022']).forEach(val => total2022 += val);
+            Object.values(member['2023']).forEach(val => total2023 += val);
+            Object.values(member['2024']).forEach(val => total2024 += val);
+            Object.values(member['2025']).forEach(val => total2025 += val);
+            Object.values(member['2026']).forEach(val => total2026 += val);
+            console.log('2022 total:', total2022);
+            console.log('2023 total:', total2023);
+            console.log('2024 total:', total2024);
+            console.log('2025 total:', total2025);
+            console.log('2026 total:', total2026);
+            console.log('Grand total:', total2022 + total2023 + total2024 + total2025 + total2026);
+            console.log('=== END FIRST MEMBER TOTALS ===');
         }
         
         console.log(`Processed member ${index + 1}:`, {
