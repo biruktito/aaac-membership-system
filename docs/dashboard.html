@@ -1417,8 +1417,8 @@
                 }
             }
             
-            // Check if they've been inactive for too long (24+ months instead of 36)
-            const isTooLongInactive = monthsSinceLastPayment >= 24;
+            // Check if they've been inactive for too long (36+ months)
+            const isTooLongInactive = monthsSinceLastPayment >= 36;
             
             // Simplified active member logic:
             // - Must have made payments
@@ -1438,7 +1438,7 @@
                 console.log('Last payment year:', lastPaymentYear);
                 console.log('Last payment month index:', lastPaymentMonth);
                 console.log('Months since last payment:', monthsSinceLastPayment);
-                console.log('Is too long inactive (24+ months):', isTooLongInactive);
+                console.log('Is too long inactive (36+ months):', isTooLongInactive);
                 console.log('Is active member:', isActiveMember);
                 console.log('Payment data by year:');
                 years.forEach(year => {
