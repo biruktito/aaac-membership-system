@@ -4,171 +4,203 @@
 
 A comprehensive, live payment tracking system for AAAC (Addis Ababa Association in Chicago) members. This system tracks monthly payments of $15 per member across multiple years, with an initial registration fee of $200 for new members and $100 for existing members.
 
-## Features
+## 🚀 **Live System**
 
-- **Multi-Year Payment Tracking**: Track payments across 2022, 2023, 2024, 2025, and 2026
-- **Advanced Balance Calculation**: Shows exactly what month each member is paid up to
-- **Real-time Payment Tracking**: Track monthly payments for each member
-- **Detailed Balance Analysis**: Automatically calculate outstanding balances with year-by-year breakdown
-- **Enhanced Search Functionality**: Search members by name, phone number, or member ID
-- **Payment Recording**: Record payments with year/month selection and notes
-- **Member Management**: Add new members with initial payments
-- **Amharic SMS Receipts**: Generate receipt messages in Amharic for payments received
-- **Payment Reminders**: Generate reminder messages for outstanding balances in Amharic
-- **Member Details View**: Comprehensive view of payment history across all years
-- **Data Export**: Export data to CSV format
-- **Mobile Responsive**: Works on desktop and mobile devices
-- **Three-Tier Access Control**: Member, Board Member, and Admin roles
-- **Free SMS Delivery**: Send receipts and reminders via email-to-SMS (no API costs)
+**Access the system:** https://biruktito.github.io/aaac-membership-system/
 
-## Payment Structure
+## ✨ **Key Features**
+
+### **🔐 Multi-Tier Authentication System**
+- **Member Login**: Personalized view with member ID authentication
+- **Board Access**: Enhanced member management and communication tools
+- **Admin Access**: Full system control and member management
+- **Demo Access**: Safe demonstration environment
+
+### **👤 Personalized Member Experience**
+- **Member ID Authentication**: Secure login with unique member ID
+- **Personal Dashboard**: Members see only their own information
+- **Privacy Protection**: Total owed amounts hidden from regular members
+- **Event Notifications**: Upcoming meetings and payment due dates
+
+### **📊 Advanced Payment Tracking**
+- **Multi-Year Support**: Track payments from 2022-2026
+- **Real-time Balance Calculation**: Automatic status updates
+- **Payment Recording**: Easy payment entry for accountants
+- **Amharic Communication**: Receipts and reminders in Amharic
+
+### **🎯 Role-Based Access Control**
+- **Members**: Personal view only, no admin functions
+- **Board Members**: Member management and communication tools
+- **Admins**: Full system access and member management
+- **Conditional UI**: Features show/hide based on user role
+
+### **📅 Event Management**
+- **Add Events**: Board/Admin can add upcoming events
+- **Member Notifications**: Events displayed to members
+- **Payment Reminders**: Automatic payment due date notifications
+
+## 💰 **Payment Structure**
 
 - **Monthly Fee**: $15 per member
 - **Initial Registration**: $200 (new members 2023+), $100 (existing members pre-2023)
 - **Payment Method**: Zelle to aaaichicago@gmail.com
 - **Multi-Year Support**: Track payments from 2022-2026
-- **Incidentals**: Additional fees for special events (e.g., $10 for funeral contributions)
+- **Incidentals**: Additional fees for special events
 
-## Enhanced Balance Features
+## 🔐 **Authentication & Access**
 
-### What You'll See for Each Member:
+### **Login Credentials**
 
-1. **Paid Up To**: Shows exactly what month/year the member is paid up to
-   - Example: "AUG 2025" means they're paid through August 2025
-   - Example: "Not Started" means no payments recorded
+| Role | Username | Password | Member ID Required |
+|------|----------|----------|-------------------|
+| **Demo** | `demo` | `demo2025` | No |
+| **Member** | `aaacuser` | `members2025` | **Yes** |
+| **Board** | `board` | `board2025` | No |
+| **Admin** | `admin` | `admin2025` | No |
 
-2. **Current Balance**: 
-   - **Positive (Green)**: Member has paid ahead (credit)
-   - **Negative (Red)**: Member owes money
-   - **Zero**: Member is up to date
+### **Member ID Authentication**
+- **Members must provide their unique ID** (e.g., 24 for Biruk Tito Eyesus)
+- **Personalized experience** - members see only their own information
+- **Privacy protection** - total owed amounts hidden from regular members
 
-3. **Payment Status**:
-   - ✅ **Current**: Member is up to date or paid ahead (0-3 months behind)
-   - ❌ **Risk**: Member owes 3-12 months
-   - ⚠️ **Issues**: Member owes 1-2 years
-   - 🚨 **Risk of Removal**: Member owes 2+ years
-   - 🚫 **Inactive**: No payments for 36+ months
+## 📱 **User Experience by Role**
 
-4. **Total Owed**: Shows the total amount owed by all members who have outstanding balances
+### **👤 Regular Member Experience**
+```
+✅ Total Members: 61 (context only)
+✅ Personal membership information
+✅ Upcoming events and meetings
+✅ Payment status and balance
+❌ No search/filter options
+❌ No admin actions
+❌ No total owed amount (privacy)
+```
 
-### Balance Calculation Logic:
+### **👥 Board Member Experience**
+```
+✅ Full member list with search/filter
+✅ Member management tools
+✅ Event management (add events)
+✅ Payment tracking and reminders
+✅ Member communication tools
+✅ Complete statistics
+```
 
-- **Previous Years**: All unpaid months from first payment date to current month are included
-- **Current Year**: Only months up to current date are calculated
-- **Future Years**: Not included in balance calculation
-- **Registration Fee**: Counted as initial payment
-- **Incidentals**: Added to total paid amount
+### **👨‍💼 Admin/Accountant Experience**
+```
+✅ All board member features
+✅ Add new members
+✅ Export data functionality
+✅ Full system control
+✅ Payment recording tools
+✅ Member management
+```
 
-## Setup Instructions
+## 🎯 **Member Status Categories**
 
-### Local Development Server
+### **Status Logic (Based on Months Behind)**
+- **✅ Current**: 0-3 months behind (or paid ahead)
+- **❌ Risk**: 3-12 months behind
+- **⚠️ Issues**: 12-24 months behind
+- **🚨 Risk of Removal**: 24+ months behind
+- **🚫 Inactive**: No payments for 36+ months
 
-1. **Install Python** (if not already installed)
-2. **Navigate to project directory**:
-   ```bash
-   cd /path/to/aaac-system
-   ```
-3. **Start local server**:
-   ```bash
-   python3 -m http.server 8000
-   ```
-4. **Open browser** and go to: `http://localhost:8000/index.html`
+### **Balance Display**
+- **🟢 Positive (Green)**: Member has paid ahead (credit)
+- **🔴 Negative (Red)**: Member owes money
+- **⚪ Zero**: Member is up to date
 
-### Authentication
+## 🛠️ **System Features**
 
-The system uses a four-tier authentication system with role-based data access:
+### **📊 Dashboard Statistics**
+- **Total Members**: Count of active members (excludes inactive)
+- **Status Breakdown**: Current, Risk, Issues, Risk of Removal counts
+- **Total Owed**: Sum of negative balances from active members only
+- **Inactive Members**: Only visible to Board/Admin users
 
-- **Demo Access**: `demo` / `demo2025` (demo data only - for demonstrations)
-- **Member Access**: `aaacuser` / `members2025` (view only, real data)
-- **Board Member Access**: `board` / `board2025` (view phone numbers, send reminders, real data)
-- **Admin Access**: `admin` / `admin2025` (full control, upload database, real data)
+### **🔍 Search & Filter**
+- **Multi-field Search**: Name, phone number, or member ID
+- **Status Filtering**: Filter by payment status
+- **Clear Search**: Reset to show all members
+- **Role-based Access**: Search hidden for regular members
 
-**Data Access:**
-- **Demo users** see demo data only
-- **Authenticated users** (admin/board/aaacuser) see real member data
-- **Real data is pre-loaded** and secure on GitHub Pages
+### **📝 Payment Recording**
+- **Manual Entry**: Year, month, amount, notes
+- **Payment Types**: Monthly fees, registration, incidentals
+- **Auto-calculation**: Balance updates automatically
+- **Payment History**: Track all payment records
 
-## Usage Guide
+### **📱 Communication Tools**
+- **Amharic Messages**: Receipts and reminders in Amharic
+- **Clipboard Copy**: Easy message sharing
+- **Multi-platform**: Works with Telegram, WhatsApp, SMS, Email
+- **Smart Detection**: Auto-detects if member owes money or has credit
 
-### For Administrators
+### **📅 Event Management**
+- **Add Events**: Date, title, description
+- **Member Display**: Events shown to members
+- **Payment Reminders**: Automatic due date notifications
+- **Persistent Storage**: Events saved in session storage
 
-#### Uploading Database
-1. Login as admin (`admin` / `admin2025`)
-2. Use the upload section to load the latest CSV database
-3. The system will automatically process and display member data
+## 🚀 **Quick Start Guide**
 
-#### Recording Payments
-1. Find the member in the list (use search if needed)
-2. Click "Record Payment" button next to their name
-3. Select the payment year, month, and type
-4. Enter the payment amount
-5. Add optional notes
-6. Click "Record Payment"
+### **For Members**
+1. **Go to**: https://biruktito.github.io/aaac-membership-system/
+2. **Login**: Username `aaacuser`, Password `members2025`
+3. **Enter Member ID**: Your assigned member ID (e.g., 24)
+4. **View Information**: See your personal membership status
+5. **Check Events**: View upcoming meetings and payment due dates
 
-#### Sending Receipts
-1. For members who have paid ahead, click "Send Email Reminder"
-2. The system will generate an Amharic receipt message
-3. Gmail will open with the pre-filled message
-4. The message will be sent as SMS to the member's phone
+### **For Accountants/Admins**
+1. **Login**: Username `admin`, Password `admin2025`
+2. **Record Payments**: Click "Record Payment" on any member
+3. **Add Members**: Use "Add New Member" for new registrations
+4. **Add Events**: Use "Add Event" for upcoming meetings
+5. **Export Data**: Use "Export Data" for backups
 
-#### Sending Payment Reminders
-1. For members who owe money, click "Send Email Reminder"
-2. The system will generate an Amharic payment reminder
-3. Gmail will open with the pre-filled message
-4. The message will be sent as SMS to the member's phone
+### **For Board Members**
+1. **Login**: Username `board`, Password `board2025`
+2. **View Members**: See all member information
+3. **Send Reminders**: Use "Copy Message" for communication
+4. **Manage Events**: Add upcoming events for members
+5. **Track Payments**: Monitor member payment status
 
-### For Board Members
+## 📊 **Data Structure**
 
-#### Viewing Member Information
-1. Login as board member (`board` / `board2025`)
-2. View member phone numbers (hidden from regular members)
-3. Send receipts and reminders to members
-4. Copy phone numbers for manual contact
-
-#### Sending Reminders
-1. Click "Send Email Reminder" on any member
-2. System automatically detects if member owes money or has credit
-3. Generates appropriate Amharic message
-4. Opens Gmail with pre-filled SMS message
-
-### For Members
-
-Members can view their payment status by:
-1. Login as member (`aaacuser` / `members2025`)
-2. Search for their name, phone number, or member ID
-3. Check their balance (green = positive, red = negative)
-4. See which month they're paid up to
-5. View detailed payment history across all years
-
-## Search Functionality
-
-The system supports multiple search methods:
-- **By Name**: Partial name matching (case-insensitive)
-- **By Phone Number**: Exact or partial phone number
-- **By Member ID**: Exact member ID number
-
-## Data Structure
-
-The system uses a standardized CSV database format:
+The system uses a standardized CSV database format with Google Sheets integration:
 
 | Column | Description |
 |--------|-------------|
-| ID | Unique identifier |
-| NAME | Member's full name |
-| PHONE | Contact number |
-| REGISTRATION_FEE | Initial registration fee |
-| FIRST_PAYMENT_YEAR | Year of first payment |
-| FIRST_PAYMENT_MONTH | Month of first payment |
+| Member_ID | Unique identifier |
+| Name | Member's full name |
+| Phone | Contact number |
+| Status | Active/Inactive status |
+| First_Payment_Year | Year of first payment |
+| Registration_Fee | Initial registration fee |
 | 2022_JAN to 2022_DEC | 2022 monthly payments |
 | 2023_JAN to 2023_DEC | 2023 monthly payments |
 | 2024_JAN to 2024_DEC | 2024 monthly payments |
 | 2025_JAN to 2025_DEC | 2025 monthly payments |
 | 2026_JAN to 2026_DEC | 2026 monthly payments |
-| INCIDENTALS | Additional fees |
+| Incidentals | Additional fees |
 
-## Amharic Receipt Messages
+## 🔄 **Google Sheets Integration**
 
-### For Members Who Have Paid Ahead:
+### **Real-time Data Sync**
+- **Live Updates**: Changes reflect immediately
+- **Backup System**: Local CSV fallback if Google Sheets unavailable
+- **Data Persistence**: All changes saved to Google Sheets
+- **Multi-user Access**: Multiple users can access simultaneously
+
+### **Payment Recording**
+- **Direct Integration**: Payments recorded directly to Google Sheets
+- **Audit Trail**: Complete payment history maintained
+- **Data Validation**: Ensures data integrity
+- **Error Handling**: Graceful fallback to local storage
+
+## 📱 **Amharic Communication Messages**
+
+### **Receipt Message (For Members with Credit)**
 ```
 የአዲስ አበባ ማሕበር በቺካጎ ክፍያ ደረሰኝ
 
@@ -188,7 +220,7 @@ The system uses a standardized CSV database format:
 የአዲስ አበባ ማሕበር በቺካጎ ቦርድ
 ```
 
-### For Members Who Owe Money:
+### **Payment Reminder (For Members Who Owe)**
 ```
 የአዲስ አበባ ማሕበር በቺካጎ ክፍያ ማስታወሻ
 
@@ -202,116 +234,139 @@ The system uses a standardized CSV database format:
 የአዲስ አበባ ማሕበር በቺካጎ ቦርድ
 ```
 
-## Balance Calculation Examples
+## 🔧 **Technical Architecture**
 
-### Example 1: Member Paid Up to Date
-- **Member**: John Doe
-- **Registration**: $200 (paid)
-- **2025 Payments**: Jan-Aug ($120 total)
-- **Current Date**: August 2025
-- **Result**: 
-  - Paid Up To: "AUG 2025"
-  - Current Balance: $0
-  - Status: ✅ Current
+### **Frontend Technologies**
+- **HTML5**: Semantic markup and structure
+- **CSS3**: Modern styling with gradients and animations
+- **JavaScript (ES6+)**: Dynamic functionality and data processing
+- **Responsive Design**: Works on desktop, tablet, and mobile
 
-### Example 2: Member Behind on Payments
-- **Member**: Jane Smith
-- **Registration**: $200 (paid)
-- **2024 Payments**: None
-- **2025 Payments**: Jan-Mar ($45 total)
-- **Current Date**: August 2025
-- **Result**:
-  - Paid Up To: "MAR 2025"
-  - Current Balance: -$75 (owes 5 months)
-  - Status: ❌ Risk
+### **Data Management**
+- **Google Sheets API**: Primary data storage and real-time sync
+- **Local CSV Fallback**: Backup data source
+- **Session Storage**: Temporary data and user preferences
+- **Data Validation**: Ensures data integrity
 
-### Example 3: Member Paid Ahead
-- **Member**: Bob Johnson
-- **Registration**: $200 (paid)
-- **2025 Payments**: Jan-Dec ($180 total)
-- **Current Date**: August 2025
-- **Result**:
-  - Paid Up To: "DEC 2025"
-  - Current Balance: $60 (paid ahead)
-  - Status: ✅ Current
+### **Security Features**
+- **Role-based Access Control**: Different permissions per user type
+- **Session Management**: Secure authentication handling
+- **Data Privacy**: Sensitive information hidden from unauthorized users
+- **Input Validation**: Prevents malicious data entry
 
-## Troubleshooting
+## 🚨 **Troubleshooting**
 
-### Common Issues
+### **Common Issues**
 
 1. **"Member not found" error**
-   - Check that member names match exactly (case-sensitive)
-   - Use the search function to find the correct name
-   - Try searching by phone number or member ID
+   - Check that member ID is correct
+   - Verify member exists in the database
+   - Contact administrator for assistance
 
 2. **Payment not recording**
-   - Check that the payment year and month are selected
-   - Verify the payment amount is a valid number
-   - Ensure you're logged in as admin
+   - Ensure you're logged in as admin/board
+   - Check that all required fields are filled
+   - Verify payment amount is a valid number
 
 3. **Balance calculation seems wrong**
-   - Check that the current date is correct (August 2025)
-   - Verify all previous year payments are recorded
-   - Use "View Details" to see payment breakdown
+   - Check current date settings (August 2025)
+   - Verify all previous payments are recorded
+   - Contact administrator for data review
 
-4. **Amharic text not displaying correctly**
-   - Ensure browser supports UTF-8 encoding
-   - Check that the page is loaded with proper charset
+4. **Events not showing**
+   - Events are stored in session storage
+   - Refresh page to reload events
+   - Check that events were added by admin/board
 
-5. **SMS not sending**
-   - Verify the phone number format is correct
-   - Check that Gmail opens with the pre-filled message
-   - The system uses email-to-SMS (phone@txt.att.net format)
+5. **Search not working**
+   - Try different search terms (name, phone, ID)
+   - Use "Clear" button to reset search
+   - Check that you have appropriate permissions
 
-### Data Backup
+### **Data Backup**
+- **Export data regularly** using the "Export Data" function
+- **Google Sheets backup** - data automatically saved
+- **Local CSV backup** - keep copies of important data
+- **Session storage** - events and temporary data
 
-- Export data regularly using the "Export Data" function
-- Keep backups of your CSV database
-- Consider setting up automatic backups
+## 💰 **Cost Analysis**
 
-## Cost Analysis
-
-### Current Implementation
-- **Local Server**: Free (Python built-in)
-- **SMS Delivery**: Free (email-to-SMS via Gmail)
-- **Hosting**: Free (local development)
+### **Current Implementation**
+- **GitHub Pages Hosting**: Free
+- **Google Sheets**: Free (up to 10 million cells)
+- **Domain**: Free (GitHub Pages subdomain)
+- **SMS/Communication**: Free (clipboard copy method)
 - **Total Cost**: $0
 
-### Alternative Solutions
+### **Alternative Solutions**
 - **Custom Web App**: $50-500/month hosting
 - **Database Solution**: $20-100/month
 - **SaaS Platform**: $10-50/month per user
 - **SMS API**: $0.01-0.10 per message
 
-## Future Enhancements
+## 🔮 **Future Enhancements**
 
-1. **Web Hosting**: Deploy to a web server for remote access
-2. **Database Integration**: Connect to a proper database system
-3. **Payment Gateway**: Direct payment processing
-4. **Reporting**: Advanced analytics and reporting
-5. **Mobile App**: Native mobile application
-6. **Multi-year Support**: Track payments across additional years
-7. **Payment Plans**: Support for different payment schedules
-8. **Automatic Reminders**: Scheduled reminder system
-9. **Email Integration**: Send receipts and reminders via email
-10. **Multi-language Support**: Support for additional languages
+### **Planned Features**
+1. **Zelle API Integration**: Direct payment processing
+2. **Automated Reminders**: Scheduled payment reminders
+3. **Advanced Reporting**: Analytics and insights
+4. **Mobile App**: Native mobile application
+5. **Email Integration**: Direct email communication
+6. **Payment Plans**: Support for different schedules
+7. **Multi-language Support**: Additional languages
+8. **Advanced Security**: Two-factor authentication
+9. **Data Analytics**: Payment trends and insights
+10. **Integration APIs**: Connect with other systems
 
-## Support
+### **Technical Improvements**
+1. **Database Migration**: Move to proper database system
+2. **API Development**: RESTful API for external integrations
+3. **Real-time Notifications**: Push notifications for updates
+4. **Advanced Search**: Full-text search capabilities
+5. **Data Export**: Multiple format support (PDF, Excel)
 
-For technical support or questions:
-1. Check this documentation first
-2. Review the troubleshooting section
-3. Contact your system administrator
+## 📞 **Support & Contact**
 
-## License
+### **For Technical Support**
+1. **Check this documentation** first
+2. **Review troubleshooting section**
+3. **Contact system administrator**
+4. **Check GitHub issues** for known problems
 
-This system is designed specifically for AAAC use. Please ensure compliance with your organization's data protection policies.
+### **For User Support**
+1. **Member Issues**: Contact board members
+2. **Payment Questions**: Contact accountant/admin
+3. **System Access**: Contact administrator
+4. **Data Corrections**: Contact administrator
 
-## Files
+## 📄 **Files & Structure**
 
-- `aaac_membership_system.html` - Main application interface
+### **Core Files**
+- `dashboard.html` - Main application interface
 - `login.html` - Authentication page
-- `index.html` - Entry point redirect
-- `AAAC_Accountant_Database_YYYYMMDD.csv` - Main database file
-- `create_accountant_database.py` - Database creation script
-- `Accountant_Instructions.txt` - Instructions for accountants
+- `google_sheets_integration.js` - Google Sheets API integration
+- `complete_data_for_google_sheet.csv` - Local data backup
+
+### **Documentation**
+- `README.md` - This comprehensive guide
+- `SECURITY_GUIDE.md` - Security best practices
+- `DEPLOYMENT_GUIDE.md` - Deployment instructions
+
+### **Data Files**
+- `AAAC_Membership_Status_YYYY.csv` - Exported data files
+- Google Sheets - Primary data storage
+
+## 📜 **License & Compliance**
+
+This system is designed specifically for AAAC use. Please ensure compliance with:
+- **Data Protection**: Member privacy and data security
+- **Financial Regulations**: Payment tracking and reporting
+- **Organization Policies**: AAAC-specific rules and procedures
+- **Technical Standards**: Web security and accessibility
+
+---
+
+**Last Updated**: March 2025  
+**Version**: 2.0  
+**System Status**: Live and Operational  
+**Access URL**: https://biruktito.github.io/aaac-membership-system/
