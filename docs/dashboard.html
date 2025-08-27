@@ -1697,13 +1697,26 @@
                         break;
                 }
                 
-                // Only add negative balances (what they owe) to the total
-                if (balanceInfo.currentBalance < 0) {
+                // Only add negative balances from ACTIVE members (what they owe) to the total
+                // Inactive members are not expected to pay, so don't include their balances
+                if (balanceInfo.currentBalance < 0 && balanceInfo.isActiveMember) {
                     totalBalance += Math.abs(balanceInfo.currentBalance);
                 }
             });
             
             const totalMembers = dataToUse.length;
+            
+            // Debug logging for total balance calculation
+            console.log('=== TOTAL BALANCE CALCULATION DEBUG ===');
+            console.log('Total members:', totalMembers);
+            console.log('Active members with negative balances:', totalBalance);
+            console.log('Status breakdown:');
+            console.log('  Current:', currentCount);
+            console.log('  Issues:', issueCount);
+            console.log('  Risk:', riskCount);
+            console.log('  Risk of Removal:', riskOfRemovalCount);
+            console.log('  Inactive:', inactiveCount);
+            console.log('=== END TOTAL BALANCE DEBUG ===');
             
             document.getElementById('total-members').textContent = totalMembers;
             document.getElementById('current-members').textContent = currentCount;
