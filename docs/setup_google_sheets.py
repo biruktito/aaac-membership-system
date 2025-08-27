@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """
-AAAC Google Sheets Integration Setup Script
-
-This script helps set up Google Sheets integration for the AAAC membership system.
-It will create a Google Sheet with our cleaned data and provide instructions for API setup.
+Google Sheets Setup Script for AAAC Membership System
+This script will create and populate the Google Sheet with member data.
 """
 
-import csv
 import json
-import os
-from datetime import datetime
+import csv
+import requests
+from typing import List, Dict, Any
 
-def read_csv_data(filename):
-    """Read CSV data and return as list of dictionaries"""
+# Google Sheets API Configuration
+SHEET_ID = '1r3SF2Ba1UIEYS28rCX8j2S7BsAsJsWRzw9v4M37-jHw'
+API_KEY = 'AIzaSyCLpLGtV9ui3Bm9o-ElkaIMKvk6wQk_Mtc'
+
+def load_csv_data(filename: str) -> List[Dict[str, Any]]:
+    """Load data from CSV file"""
     data = []
     with open(filename, 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
@@ -20,95 +22,171 @@ def read_csv_data(filename):
             data.append(row)
     return data
 
-def create_google_sheets_setup():
-    """Create setup instructions and data for Google Sheets"""
+def create_sheet_structure():
+    """Create the basic sheet structure"""
+    print("🔄 Creating Google Sheet structure...")
     
-    print("🔧 AAAC Google Sheets Integration Setup")
-    print("=" * 50)
+    # Create Members sheet
+    members_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/Members!A1:ZZ1?valueInputOption=RAW&key={API_KEY}"
     
-    # Read our clean data
-    real_data = read_csv_data('data/AAAC_Real_Data.csv')
-    demo_data = read_csv_data('data/AAAC_Demo_Data.csv')
+    # Load CSV data to get headers
+    csv_data = load_csv_data('data/AAAC_Demo_Data.csv')
+    if not csv_data:
+        print("❌ No CSV data found")
+        return False
     
-    print(f"✅ Found {len(real_data)} real members")
-    print(f"✅ Found {len(demo_data)} demo members")
+    headers = list(csv_data[0].keys())
     
-    # Create setup instructions
-    setup_instructions = {
-        "title": "AAAC Membership System - Google Sheets Setup",
-        "description": "Live database for AAAC membership management",
-        "sheets": {
-            "Members": {
-                "description": "Main member data (100 members)",
-                "columns": list(real_data[0].keys()) if real_data else [],
-                "data": real_data[:5],  # First 5 rows as example
-                "total_rows": len(real_data)
-            },
-            "Payment_Log": {
-                "description": "Audit trail for all payments",
-                "columns": ["Date", "Member_ID", "Member_Name", "Payment_Type", "Amount", "Month", "Year", "Notes", "Recorded_By"],
-                "data": [
-                    {
-                        "Date": datetime.now().strftime("%Y-%m-%d"),
-                        "Member_ID": "1",
-                        "Member_Name": "Habtamu Bekuma Bekana",
-                        "Payment_Type": "Monthly",
-                        "Amount": "15.00",
-                        "Month": "AUG",
-                        "Year": "2025",
-                        "Notes": "Payment received via Zelle",
-                        "Recorded_By": "Accountant"
-                    }
-                ]
-            },
-            "Settings": {
-                "description": "System configuration",
-                "columns": ["Setting", "Value", "Description"],
-                "data": [
-                    {"Setting": "Current_Date", "Value": "August 2025", "Description": "Current system date"},
-                    {"Setting": "Monthly_Fee", "Value": "15.00", "Description": "Monthly membership fee"},
-                    {"Setting": "Registration_Fee_New", "Value": "200.00", "Description": "Registration fee for new members"},
-                    {"Setting": "Registration_Fee_Pre2023", "Value": "100.00", "Description": "Registration fee for pre-2023 members"},
-                    {"Setting": "Auto_Refresh_Interval", "Value": "30", "Description": "Dashboard refresh interval (seconds)"}
-                ]
-            }
-        }
+    # Prepare headers data
+    headers_data = {
+        "values": [headers]
     }
     
-    # Save setup data
-    with open('google_sheets_setup.json', 'w', encoding='utf-8') as f:
-        json.dump(setup_instructions, f, indent=2, ensure_ascii=False)
+    try:
+        response = requests.put(members_url, json=headers_data)
+        if response.status_code == 200:
+            print("✅ Members sheet headers created")
+        else:
+            print(f"❌ Error creating headers: {response.status_code}")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return False
     
-    print("\n📋 Google Sheets Setup Instructions:")
+    # Create Payment_Log sheet
+    payment_log_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/Payment_Log!A1:ZZ1?valueInputOption=RAW&key={API_KEY}"
+    payment_log_headers = {
+        "values": [["Timestamp", "Member_ID", "Member_Name", "Payment_Type", "Amount", "Year", "Month", "Notes", "Recorded_By"]]
+    }
+    
+    try:
+        response = requests.put(payment_log_url, json=payment_log_headers)
+        if response.status_code == 200:
+            print("✅ Payment_Log sheet created")
+        else:
+            print(f"❌ Error creating Payment_Log: {response.status_code}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+    
+    # Create Settings sheet
+    settings_url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/Settings!A1:ZZ1?valueInputOption=RAW&key={API_KEY}"
+    settings_data = {
+        "values": [
+            ["Setting", "Value"],
+            ["Monthly_Fee", "15"],
+            ["Registration_Fee_New", "200"],
+            ["Registration_Fee_Existing", "100"],
+            ["Current_Year", "2025"],
+            ["Current_Month", "8"],
+            ["System_Version", "2.0"],
+            ["Last_Updated", ""]
+        ]
+    }
+    
+    try:
+        response = requests.put(settings_url, json=settings_data)
+        if response.status_code == 200:
+            print("✅ Settings sheet created")
+        else:
+            print(f"❌ Error creating Settings: {response.status_code}")
+    except Exception as e:
+        print(f"❌ Error: {e}")
+    
+    return True
+
+def populate_members_data():
+    """Populate the Members sheet with CSV data"""
+    print("🔄 Populating Members sheet with data...")
+    
+    # Load CSV data
+    csv_data = load_csv_data('data/AAAC_Demo_Data.csv')
+    if not csv_data:
+        print("❌ No CSV data found")
+        return False
+    
+    # Convert to values array
+    headers = list(csv_data[0].keys())
+    values = [headers]  # First row is headers
+    
+    for row in csv_data:
+        values.append([row.get(header, '') for header in headers])
+    
+    # Prepare data for Google Sheets
+    data = {
+        "values": values
+    }
+    
+    # Update the sheet
+    url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/Members!A1:ZZ{len(values)}?valueInputOption=RAW&key={API_KEY}"
+    
+    try:
+        response = requests.put(url, json=data)
+        if response.status_code == 200:
+            print(f"✅ Successfully populated {len(csv_data)} members")
+            return True
+        else:
+            print(f"❌ Error populating data: {response.status_code}")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return False
+
+def test_connection():
+    """Test the Google Sheets connection"""
+    print("🔄 Testing Google Sheets connection...")
+    
+    url = f"https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}?key={API_KEY}"
+    
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            print(f"✅ Connection successful!")
+            print(f"📊 Sheet Title: {data.get('properties', {}).get('title', 'Unknown')}")
+            print(f"📋 Sheets: {[sheet.get('properties', {}).get('title') for sheet in data.get('sheets', [])]}")
+            return True
+        else:
+            print(f"❌ Connection failed: {response.status_code}")
+            print(response.text)
+            return False
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return False
+
+def main():
+    """Main setup function"""
+    print("🚀 AAAC Google Sheets Setup")
     print("=" * 50)
-    print("1. Go to https://sheets.google.com")
-    print("2. Create a new Google Sheet")
-    print("3. Name it: 'AAAC Membership Database'")
-    print("4. Create 3 sheets: 'Members', 'Payment_Log', 'Settings'")
-    print("5. Copy the data from google_sheets_setup.json")
-    print("6. Share the sheet with your team")
-    print("7. Get the Sheet ID from the URL")
     
-    print("\n🔑 API Setup Required:")
+    # Test connection first
+    if not test_connection():
+        print("\n❌ Cannot connect to Google Sheets. Please check:")
+        print("1. Sheet ID is correct")
+        print("2. API key is valid")
+        print("3. Sheet is shared with your account")
+        return
+    
+    # Create sheet structure
+    if not create_sheet_structure():
+        print("\n❌ Failed to create sheet structure")
+        return
+    
+    # Populate with data
+    if not populate_members_data():
+        print("\n❌ Failed to populate data")
+        return
+    
+    print("\n🎉 Setup Complete!")
     print("=" * 50)
-    print("1. Go to https://console.developers.google.com")
-    print("2. Create a new project")
-    print("3. Enable Google Sheets API")
-    print("4. Create credentials (Service Account)")
-    print("5. Download JSON key file")
-    print("6. Share your Google Sheet with the service account email")
-    
-    print("\n📊 Data Structure:")
-    print("=" * 50)
-    print(f"Members Sheet: {len(real_data)} rows, {len(real_data[0].keys()) if real_data else 0} columns")
-    print("Payment_Log Sheet: Audit trail for all payments")
-    print("Settings Sheet: System configuration")
-    
-    print("\n✅ Setup files created:")
-    print("- google_sheets_setup.json (contains all data structure)")
-    print("- This script (for future reference)")
-    
-    return setup_instructions
+    print("✅ Google Sheet is ready")
+    print("✅ Data is populated")
+    print("✅ Integration is configured")
+    print("\n🌐 Your live dashboard:")
+    print("https://biruktito.github.io/aaac-membership-system/dashboard.html")
+    print("\n📊 Your Google Sheet:")
+    print(f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/edit")
 
 if __name__ == "__main__":
-    create_google_sheets_setup()
+    main()

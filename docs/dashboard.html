@@ -1028,7 +1028,7 @@
                 <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
                 <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
                 <p class="location">📍 Chicago, Illinois | 🇺🇸 United States</p>
-                <p><strong>Current Date: August 2025</strong></p>
+                <p><strong>Current Date: <span id="currentDate">August 2025</span></strong></p>
             </div>
         </div>
 
@@ -1298,6 +1298,11 @@
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
             console.log('=== DOM CONTENT LOADED ===');
+            
+            // Update current date and events
+            updateCurrentDate();
+            updateEventsDisplay();
+            
             console.log('Checking authentication...');
             
             const authResult = checkAuthentication();
@@ -2273,6 +2278,10 @@
                 if (searchSection) searchSection.style.display = 'none';
                 if (filterSection) filterSection.style.display = 'none';
                 if (adminActions) adminActions.style.display = 'none';
+                
+                // Hide filter tabs for members
+                const filterTabs = document.querySelector('.filter-tabs');
+                if (filterTabs) filterTabs.style.display = 'none';
             } else {
                 if (searchSection) searchSection.style.display = 'block';
                 if (filterSection) filterSection.style.display = 'block';
@@ -2280,6 +2289,10 @@
                 if (adminActions && (userRole === 'admin' || userRole === 'board')) {
                     adminActions.style.display = 'block';
                 }
+                
+                // Show filter tabs for admin/board users
+                const filterTabs = document.querySelector('.filter-tabs');
+                if (filterTabs) filterTabs.style.display = 'flex';
             }
             
             if (isMemberLogin) {
@@ -2318,12 +2331,22 @@
                             <h3>📅 Upcoming Events</h3>
                             <div class="events-list">
                                 <div class="event-card">
-                                    <div class="event-date">March 15, 2025</div>
+                                    <div class="event-date">August 15, 2025</div>
                                     <div class="event-title">Monthly Meeting</div>
                                     <div class="event-description">Regular monthly membership meeting at Ethiopian Community Center</div>
                                 </div>
                                 <div class="event-card">
-                                    <div class="event-date">March 31, 2025</div>
+                                    <div class="event-date">August 31, 2025</div>
+                                    <div class="event-title">Payment Due</div>
+                                    <div class="event-description">Monthly membership fee due - $15</div>
+                                </div>
+                                <div class="event-card">
+                                    <div class="event-date">September 15, 2025</div>
+                                    <div class="event-title">Monthly Meeting</div>
+                                    <div class="event-description">Regular monthly membership meeting at Ethiopian Community Center</div>
+                                </div>
+                                <div class="event-card">
+                                    <div class="event-date">September 30, 2025</div>
                                     <div class="event-title">Payment Due</div>
                                     <div class="event-description">Monthly membership fee due - $15</div>
                                 </div>
@@ -2840,6 +2863,75 @@
             document.getElementById('addMemberModal').style.display = 'none';
             document.getElementById('addEventModal').style.display = 'none';
             document.getElementById('paymentForm').reset();
+        }
+
+        // Update current date
+        function updateCurrentDate() {
+            const currentDateElement = document.getElementById('currentDate');
+            if (currentDateElement) {
+                const now = new Date();
+                const currentDate = now.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+                currentDateElement.textContent = currentDate;
+            }
+        }
+
+        // Generate upcoming events based on current date
+        function generateUpcomingEvents() {
+            const now = new Date();
+            const currentMonth = now.getMonth();
+            const currentYear = now.getFullYear();
+            
+            const events = [];
+            
+            // Generate events for current month and next 2 months
+            for (let i = 0; i < 3; i++) {
+                const month = currentMonth + i;
+                const year = currentYear + Math.floor(month / 12);
+                const actualMonth = month % 12;
+                
+                const monthName = new Date(year, actualMonth).toLocaleDateString('en-US', { month: 'long' });
+                
+                // Monthly meeting (15th of each month)
+                events.push({
+                    date: `${monthName} 15, ${year}`,
+                    title: 'Monthly Meeting',
+                    description: 'Regular monthly membership meeting at Ethiopian Community Center'
+                });
+                
+                // Payment due (last day of each month)
+                const lastDay = new Date(year, actualMonth + 1, 0).getDate();
+                events.push({
+                    date: `${monthName} ${lastDay}, ${year}`,
+                    title: 'Payment Due',
+                    description: 'Monthly membership fee due - $15'
+                });
+            }
+            
+            return events;
+        }
+
+        // Update events display
+        function updateEventsDisplay() {
+            const eventsContainer = document.querySelector('.events-list');
+            if (eventsContainer) {
+                const events = generateUpcomingEvents();
+                let eventsHTML = '';
+                
+                events.forEach(event => {
+                    eventsHTML += `
+                        <div class="event-card">
+                            <div class="event-date">${event.date}</div>
+                            <div class="event-title">${event.title}</div>
+                            <div class="event-description">${event.description}</div>
+                        </div>
+                    `;
+                });
+                
+                eventsContainer.innerHTML = eventsHTML;
+            }
         }
 
         // Test function to check if JavaScript is working
