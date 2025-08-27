@@ -814,20 +814,9 @@
             const userRole = sessionStorage.getItem('aaacUserRole');
             console.log('User role:', userRole);
             
-            let dataFile = 'data/AAAC_Demo_Data.csv'; // Default to demo data
-            
-            if (userRole === 'admin' || userRole === 'board' || userRole === 'member') {
-                // Load real data for authenticated users
-                dataFile = 'data/AAAC_Real_Data.csv';
-                console.log('Loading real data for authenticated user:', userRole);
-            } else {
-                // Load demo data for demo users or unauthenticated
-                dataFile = 'data/AAAC_Demo_Data.csv';
-                console.log('Loading demo data for demo user or unauthenticated');
-            }
+            let dataFile = 'complete_data_for_google_sheet.csv'; // Use the complete data file
             
             console.log('Attempting to load data file:', dataFile);
-            console.log('Full URL would be:', window.location.origin + window.location.pathname.replace('dashboard.html', '') + dataFile);
             
             fetch(dataFile)
                 .then(response => {
@@ -845,7 +834,6 @@
                     console.log('Data loaded successfully from:', dataFile);
                     console.log('Data length:', data.length);
                     console.log('First 200 characters:', data.substring(0, 200));
-                    console.log('Last 200 characters:', data.substring(data.length - 200));
                     
                     if (data.length === 0) {
                         throw new Error('Data file is empty');
@@ -872,14 +860,9 @@
                     console.error('Error details:', error.message);
                     console.error('Error stack:', error.stack);
                     
-                    // Fallback to demo data if real data fails
-                    if (dataFile !== 'data/AAAC_Demo_Data.csv') {
-                        console.log('Falling back to demo data');
-                        loadMembersData(); // This will load demo data
-                    } else {
-                        console.log('Loading sample data as final fallback');
-                        loadSampleData();
-                    }
+                    // Fallback to sample data
+                    console.log('Loading sample data as fallback');
+                    loadSampleData();
                 });
         }
 
@@ -1011,6 +994,7 @@
             }
             
             console.log('Total members parsed:', members.length);
+            console.log('Sample member:', members[0]);
             return members;
         }
 
@@ -1501,9 +1485,20 @@
             console.log('Sample member data:', data[0]);
             
             const container = document.getElementById('members-container');
+            
+            // Hide loading spinner
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+            
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="members-section"><h3>No members found</h3></div>';
+                return;
+            }
+            
             const activeMembers = data.filter(member => {
                 const balanceInfo = calculateDetailedBalance(member);
-                console.log(`Member ${member.id} (${member.name}): isActiveMember = ${balanceInfo.isActiveMember}`);
                 return balanceInfo.isActiveMember;
             });
             
@@ -1514,59 +1509,14 @@
             
             console.log(`Active members: ${activeMembers.length}, Inactive members: ${inactiveMembers.length}`);
             
-            // If no active members, show all members for debugging
-            if (activeMembers.length === 0) {
-                console.log('No active members found, showing all members for debugging');
-                let html = `
-                    <div class="members-section">
-                        <h3>All Members (${data.length}) - Debug Mode</h3>
-                        <div class="members-grid">
-                `;
-                
-                data.forEach(member => {
-                    const balanceInfo = calculateDetailedBalance(member);
-                    const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
-                    
-                    html += `
-                        <div class="member-card">
-                            <div class="member-header">
-                                <span class="member-id">${member.id}</span>
-                                <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
-                            </div>
-                                                    <div class="member-info">
-                            <div class="member-name">${member.name}</div>
-                            <div class="member-id">ID: ${member.id}</div>
-                        </div>
-                        <div class="member-balance">
-                            <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
-                            <div class="balance-details">${balanceInfo.balanceDetails}</div>
-                            <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
-                            <div class="debug-info">First payment: ${balanceInfo.firstPaymentYear || 'None'}, Active: ${balanceInfo.isActiveMember}</div>
-                        </div>
-                            <div class="member-actions">
-                                <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
-                                <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += `
-                        </div>
-                    </div>
-                `;
-                
-                container.innerHTML = html;
-                return;
-            }
-            
+            // Show all members for now (we can filter later)
             let html = `
                 <div class="members-section">
-                    <h3>Active Members (${activeMembers.length})</h3>
+                    <h3>All Members (${data.length})</h3>
                     <div class="members-grid">
             `;
             
-            activeMembers.forEach(member => {
+            data.forEach(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
                 
@@ -1587,7 +1537,7 @@
                         </div>
                         <div class="member-actions">
                             <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
-                                                            <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                            <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
                         </div>
                     </div>
                 `;
@@ -1597,41 +1547,6 @@
                     </div>
                 </div>
             `;
-            
-            // Add inactive members section
-            if (inactiveMembers.length > 0) {
-                html += `
-                    <div class="members-section inactive-section">
-                        <h3>Inactive Members (${inactiveMembers.length}) - No recent payments or inactive 36+ months</h3>
-                        <div class="members-grid">
-                `;
-                
-                inactiveMembers.forEach(member => {
-                    const balanceInfo = calculateDetailedBalance(member);
-                    
-                    html += `
-                        <div class="member-card inactive">
-                            <div class="member-header">
-                                <span class="member-id">${member.id}</span>
-                                <span class="member-status inactive">🚫 Inactive</span>
-                            </div>
-                            <div class="member-info">
-                                <div class="member-name">${member.name}</div>
-                                <div class="member-id">ID: ${member.id}</div>
-                            </div>
-                            <div class="member-balance">
-                                <div class="balance-details">No recent payments or inactive 36+ months</div>
-                                <div class="paid-up-to">Last payment: ${balanceInfo.lastPaidYear || 'Never'}</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                html += `
-                        </div>
-                    </div>
-                `;
-            }
             
             container.innerHTML = html;
         }
