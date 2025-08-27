@@ -160,6 +160,9 @@
 
     </div>
 
+    <!-- Load configuration management -->
+    <script src="config.js"></script>
+    
     <script>
         // Show/hide member ID field based on username
         document.getElementById('username').addEventListener('input', function() {
@@ -183,46 +186,28 @@
             const memberId = document.getElementById('memberId').value;
             const errorMessage = document.getElementById('errorMessage');
             
-            // Four-tier authentication system
-            if (username === 'demo' && password === 'demo2025') {
-                // Demo access - demo data only
-                sessionStorage.setItem('aaacAuthenticated', 'true');
-                sessionStorage.setItem('aaacUserRole', 'demo');
-                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+            // Use secure credential validation
+            const validation = window.AAACConfig.validateCredentials(username, password);
+            
+            if (validation.valid) {
+                const role = validation.role;
                 
-                // Redirect to main system
-                window.location.href = 'dashboard.html';
-            } else if (username === 'aaacuser' && password === 'members2025') {
-                // Member access - requires member ID
-                if (!memberId || memberId.trim() === '') {
-                    errorMessage.textContent = 'Please enter your Member ID number.';
-                    errorMessage.style.display = 'block';
-                    return;
+                // Special handling for member login
+                if (role === 'member') {
+                    if (!memberId || memberId.trim() === '') {
+                        errorMessage.textContent = 'Please enter your Member ID number.';
+                        errorMessage.style.display = 'block';
+                        return;
+                    }
+                    sessionStorage.setItem('aaacMemberId', memberId);
                 }
                 
-                // Store member ID for personalized view
+                // Set authentication data
                 sessionStorage.setItem('aaacAuthenticated', 'true');
-                sessionStorage.setItem('aaacUserRole', 'member');
-                sessionStorage.setItem('aaacMemberId', memberId);
+                sessionStorage.setItem('aaacUserRole', role);
                 sessionStorage.setItem('aaacLoginTime', new Date().getTime());
                 
-                // Redirect to main system
-                window.location.href = 'dashboard.html';
-            } else if (username === 'board' && password === 'board2025') {
-                // Board member access - can view phone numbers and send reminders
-                sessionStorage.setItem('aaacAuthenticated', 'true');
-                sessionStorage.setItem('aaacUserRole', 'board');
-                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
-                
-                // Redirect to main system
-                window.location.href = 'dashboard.html';
-            } else if (username === 'admin' && password === 'admin2025') {
-                // Admin access - full control
-                sessionStorage.setItem('aaacAuthenticated', 'true');
-                sessionStorage.setItem('aaacUserRole', 'admin');
-                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
-                
-                // Redirect to main system
+                // Redirect to dashboard
                 window.location.href = 'dashboard.html';
             } else {
                 errorMessage.textContent = 'Invalid username or password. Please try again.';
