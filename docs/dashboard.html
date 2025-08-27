@@ -788,11 +788,17 @@
         // Simplified, robust data loading system
         function loadDataRobustly() {
             console.log('=== ROBUST DATA LOADING SYSTEM ===');
+            console.log('GoogleSheetsIntegration available:', !!window.GoogleSheetsIntegration);
+            console.log('GoogleSheetsIntegration.initialize available:', !!(window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function'));
             
             // Try Google Sheets first
             if (window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function') {
                 console.log('🔄 Attempting Google Sheets integration...');
                 window.GoogleSheetsIntegration.initialize().then(success => {
+                    console.log('Google Sheets initialize result:', success);
+                    console.log('window.membersData:', window.membersData);
+                    console.log('window.membersData length:', window.membersData ? window.membersData.length : 'undefined');
+                    
                     if (success && window.membersData && window.membersData.length > 0) {
                         console.log('✅ Using Google Sheets data:', window.membersData.length, 'members');
                         displayMembers();
@@ -816,6 +822,9 @@
             
             fetch('complete_data_for_google_sheet.csv')
                 .then(response => {
+                    console.log('CSV fetch response status:', response.status);
+                    console.log('CSV fetch response ok:', response.ok);
+                    
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
@@ -823,7 +832,12 @@
                 })
                 .then(data => {
                     console.log('✅ Local CSV loaded successfully');
+                    console.log('CSV data length:', data.length);
+                    console.log('CSV data preview:', data.substring(0, 200));
+                    
                     const parsedData = parseAccountantData(data);
+                    console.log('Parsed data length:', parsedData.length);
+                    console.log('Sample parsed member:', parsedData[0]);
                     
                     if (parsedData.length > 0) {
                         window.membersData = parsedData;
@@ -836,6 +850,7 @@
                 })
                 .catch(error => {
                     console.error('❌ Local CSV loading failed:', error);
+                    console.log('🔄 Loading sample data as fallback...');
                     // Load sample data as final fallback
                     loadSampleData();
                 });
@@ -1168,7 +1183,8 @@
         }
 
         function loadSampleData() {
-            console.log('Loading sample data...');
+            console.log('🔄 Loading sample data as fallback...');
+            console.log('Setting up sample member data...');
             window.membersData = [
                 {
                     id: '1',
@@ -1188,6 +1204,8 @@
                     incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
                 }
             ];
+            console.log('✅ Sample data loaded:', window.membersData.length, 'members');
+            console.log('Sample member:', window.membersData[0]);
             displayMembers();
             updateStats();
         }
