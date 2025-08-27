@@ -1030,6 +1030,25 @@
             
             console.log('Total members parsed:', members.length);
             console.log('Sample member:', members[0]);
+            
+            // Test the first member's payment data
+            if (members.length > 0) {
+                const firstMember = members[0];
+                console.log('=== FIRST MEMBER PAYMENT TEST ===');
+                console.log('Member ID:', firstMember.id);
+                console.log('Member Name:', firstMember.name);
+                console.log('2022 payments:', firstMember['2022']);
+                console.log('2023 payments:', firstMember['2023']);
+                console.log('2024 payments:', firstMember['2024']);
+                console.log('2025 payments:', firstMember['2025']);
+                console.log('2026 payments:', firstMember['2026']);
+                
+                // Test a specific payment
+                console.log('2022 JAN payment:', firstMember['2022']['JAN']);
+                console.log('2025 AUG payment:', firstMember['2025']['AUG']);
+                console.log('=== END FIRST MEMBER TEST ===');
+            }
+            
             return members;
         }
 
@@ -1236,13 +1255,54 @@
             ];
         }
 
+        // Add comprehensive debugging function
+        function debugMemberData(member) {
+            console.log('=== COMPREHENSIVE MEMBER DEBUG ===');
+            console.log('Member ID:', member.id);
+            console.log('Member Name:', member.name);
+            console.log('Raw member object:', member);
+            
+            // Check payment data structure
+            console.log('2022 payments:', member['2022']);
+            console.log('2023 payments:', member['2023']);
+            console.log('2024 payments:', member['2024']);
+            console.log('2025 payments:', member['2025']);
+            console.log('2026 payments:', member['2026']);
+            
+            // Check if payment data exists
+            const years = ['2022', '2023', '2024', '2025', '2026'];
+            let totalPayments = 0;
+            
+            years.forEach(year => {
+                const yearData = member[year];
+                if (yearData && typeof yearData === 'object') {
+                    console.log(`${year} data type:`, typeof yearData);
+                    console.log(`${year} keys:`, Object.keys(yearData));
+                    
+                    // Sum payments for this year
+                    let yearTotal = 0;
+                    MONTHS.forEach(month => {
+                        const payment = yearData[month] || 0;
+                        yearTotal += payment;
+                        if (payment > 0) {
+                            console.log(`${year} ${month}: $${payment}`);
+                        }
+                    });
+                    console.log(`${year} total: $${yearTotal}`);
+                    totalPayments += yearTotal;
+                } else {
+                    console.log(`${year} data:`, yearData);
+                }
+            });
+            
+            console.log('Total payments across all years: $', totalPayments);
+            console.log('=== END COMPREHENSIVE DEBUG ===');
+        }
+
         function calculateDetailedBalance(member) {
-            // Debug for Habtamu
-            if (member.id === '1') {
-                console.log('=== HABTAMU BALANCE CALCULATION ===');
-                console.log('Member data:', member);
-                console.log('2025 payments:', member['2025']);
-                console.log('2026 payments:', member['2026']);
+            // Comprehensive debug for first few members
+            if (member.id === '1' || member.id === '2' || member.id === '3') {
+                debugMemberData(member);
             }
             
             // Use the fixed current date (August 2025)
