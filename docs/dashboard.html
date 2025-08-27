@@ -763,7 +763,7 @@
                 window.GoogleSheetsIntegration.initialize().then(success => {
                     if (success) {
                         console.log('✅ Using Google Sheets data');
-                        return; // Google Sheets will handle the display
+                        // Google Sheets will handle the display and auto-refresh
                     } else {
                         console.log('⚠️ Google Sheets failed, using local data');
                         loadMembersData();
@@ -776,10 +776,6 @@
                 console.log('⚠️ Google Sheets integration not available, using local data');
                 loadMembersData();
             }
-            
-            // Fallback to local CSV data
-            console.log('🔄 Loading local CSV data...');
-            loadMembersData();
             
             setupEventListeners();
             console.log('=== INITIALIZATION COMPLETE ===');

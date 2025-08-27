@@ -192,13 +192,70 @@ function processGoogleSheetsData(data) {
         let member = {};
         
         if (headers.length > 1 && row.length > 1) {
-            // Multi-column data
+            // Multi-column data - this is the expected format from Google Sheets
             console.log(`Using multi-column parsing for member ${index + 1}`);
-            headers.forEach((header, i) => {
-                member[header] = row[i] || '';
-            });
+            
+            // Initialize member structure
+            member = {
+                id: row[headers.indexOf('Member_ID')] || row[headers.indexOf('Member ID')] || row[0] || '',
+                name: row[headers.indexOf('Name')] || row[1] || '',
+                phone: row[headers.indexOf('Phone')] || row[2] || '',
+                status: row[headers.indexOf('Status')] || row[3] || 'Active',
+                firstPaymentYear: row[headers.indexOf('First_Payment_Year')] || row[headers.indexOf('First Payment Year')] || row[4] || '',
+                registrationFeePaid: row[headers.indexOf('Registration_Fee_Paid')] || row[5] || '0',
+                registrationFeeAmount: row[headers.indexOf('Registration_Fee_Amount')] || row[6] || '0',
+                lastPaymentDate: row[headers.indexOf('Last_Payment_Date')] || row[headers.indexOf('Last Payment Date')] || row[7] || '',
+                notes: row[headers.indexOf('Notes')] || row[8] || '',
+                '2022': {},
+                '2023': {},
+                '2024': {},
+                '2025': {},
+                '2026': {},
+                incidentals: {}
+            };
+            
+            // Parse monthly payments for each year
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            
+            // Parse monthly payments for each year
+            for (let year = 2022; year <= 2026; year++) {
+                monthNames.forEach((month) => {
+                    const columnName = `${year}_${month}`;
+                    const columnIndex = headers.indexOf(columnName);
+                    if (columnIndex !== -1 && columnIndex < row.length) {
+                        const value = parseFloat(row[columnIndex]) || 0;
+                        member[year.toString()][month] = value;
+                    } else {
+                        member[year.toString()][month] = 0;
+                    }
+                });
+                
+                // Parse incidentals for each year
+                const incidentalColumnName = `${year}_Incidentals`;
+                const incidentalColumnIndex = headers.indexOf(incidentalColumnName);
+                if (incidentalColumnIndex !== -1 && incidentalColumnIndex < row.length) {
+                    const value = parseFloat(row[incidentalColumnIndex]) || 0;
+                    member.incidentals[year] = value;
+                } else {
+                    member.incidentals[year] = 0;
+                }
+            }
+            
+            // Debug: Show column mapping for first member
+            if (index === 0) {
+                console.log('=== HEADER DEBUG FOR FIRST MEMBER ===');
+                console.log('Headers array:', headers);
+                console.log('Row array:', row);
+                console.log('Looking for columns like 2022_JAN, 2022_FEB, etc.');
+                monthNames.forEach(month => {
+                    const columnName = `2022_${month}`;
+                    const columnIndex = headers.indexOf(columnName);
+                    console.log(`${columnName}: index ${columnIndex}, value: ${columnIndex !== -1 ? row[columnIndex] : 'NOT FOUND'}`);
+                });
+                console.log('=== END HEADER DEBUG ===');
+            }
         } else {
-            // Single-column CSV string data
+            // Single-column CSV string data (fallback)
             console.log(`Using CSV parsing for member ${index + 1}`);
             const csvString = row[0];
             console.log(`Parsing CSV for member ${index + 1}:`, csvString);
@@ -222,7 +279,8 @@ function processGoogleSheetsData(data) {
                 '2023': {},
                 '2024': {},
                 '2025': {},
-                '2026': {}
+                '2026': {},
+                incidentals: {}
             };
             
             // Parse monthly payments for each year
