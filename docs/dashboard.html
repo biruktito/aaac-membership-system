@@ -1998,14 +1998,14 @@
             let statusText = '✅ Current';
             
             if (monthsBehind >= 24) {
-                status = 'removed';
-                statusText = '🚫 Removed (2+ years)';
+                status = 'risk-of-removal';
+                statusText = '🚨 Risk of Removal';
             } else if (monthsBehind >= 12) {
                 status = 'risk';
-                statusText = '❌ Risk (1-2 years)';
+                statusText = '❌ Risk';
             } else if (monthsBehind >= 6) {
                 status = 'issue';
-                statusText = '⚠️ Issues (6-12 months)';
+                statusText = '⚠️ Issues';
             } else if (monthsBehind > 0) {
                 status = 'current';
                 statusText = '✅ Current';
