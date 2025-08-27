@@ -37,9 +37,14 @@ async function loadDataFromGoogleSheets() {
         // Parse and process the data
         const processedMembers = processGoogleSheetsData(membersData);
         
+        console.log('✅ Processed members:', processedMembers.length);
+        console.log('Sample processed member:', processedMembers[0]);
+        
         // Update global data
         window.membersData = processedMembers;
         window.systemSettings = processSettings(settings);
+        
+        console.log('🔄 Updating dashboard...');
         
         // Update dashboard
         displayMembers();
@@ -81,11 +86,29 @@ function processGoogleSheetsData(sheetData) {
     const headers = sheetData[0];
     const rows = sheetData.slice(1);
     
-    return rows.map(row => {
+    console.log('🔄 Processing Google Sheets data...');
+    console.log('Headers:', headers);
+    console.log('Total rows:', rows.length);
+    console.log('Sample row:', rows[0]);
+    
+    return rows.map((row, index) => {
         const member = {};
-        headers.forEach((header, index) => {
-            member[header] = row[index] || '';
+        headers.forEach((header, headerIndex) => {
+            member[header] = row[headerIndex] || '';
         });
+        
+        // Map Google Sheets fields to expected dashboard fields
+        member.id = member.Member_ID || member['Member ID'] || (index + 1);
+        member.name = member.Name || member['Member Name'] || 'Unknown';
+        member.phone = member.Phone || member['Phone Number'] || '';
+        member.status = member.Status || 'Active';
+        
+        console.log(`Processed member ${index + 1}:`, {
+            id: member.id,
+            name: member.name,
+            status: member.status
+        });
+        
         return member;
     });
 }
