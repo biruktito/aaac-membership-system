@@ -1401,6 +1401,14 @@
             const lastPaymentYear = lastPaidYear ? parseInt(lastPaidYear) : 0;
             const lastPaymentMonth = lastPaidMonth ? MONTHS.indexOf(lastPaidMonth) : -1;
             
+            // Check if last payment was since mid-2022 (July 2022 or later)
+            let isRecentPayment = false;
+            if (lastPaymentYear > 2022) {
+                isRecentPayment = true; // Any payment in 2023 or later
+            } else if (lastPaymentYear === 2022 && lastPaymentMonth >= 6) { // July = index 6
+                isRecentPayment = true; // Payment in July 2022 or later
+            }
+            
             // Calculate months since last payment
             let monthsSinceLastPayment = 0;
             if (lastPaymentYear && lastPaymentMonth !== -1) {
@@ -1417,19 +1425,14 @@
                 }
             }
             
-            // Check if they've been inactive for too long (36+ months)
+            // Check if they've been inactive for 36+ months
             const isTooLongInactive = monthsSinceLastPayment >= 36;
             
-            // Simplified active member logic:
-            // - Must have made payments
-            // - Must not be inactive for too long (24+ months)
-            // - No requirement for "recent" payments since 2022
-            isActiveMember = hasAnyPayments && !isTooLongInactive;
+            isActiveMember = hasAnyPayments && isRecentPayment && !isTooLongInactive;
             
-            // Debug for specific members to understand inactive logic
-            if (member.id === '1' || member.id === '54' || member.id === '97' || member.id === '98' || member.id === '99') {
-                console.log(`=== MEMBER ${member.id} ACTIVE STATUS DEBUG ===`);
-                console.log('Member name:', member.name);
+            // Debug for Habtamu
+            if (member.id === '1') {
+                console.log('=== HABTAMU ACTIVE STATUS DEBUG ===');
                 console.log('First payment year:', firstPaymentYear);
                 console.log('First payment month:', firstPaymentMonth);
                 console.log('Last payment year:', lastPaidYear);
@@ -1439,6 +1442,7 @@
                 console.log('Last payment year:', lastPaymentYear);
                 console.log('Last payment month index:', lastPaymentMonth);
                 console.log('Months since last payment:', monthsSinceLastPayment);
+                console.log('Is recent payment (since mid-2022):', isRecentPayment);
                 console.log('Is too long inactive (36+ months):', isTooLongInactive);
                 console.log('Is active member:', isActiveMember);
                 console.log('Payment data by year:');
@@ -1447,7 +1451,7 @@
                     const yearTotal = Object.values(yearData).reduce((sum, val) => sum + (val || 0), 0);
                     console.log(`  ${year}: $${yearTotal}`, yearData);
                 });
-                console.log('=== END MEMBER DEBUG ===');
+                console.log('=== END HABTAMU DEBUG ===');
             }
             
             // Calculate what's due from their first payment to current date
@@ -1621,7 +1625,7 @@
                 firstPaymentYear: firstPaymentYear,
                 lastPaidMonth: lastPaidMonth,
                 lastPaidYear: lastPaidYear,
-                isActiveMember: isActiveMember
+                isActiveMember: true
             };
         }
 
@@ -1717,7 +1721,7 @@
             dataToUse.forEach(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 
-                // Debug first few members and track inactive members
+                // Debug first few members
                 if (member.id === '1' || member.id === '2' || member.id === '3') {
                     console.log(`=== UPDATE STATS FOR MEMBER ${member.id} ===`);
                     console.log('Member name:', member.name);
@@ -1726,11 +1730,6 @@
                     console.log('Months behind:', balanceInfo.monthsBehind);
                     console.log('Is active:', balanceInfo.isActiveMember);
                     console.log('Current balance:', balanceInfo.currentBalance);
-                }
-                
-                // Track all inactive members
-                if (balanceInfo.status === 'inactive') {
-                    console.log(`INACTIVE MEMBER: ID ${member.id}, Name: ${member.name}, Is Active: ${balanceInfo.isActiveMember}, Total Paid: ${balanceInfo.totalPaid}`);
                 }
                 
                 // Count by status
@@ -1775,9 +1774,16 @@
             console.log('  Risk of Removal:', riskOfRemovalCount);
             console.log('  Inactive:', inactiveCount);
             console.log('=== END TOTAL BALANCE DEBUG ===');
-            console.log('=== INACTIVE MEMBERS SUMMARY ===');
-            console.log(`Total inactive members found: ${inactiveCount}`);
-            console.log('=== END INACTIVE MEMBERS SUMMARY ===');
+            
+            // Show inactive members list
+            console.log('=== INACTIVE MEMBERS LIST ===');
+            dataToUse.forEach(member => {
+                const balanceInfo = calculateDetailedBalance(member);
+                if (balanceInfo.status === 'inactive') {
+                    console.log(`Inactive: ID ${member.id}, ${member.name}, Total Paid: $${balanceInfo.totalPaid}, Last Payment: ${balanceInfo.lastPaidMonth} ${balanceInfo.lastPaidYear}`);
+                }
+            });
+            console.log('=== END INACTIVE MEMBERS LIST ===');
             
             document.getElementById('total-members').textContent = totalMembers;
             document.getElementById('current-members').textContent = currentCount;
