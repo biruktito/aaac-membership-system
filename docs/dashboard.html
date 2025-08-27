@@ -2704,8 +2704,8 @@
             // Close modal
             closeModal();
             
-            // Refresh display to show new event
-            displayMembers();
+            // Refresh events display to show new event
+            updateEventsDisplay();
             
             alert(`Event "${eventTitle}" has been added successfully!`);
         }
@@ -2917,10 +2917,22 @@
         function updateEventsDisplay() {
             const eventsContainer = document.querySelector('.events-list');
             if (eventsContainer) {
-                const events = generateUpcomingEvents();
+                // Get auto-generated events
+                const autoEvents = generateUpcomingEvents();
+                
+                // Get custom events from sessionStorage
+                const customEvents = JSON.parse(sessionStorage.getItem('aaacEvents') || '[]');
+                
+                // Combine and sort all events by date
+                const allEvents = [...autoEvents, ...customEvents].sort((a, b) => {
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    return dateA - dateB;
+                });
+                
                 let eventsHTML = '';
                 
-                events.forEach(event => {
+                allEvents.forEach(event => {
                     eventsHTML += `
                         <div class="event-card">
                             <div class="event-date">${event.date}</div>
