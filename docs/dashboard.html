@@ -695,6 +695,9 @@
         </div>
     </div>
 
+    <!-- Google Sheets Integration -->
+    <script src="google_sheets_integration.js"></script>
+
     <script>
         let membersData = [];
         let currentYear = new Date().getFullYear();
@@ -752,7 +755,23 @@
             }
             
             console.log('Authentication passed, loading member data...');
-            loadMembersData();
+            
+            // Try Google Sheets integration first
+            if (window.GoogleSheetsIntegration) {
+                console.log('🔄 Attempting Google Sheets integration...');
+                window.GoogleSheetsIntegration.initialize().then(success => {
+                    if (success) {
+                        console.log('✅ Using Google Sheets data');
+                    } else {
+                        console.log('⚠️ Google Sheets failed, using local data');
+                        loadMembersData();
+                    }
+                });
+            } else {
+                console.log('⚠️ Google Sheets integration not available, using local data');
+                loadMembersData();
+            }
+            
             setupEventListeners();
             console.log('=== INITIALIZATION COMPLETE ===');
         });
