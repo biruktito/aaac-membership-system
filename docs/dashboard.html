@@ -1554,6 +1554,15 @@
             let status = 'current';
             let statusText = '✅ Current';
             
+            // Debug status determination for first few members
+            if (member.id === '1' || member.id === '2' || member.id === '3') {
+                console.log(`=== STATUS DETERMINATION FOR MEMBER ${member.id} ===`);
+                console.log('Member name:', member.name);
+                console.log('Months behind:', monthsBehind);
+                console.log('Is active member:', isActiveMember);
+                console.log('Current balance:', currentBalance);
+            }
+            
             if (monthsBehind >= 24) { // Over 2 years behind
                 status = 'risk-of-removal';
                 statusText = '🚨 Risk of Removal';
@@ -1569,6 +1578,13 @@
             } else { // Up to date or paid ahead
                 status = 'current';
                 statusText = '✅ Current';
+            }
+            
+            // Debug final status for first few members
+            if (member.id === '1' || member.id === '2' || member.id === '3') {
+                console.log('Final status:', status);
+                console.log('Status text:', statusText);
+                console.log('=== END STATUS DETERMINATION ===');
             }
             
             return {
@@ -1677,6 +1693,17 @@
             
             dataToUse.forEach(member => {
                 const balanceInfo = calculateDetailedBalance(member);
+                
+                // Debug first few members
+                if (member.id === '1' || member.id === '2' || member.id === '3') {
+                    console.log(`=== UPDATE STATS FOR MEMBER ${member.id} ===`);
+                    console.log('Member name:', member.name);
+                    console.log('Status:', balanceInfo.status);
+                    console.log('Status text:', balanceInfo.statusText);
+                    console.log('Months behind:', balanceInfo.monthsBehind);
+                    console.log('Is active:', balanceInfo.isActiveMember);
+                    console.log('Current balance:', balanceInfo.currentBalance);
+                }
                 
                 // Count by status
                 switch (balanceInfo.status) {
