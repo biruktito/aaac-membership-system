@@ -144,6 +144,12 @@
                 <input type="password" id="password" name="password" required>
             </div>
             
+            <div class="form-group" id="memberIdGroup" style="display: none;">
+                <label for="memberId">Member ID Number</label>
+                <input type="number" id="memberId" name="memberId" placeholder="Enter your member ID (e.g., 24)">
+                <small style="color: #6c757d; font-size: 12px;">Enter your assigned member ID number</small>
+            </div>
+            
             <button type="submit" class="login-btn">Login</button>
         </form>
         
@@ -155,11 +161,26 @@
     </div>
 
     <script>
+        // Show/hide member ID field based on username
+        document.getElementById('username').addEventListener('input', function() {
+            const username = this.value;
+            const memberIdGroup = document.getElementById('memberIdGroup');
+            
+            if (username === 'aaacuser') {
+                memberIdGroup.style.display = 'block';
+                document.getElementById('memberId').required = true;
+            } else {
+                memberIdGroup.style.display = 'none';
+                document.getElementById('memberId').required = false;
+            }
+        });
+
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const memberId = document.getElementById('memberId').value;
             const errorMessage = document.getElementById('errorMessage');
             
             // Four-tier authentication system
@@ -172,9 +193,17 @@
                 // Redirect to main system
                 window.location.href = 'dashboard.html';
             } else if (username === 'aaacuser' && password === 'members2025') {
-                // Member access - view only
+                // Member access - requires member ID
+                if (!memberId || memberId.trim() === '') {
+                    errorMessage.textContent = 'Please enter your Member ID number.';
+                    errorMessage.style.display = 'block';
+                    return;
+                }
+                
+                // Store member ID for personalized view
                 sessionStorage.setItem('aaacAuthenticated', 'true');
                 sessionStorage.setItem('aaacUserRole', 'member');
+                sessionStorage.setItem('aaacMemberId', memberId);
                 sessionStorage.setItem('aaacLoginTime', new Date().getTime());
                 
                 // Redirect to main system
@@ -196,6 +225,7 @@
                 // Redirect to main system
                 window.location.href = 'dashboard.html';
             } else {
+                errorMessage.textContent = 'Invalid username or password. Please try again.';
                 errorMessage.style.display = 'block';
                 document.getElementById('password').value = '';
             }

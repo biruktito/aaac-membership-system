@@ -628,6 +628,38 @@
         </div>
     </div>
 
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Add New Member</h2>
+            <div class="form-group">
+                <label for="newMemberId">Member ID:</label>
+                <input type="text" id="newMemberId" readonly>
+            </div>
+            <div class="form-group">
+                <label for="newMemberName">Full Name:</label>
+                <input type="text" id="newMemberName" required>
+            </div>
+            <div class="form-group">
+                <label for="newMemberPhone">Phone Number:</label>
+                <input type="text" id="newMemberPhone" required>
+            </div>
+            <div class="form-group">
+                <label for="newMemberStartYear">Start Year:</label>
+                <select id="newMemberStartYear">
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button onclick="saveNewMember()" class="btn btn-success">Save Member</button>
+                <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Payment Modal -->
     <div id="paymentModal" class="modal">
         <div class="modal-content">
@@ -1708,45 +1740,91 @@
                 </div>
             `;
             
-            // Show inactive members section only for admin/board users
-            if (isAdminOrBoard && inactiveMembers.length > 0) {
-                html += `
-                    <div class="members-section inactive-section">
-                        <h3>Inactive Members (${inactiveMembers.length}) - Board/Admin View Only</h3>
-                        <div class="members-grid">
-                `;
-                
-                inactiveMembers.forEach(member => {
+            // Check if this is a member login (personalized view)
+            const memberId = sessionStorage.getItem('aaacMemberId');
+            const isMemberLogin = userRole === 'member' && memberId;
+            
+            if (isMemberLogin) {
+                // Find the specific member
+                const member = data.find(m => m.id === memberId);
+                if (member) {
                     const balanceInfo = calculateDetailedBalance(member);
                     const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
                     
-                    html += `
-                        <div class="member-card inactive">
-                            <div class="member-header">
-                                <span class="member-id">${member.id}</span>
-                                <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
-                            </div>
-                            <div class="member-info">
-                                <div class="member-name">${member.name}</div>
-                                <div class="member-id">ID: ${member.id}</div>
-                            </div>
-                            <div class="member-balance">
-                                <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
-                                <div class="balance-details">${balanceInfo.balanceDetails}</div>
-                                <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
-                            </div>
-                            <div class="member-actions">
-                                <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
-                                <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                    html = `
+                        <div class="members-section">
+                            <h3>Your Membership Information</h3>
+                            <div class="members-grid">
+                                <div class="member-card personal-view">
+                                    <div class="member-header">
+                                        <span class="member-id">${member.id}</span>
+                                        <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
+                                    </div>
+                                    <div class="member-info">
+                                        <div class="member-name">${member.name}</div>
+                                        <div class="member-id">Member ID: ${member.id}</div>
+                                    </div>
+                                    <div class="member-balance">
+                                        <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
+                                        <div class="balance-details">${balanceInfo.balanceDetails}</div>
+                                        <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
+                                    </div>
+                                    <div class="member-actions">
+                                        <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `;
-                });
-                
-                html += `
+                } else {
+                    html = `
+                        <div class="members-section">
+                            <h3>Member Not Found</h3>
+                            <p>Member ID ${memberId} was not found in our records. Please contact the administrator.</p>
                         </div>
-                    </div>
-                `;
+                    `;
+                }
+            } else {
+                // Show inactive members section only for admin/board users
+                if (isAdminOrBoard && inactiveMembers.length > 0) {
+                    html += `
+                        <div class="members-section inactive-section">
+                            <h3>Inactive Members (${inactiveMembers.length}) - Board/Admin View Only</h3>
+                            <div class="members-grid">
+                    `;
+                    
+                    inactiveMembers.forEach(member => {
+                        const balanceInfo = calculateDetailedBalance(member);
+                        const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
+                        
+                        html += `
+                            <div class="member-card inactive">
+                                <div class="member-header">
+                                    <span class="member-id">${member.id}</span>
+                                    <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
+                                </div>
+                                <div class="member-info">
+                                    <div class="member-name">${member.name}</div>
+                                    <div class="member-id">ID: ${member.id}</div>
+                                </div>
+                                <div class="member-balance">
+                                    <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
+                                    <div class="balance-details">${balanceInfo.balanceDetails}</div>
+                                    <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
+                                </div>
+                                <div class="member-actions">
+                                    <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
+                                    <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
             }
             
             container.innerHTML = html;
@@ -1837,20 +1915,38 @@
             const userRole = sessionStorage.getItem('aaacUserRole') || 'member';
             const isAdminOrBoard = userRole === 'admin' || userRole === 'board';
             
-            document.getElementById('total-members').textContent = totalMembers;
-            document.getElementById('current-members').textContent = currentCount;
-            document.getElementById('issue-members').textContent = issueCount;
-            document.getElementById('risk-members').textContent = riskCount;
-            document.getElementById('risk-of-removal-members').textContent = riskOfRemovalCount;
-            document.getElementById('total-balance').textContent = `$${totalBalance.toFixed(2)} (Total Owed)`;
+            // Check if this is a member login
+            const memberId = sessionStorage.getItem('aaacMemberId');
+            const isMemberLogin = userRole === 'member' && memberId;
             
-            // Show inactive count only to admin/board users
-            const inactiveElement = document.getElementById('inactive-members');
-            if (isAdminOrBoard) {
-                inactiveElement.textContent = inactiveCount;
-                inactiveElement.parentElement.style.display = 'block';
+            if (isMemberLogin) {
+                // For member login, show minimal stats
+                document.getElementById('total-members').textContent = '1';
+                document.getElementById('current-members').textContent = '1';
+                document.getElementById('issue-members').textContent = '0';
+                document.getElementById('risk-members').textContent = '0';
+                document.getElementById('risk-of-removal-members').textContent = '0';
+                
+                // Hide total balance from members for privacy
+                document.getElementById('total-balance').parentElement.style.display = 'none';
+                document.getElementById('inactive-members').parentElement.style.display = 'none';
             } else {
-                inactiveElement.parentElement.style.display = 'none';
+                // For admin/board/demo users, show full stats
+                document.getElementById('total-members').textContent = totalMembers;
+                document.getElementById('current-members').textContent = currentCount;
+                document.getElementById('issue-members').textContent = issueCount;
+                document.getElementById('risk-members').textContent = riskCount;
+                document.getElementById('risk-of-removal-members').textContent = riskOfRemovalCount;
+                document.getElementById('total-balance').textContent = `$${totalBalance.toFixed(2)} (Total Owed)`;
+                
+                // Show inactive count only to admin/board users
+                const inactiveElement = document.getElementById('inactive-members');
+                if (isAdminOrBoard) {
+                    inactiveElement.textContent = inactiveCount;
+                    inactiveElement.parentElement.style.display = 'block';
+                } else {
+                    inactiveElement.parentElement.style.display = 'none';
+                }
             }
         }
 
@@ -1919,6 +2015,75 @@
             document.getElementById('searchInput').value = '';
             displayMembers(); // Show all members
             console.log('Search cleared, showing all members');
+        }
+
+        function addNewMember() {
+            console.log('=== ADD NEW MEMBER CALLED ===');
+            
+            // Check if user has permission
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            if (userRole !== 'admin' && userRole !== 'board') {
+                alert('Only administrators and board members can add new members.');
+                return;
+            }
+            
+            // Get the next available member ID
+            const dataToUse = window.membersData || membersData;
+            const maxId = Math.max(...dataToUse.map(m => parseInt(m.id)));
+            const newMemberId = (maxId + 1).toString();
+            
+            // Show add member modal
+            const modal = document.getElementById('addMemberModal');
+            if (modal) {
+                document.getElementById('newMemberId').value = newMemberId;
+                modal.style.display = 'block';
+            } else {
+                alert('Add member functionality is not available in this view.');
+            }
+        }
+
+        function saveNewMember() {
+            const memberId = document.getElementById('newMemberId').value;
+            const memberName = document.getElementById('newMemberName').value;
+            const memberPhone = document.getElementById('newMemberPhone').value;
+            const startYear = document.getElementById('newMemberStartYear').value;
+            
+            if (!memberName || !memberPhone) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Create new member object
+            const newMember = {
+                id: memberId,
+                name: memberName,
+                phone: memberPhone,
+                status: 'Active',
+                firstPaymentYear: startYear || '2025',
+                registrationFeePaid: '0',
+                registrationFeeAmount: '200',
+                lastPaymentDate: '',
+                notes: '',
+                '2022': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2023': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2024': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2025': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
+            };
+            
+            // Add to data
+            const dataToUse = window.membersData || membersData;
+            dataToUse.push(newMember);
+            
+            // Update display
+            displayMembers();
+            updateStats();
+            
+            // Close modal
+            closeModal();
+            
+            alert(`New member ${memberName} (ID: ${memberId}) has been added successfully!\n\nPlease record their initial registration fee and monthly payments using the "Record Payment" function.`);
         }
 
         function recordPaymentForMember(memberName) {
@@ -2059,6 +2224,7 @@
         function closeModal() {
             document.getElementById('paymentModal').style.display = 'none';
             document.getElementById('memberDetailsModal').style.display = 'none';
+            document.getElementById('addMemberModal').style.display = 'none';
             document.getElementById('paymentForm').reset();
         }
 
