@@ -1197,6 +1197,14 @@
             console.log('=== SIMPLIFIED BALANCE CALCULATION ===');
             console.log('Member:', member.name, '(ID:', member.id, ')');
             
+            // Debug: Show the actual member data structure
+            console.log('Member object keys:', Object.keys(member));
+            console.log('2022 data:', member['2022']);
+            console.log('2023 data:', member['2023']);
+            console.log('2024 data:', member['2024']);
+            console.log('2025 data:', member['2025']);
+            console.log('2026 data:', member['2026']);
+            
             let totalPaid = 0;
             let lastPaymentYear = null;
             let lastPaymentMonth = null;
@@ -1205,28 +1213,41 @@
             const years = ['2022', '2023', '2024', '2025', '2026'];
             years.forEach(year => {
                 const yearData = member[year];
+                console.log(`Processing ${year} data:`, yearData);
                 if (yearData && typeof yearData === 'object') {
+                    console.log(`${year} keys:`, Object.keys(yearData));
                     MONTHS.forEach(month => {
                         const payment = parseFloat(yearData[month]) || 0;
+                        console.log(`${year} ${month}: $${payment}`);
                         totalPaid += payment;
                         if (payment > 0) {
                             lastPaymentYear = year;
                             lastPaymentMonth = month;
                         }
                     });
+                } else {
+                    console.log(`${year} data is not an object:`, yearData);
                 }
             });
             
-            // Calculate what they owe (from 2022 to current date)
+            // Calculate what they owe based on their membership start date
             const currentYear = 2025;
-            const currentMonth = 7; // August
+            const currentMonth = 7; // August (0-indexed, so 7 = August)
             const monthlyFee = 15;
             
+            const startYear = member.firstPaymentYear ? parseInt(member.firstPaymentYear) : 2022;
+            
             let totalDue = 0;
-            for (let year = 2022; year <= currentYear; year++) {
+            for (let year = startYear; year <= currentYear; year++) {
                 const monthsInYear = year === currentYear ? currentMonth + 1 : 12;
                 totalDue += monthsInYear * monthlyFee;
             }
+            
+            console.log('Monthly fee:', monthlyFee);
+            console.log('Current year:', currentYear);
+            console.log('Current month:', currentMonth);
+            console.log('Member start year:', startYear);
+            console.log('Total due calculation:', totalDue);
             
             const balance = totalPaid - totalDue;
             const isActive = totalPaid > 0 && lastPaymentYear && parseInt(lastPaymentYear) >= 2022;
