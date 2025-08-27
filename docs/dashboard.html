@@ -306,6 +306,50 @@
             cursor: pointer;
             transition: all 0.2s;
         }
+
+        .events-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .events-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .events-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .event-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .event-date {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .event-title {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .event-description {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
         
         .btn-record {
             background: #28a745;
@@ -543,9 +587,11 @@
                 <input type="text" id="searchInput" class="search-input" placeholder="Search by name, phone number, or member ID...">
                 <button class="btn btn-primary" onclick="searchMembers()">Search</button>
                 <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
-                <button class="btn btn-success" onclick="addNewMember()">Add New Member</button>
-                <button class="btn btn-info" onclick="viewMemberDetails()">View Details</button>
-                <button class="btn btn-warning" onclick="exportData()">Export Data</button>
+                <div id="adminActions" style="display: none;">
+                    <button class="btn btn-success" onclick="addNewMember()">Add New Member</button>
+                    <button class="btn btn-info" onclick="addEvent()">Add Event</button>
+                    <button class="btn btn-warning" onclick="exportData()">Export Data</button>
+                </div>
             </div>
 
             <div class="filter-tabs">
@@ -660,6 +706,30 @@
         </div>
     </div>
 
+    <!-- Add Event Modal -->
+    <div id="addEventModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Add New Event</h2>
+            <div class="form-group">
+                <label for="eventDate">Event Date:</label>
+                <input type="date" id="eventDate" required>
+            </div>
+            <div class="form-group">
+                <label for="eventTitle">Event Title:</label>
+                <input type="text" id="eventTitle" required placeholder="e.g., Monthly Meeting">
+            </div>
+            <div class="form-group">
+                <label for="eventDescription">Description:</label>
+                <textarea id="eventDescription" rows="3" placeholder="Event details, location, etc."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button onclick="saveEvent()" class="btn btn-success">Save Event</button>
+                <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Payment Modal -->
     <div id="paymentModal" class="modal">
         <div class="modal-content">
@@ -670,6 +740,11 @@
                 • Monthly fee: $15 per member<br>
                 • Initial registration: $200<br>
                 • Send payment via Zelle to: aaaichicago@gmail.com<br>
+                <br>
+                <strong>Quick Payment Options:</strong><br>
+                <button onclick="quickPayment('monthly')" class="btn btn-primary">Record Monthly Fee ($15)</button>
+                <button onclick="quickPayment('registration')" class="btn btn-success">Record Registration ($200)</button>
+                <button onclick="quickPayment('custom')" class="btn btn-info">Custom Amount</button>
                 • Include member name in payment description
             </div>
             <form id="paymentForm">
@@ -1744,6 +1819,24 @@
             const memberId = sessionStorage.getItem('aaacMemberId');
             const isMemberLogin = userRole === 'member' && memberId;
             
+            // Hide search and filter options for members
+            const searchSection = document.querySelector('.search-section');
+            const filterSection = document.querySelector('.filter-section');
+            const adminActions = document.getElementById('adminActions');
+            
+            if (isMemberLogin) {
+                if (searchSection) searchSection.style.display = 'none';
+                if (filterSection) filterSection.style.display = 'none';
+                if (adminActions) adminActions.style.display = 'none';
+            } else {
+                if (searchSection) searchSection.style.display = 'block';
+                if (filterSection) filterSection.style.display = 'block';
+                // Show admin actions only for admin/board users
+                if (adminActions && (userRole === 'admin' || userRole === 'board')) {
+                    adminActions.style.display = 'block';
+                }
+            }
+            
             if (isMemberLogin) {
                 // Find the specific member
                 const member = data.find(m => m.id === memberId);
@@ -1772,6 +1865,22 @@
                                     <div class="member-actions">
                                         <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="events-section">
+                            <h3>📅 Upcoming Events</h3>
+                            <div class="events-list">
+                                <div class="event-card">
+                                    <div class="event-date">March 15, 2025</div>
+                                    <div class="event-title">Monthly Meeting</div>
+                                    <div class="event-description">Regular monthly membership meeting at Ethiopian Community Center</div>
+                                </div>
+                                <div class="event-card">
+                                    <div class="event-date">March 31, 2025</div>
+                                    <div class="event-title">Payment Due</div>
+                                    <div class="event-description">Monthly membership fee due - $15</div>
                                 </div>
                             </div>
                         </div>
@@ -1920,12 +2029,12 @@
             const isMemberLogin = userRole === 'member' && memberId;
             
             if (isMemberLogin) {
-                // For member login, show minimal stats
-                document.getElementById('total-members').textContent = '1';
-                document.getElementById('current-members').textContent = '1';
-                document.getElementById('issue-members').textContent = '0';
-                document.getElementById('risk-members').textContent = '0';
-                document.getElementById('risk-of-removal-members').textContent = '0';
+                // For member login, show total members but hide individual status counts
+                document.getElementById('total-members').textContent = totalMembers;
+                document.getElementById('current-members').parentElement.style.display = 'none';
+                document.getElementById('issue-members').parentElement.style.display = 'none';
+                document.getElementById('risk-members').parentElement.style.display = 'none';
+                document.getElementById('risk-of-removal-members').parentElement.style.display = 'none';
                 
                 // Hide total balance from members for privacy
                 document.getElementById('total-balance').parentElement.style.display = 'none';
@@ -2086,9 +2195,107 @@
             alert(`New member ${memberName} (ID: ${memberId}) has been added successfully!\n\nPlease record their initial registration fee and monthly payments using the "Record Payment" function.`);
         }
 
+        function addEvent() {
+            console.log('=== ADD EVENT CALLED ===');
+            
+            // Check if user has permission
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            if (userRole !== 'admin' && userRole !== 'board') {
+                alert('Only administrators and board members can add events.');
+                return;
+            }
+            
+            // Show add event modal
+            const modal = document.getElementById('addEventModal');
+            if (modal) {
+                modal.style.display = 'block';
+            } else {
+                alert('Add event functionality is not available.');
+            }
+        }
+
+        function saveEvent() {
+            const eventDate = document.getElementById('eventDate').value;
+            const eventTitle = document.getElementById('eventTitle').value;
+            const eventDescription = document.getElementById('eventDescription').value;
+            
+            if (!eventDate || !eventTitle) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Store event in sessionStorage for now (in a real app, this would go to a database)
+            const events = JSON.parse(sessionStorage.getItem('aaacEvents') || '[]');
+            events.push({
+                date: eventDate,
+                title: eventTitle,
+                description: eventDescription
+            });
+            sessionStorage.setItem('aaacEvents', JSON.stringify(events));
+            
+            // Close modal
+            closeModal();
+            
+            // Refresh display to show new event
+            displayMembers();
+            
+            alert(`Event "${eventTitle}" has been added successfully!`);
+        }
+
+        function quickPayment(type) {
+            const memberName = sessionStorage.getItem('currentPaymentMember');
+            if (!memberName) {
+                alert('No member selected for payment.');
+                return;
+            }
+            
+            let amount = 0;
+            let description = '';
+            
+            switch(type) {
+                case 'monthly':
+                    amount = 15;
+                    description = 'Monthly membership fee';
+                    break;
+                case 'registration':
+                    amount = 200;
+                    description = 'Initial registration fee';
+                    break;
+                case 'custom':
+                    const customAmount = prompt('Enter payment amount:');
+                    if (!customAmount || isNaN(customAmount)) {
+                        alert('Please enter a valid amount.');
+                        return;
+                    }
+                    amount = parseFloat(customAmount);
+                    description = 'Custom payment';
+                    break;
+            }
+            
+            // Auto-fill the payment form
+            document.getElementById('paymentAmount').value = amount;
+            document.getElementById('paymentDescription').value = description;
+            
+            // Focus on the description field for any additional notes
+            document.getElementById('paymentDescription').focus();
+        }
+
         function recordPaymentForMember(memberName) {
-            document.getElementById('memberName').value = memberName;
-            document.getElementById('paymentModal').style.display = 'block';
+            console.log('=== RECORD PAYMENT FOR MEMBER CALLED ===');
+            console.log('Member name:', memberName);
+            
+            // Store member name for quick payment functions
+            sessionStorage.setItem('currentPaymentMember', memberName);
+            
+            // Show payment modal
+            const modal = document.getElementById('paymentModal');
+            if (modal) {
+                modal.style.display = 'block';
+                // Set the member name in the modal
+                document.getElementById('memberName').value = memberName;
+            } else {
+                alert('Payment modal not found.');
+            }
         }
 
         function recordPayment() {
@@ -2225,6 +2432,7 @@
             document.getElementById('paymentModal').style.display = 'none';
             document.getElementById('memberDetailsModal').style.display = 'none';
             document.getElementById('addMemberModal').style.display = 'none';
+            document.getElementById('addEventModal').style.display = 'none';
             document.getElementById('paymentForm').reset();
         }
 
