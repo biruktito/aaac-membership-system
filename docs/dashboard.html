@@ -1436,44 +1436,6 @@
                 console.log('=== END HABTAMU DEBUG ===');
             }
             
-            // Calculate current balance
-            const currentBalance = totalPaid - totalDue;
-            let balanceDetails = '';
-            
-            if (currentBalance > 0) {
-                balanceDetails = `Paid ahead by $${currentBalance}`;
-            } else if (currentBalance < 0) {
-                balanceDetails = `Owes $${Math.abs(currentBalance)} (${monthsBehind} months behind)`;
-            } else {
-                balanceDetails = 'Up to date';
-            }
-            
-            // Add incidentals info if any
-            if (totalIncidentals > 0) {
-                balanceDetails += ` | Incidentals: $${totalIncidentals}`;
-            }
-            
-            // If not an active member, return with inactive status but still calculate balance
-            if (!isActiveMember) {
-                return {
-                    currentBalance: currentBalance,
-                    totalDue: totalDue,
-                    totalPaid: totalPaid,
-                    totalRegistrationPaid: totalRegistrationPaid,
-                    totalIncidentals: totalIncidentals,
-                    paidUpTo: 'Inactive Member',
-                    balanceDetails: 'No recent payments or inactive 36+ months',
-                    status: 'inactive',
-                    statusText: '🚫 Inactive',
-                    monthsBehind: monthsBehind,
-                    firstPaymentMonth: firstPaymentMonth,
-                    firstPaymentYear: firstPaymentYear,
-                    lastPaidMonth: lastPaidMonth,
-                    lastPaidYear: lastPaidYear,
-                    isActiveMember: false
-                };
-            }
-            
             // Calculate what's due from their first payment to current date
             let totalDue = 0;
             let paidUpTo = 'Not Started';
@@ -1524,6 +1486,44 @@
                 const monthsFrom2023 = (currentYear - 2023) * 12 + currentMonth + 1;
                 totalDue = monthsFrom2023 * MONTHLY_FEE;
                 monthsBehind = monthsFrom2023;
+            }
+            
+            // Calculate current balance
+            const currentBalance = totalPaid - totalDue;
+            let balanceDetails = '';
+            
+            if (currentBalance > 0) {
+                balanceDetails = `Paid ahead by $${currentBalance}`;
+            } else if (currentBalance < 0) {
+                balanceDetails = `Owes $${Math.abs(currentBalance)} (${monthsBehind} months behind)`;
+            } else {
+                balanceDetails = 'Up to date';
+            }
+            
+            // Add incidentals info if any
+            if (totalIncidentals > 0) {
+                balanceDetails += ` | Incidentals: $${totalIncidentals}`;
+            }
+            
+            // If not an active member, return with inactive status but still calculate balance
+            if (!isActiveMember) {
+                return {
+                    currentBalance: currentBalance,
+                    totalDue: totalDue,
+                    totalPaid: totalPaid,
+                    totalRegistrationPaid: totalRegistrationPaid,
+                    totalIncidentals: totalIncidentals,
+                    paidUpTo: 'Inactive Member',
+                    balanceDetails: 'No recent payments or inactive 36+ months',
+                    status: 'inactive',
+                    statusText: '🚫 Inactive',
+                    monthsBehind: monthsBehind,
+                    firstPaymentMonth: firstPaymentMonth,
+                    firstPaymentYear: firstPaymentYear,
+                    lastPaidMonth: lastPaidMonth,
+                    lastPaidYear: lastPaidYear,
+                    isActiveMember: false
+                };
             }
             
             // Debug for Habtamu
