@@ -757,25 +757,8 @@
             
             console.log('Authentication passed, loading member data...');
             
-            // Check for Google Sheets integration
-            if (window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function') {
-                console.log('🔄 Attempting Google Sheets integration...');
-                window.GoogleSheetsIntegration.initialize().then(success => {
-                    if (success) {
-                        console.log('✅ Using Google Sheets data');
-                        // Google Sheets will handle the display and auto-refresh
-                    } else {
-                        console.log('⚠️ Google Sheets failed, using local data');
-                        loadMembersData();
-                    }
-                }).catch(error => {
-                    console.log('⚠️ Google Sheets integration not available, using local data');
-                    loadMembersData();
-                });
-            } else {
-                console.log('⚠️ Google Sheets integration not available, using local data');
-                loadMembersData();
-            }
+            // Simplified, robust data loading system
+            loadDataRobustly();
             
             setupEventListeners();
             console.log('=== INITIALIZATION COMPLETE ===');
@@ -802,89 +785,60 @@
             }
         }
 
-        function loadMembersData() {
-            console.log('=== STARTING DATA LOAD PROCESS ===');
-            console.log('Starting to load member data...');
+        // Simplified, robust data loading system
+        function loadDataRobustly() {
+            console.log('=== ROBUST DATA LOADING SYSTEM ===');
             
-            // Check user role to determine which data to load
-            const userRole = sessionStorage.getItem('aaacUserRole');
-            console.log('User role:', userRole);
+            // Try Google Sheets first
+            if (window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function') {
+                console.log('🔄 Attempting Google Sheets integration...');
+                window.GoogleSheetsIntegration.initialize().then(success => {
+                    if (success && window.membersData && window.membersData.length > 0) {
+                        console.log('✅ Using Google Sheets data:', window.membersData.length, 'members');
+                        displayMembers();
+                        updateStats();
+                    } else {
+                        console.log('⚠️ Google Sheets failed or returned no data, using local CSV');
+                        loadLocalCSVData();
+                    }
+                }).catch(error => {
+                    console.log('⚠️ Google Sheets integration error, using local CSV:', error);
+                    loadLocalCSVData();
+                });
+            } else {
+                console.log('⚠️ Google Sheets integration not available, using local CSV');
+                loadLocalCSVData();
+            }
+        }
+
+        function loadLocalCSVData() {
+            console.log('🔄 Loading local CSV data...');
             
-            let dataFile = 'complete_data_for_google_sheet.csv'; // Use the complete data file
-            
-            console.log('Attempting to load data file:', dataFile);
-            
-            fetch(dataFile)
+            fetch('complete_data_for_google_sheet.csv')
                 .then(response => {
-                    console.log('=== FETCH RESPONSE ===');
-                    console.log('Response status:', response.status);
-                    console.log('Response ok:', response.ok);
-                    console.log('Response url:', response.url);
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     return response.text();
                 })
                 .then(data => {
-                    console.log('=== DATA RECEIVED ===');
-                    console.log('Data loaded successfully from:', dataFile);
-                    console.log('Data length:', data.length);
-                    console.log('First 200 characters:', data.substring(0, 200));
-                    
-                    if (data.length === 0) {
-                        throw new Error('Data file is empty');
-                    }
-                    
+                    console.log('✅ Local CSV loaded successfully');
                     const parsedData = parseAccountantData(data);
-                    console.log('=== PARSING COMPLETE ===');
-                    console.log('Data parsed:', parsedData.length, 'members');
                     
-                    if (parsedData.length === 0) {
-                        throw new Error('No members parsed from data');
+                    if (parsedData.length > 0) {
+                        window.membersData = parsedData;
+                        console.log('✅ Local data set:', window.membersData.length, 'members');
+                        displayMembers();
+                        updateStats();
+                    } else {
+                        throw new Error('No members parsed from local CSV');
                     }
-                    
-                    // Use loaded data for display
-                    membersData = parsedData;
-                    console.log('=== DISPLAYING MEMBERS ===');
-                    displayMembers();
-                    updateStats();
-                    console.log('=== DATA LOAD COMPLETE ===');
                 })
                 .catch(error => {
-                    console.error('=== ERROR IN DATA LOADING ===');
-                    console.error('Error loading data:', error);
-                    console.error('Error details:', error.message);
-                    console.error('Error stack:', error.stack);
-                    
-                    // Fallback to sample data
-                    console.log('Loading sample data as fallback');
+                    console.error('❌ Local CSV loading failed:', error);
+                    // Load sample data as final fallback
                     loadSampleData();
                 });
-        }
-
-        function loadSampleData() {
-            console.log('Loading sample data...');
-            membersData = [
-                {
-                    id: '1',
-                    name: 'Demo Member 1',
-                    phone: '555-0101',
-                    status: 'Active',
-                    firstPaymentYear: '2022',
-                    registrationFeePaid: '0',
-                    registrationFeeAmount: '200',
-                    lastPaymentDate: 'AUG 2025',
-                    notes: '',
-                    '2022': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
-                    '2023': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
-                    '2024': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
-                    '2025': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
-                }
-            ];
-            displayMembers();
-            updateStats();
         }
 
         function parseContactData(csvText) {
@@ -1213,46 +1167,89 @@
             console.log(`Year ${year} payment data processed`);
         }
 
-        function loadSampleData(contactData = {}) {
-            // Sample data for demonstration
-            membersData = [
+        function loadSampleData() {
+            console.log('Loading sample data...');
+            window.membersData = [
                 {
-                    id: 1,
-                    name: contactData[1]?.name || "HABTAMU BAKANA",
-                    phone: contactData[1]?.phone || "7734941942",
-                    registration: 0,
-                    '2022': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2023': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2024': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2025': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2027': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 }
-                },
-                {
-                    id: 24,
-                    name: contactData[24]?.name || "BIRUK TITO EYESUE",
-                    phone: contactData[24]?.phone || "7736540023",
-                    registration: 200,
-                    '2022': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2023': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2024': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2025': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2026': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2027': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 }
-                },
-                {
-                    id: 56,
-                    name: contactData[56]?.name || "RICHARED BIRHANU",
-                    phone: contactData[56]?.phone || "7734945767",
-                    registration: 200,
-                    '2022': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2023': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2024': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2025': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2026': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUNE: 16, JULY: 15, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
-                    '2027': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 }
+                    id: '1',
+                    name: 'Demo Member 1',
+                    phone: '555-0101',
+                    status: 'Active',
+                    firstPaymentYear: '2022',
+                    registrationFeePaid: '0',
+                    registrationFeeAmount: '200',
+                    lastPaymentDate: 'AUG 2025',
+                    notes: '',
+                    '2022': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    '2023': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    '2024': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    '2025': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                    '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                    incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
                 }
             ];
+            displayMembers();
+            updateStats();
+        }
+
+        // Simplified balance calculation that works with any data structure
+        function calculateBalanceSimple(member) {
+            console.log('=== SIMPLIFIED BALANCE CALCULATION ===');
+            console.log('Member:', member.name, '(ID:', member.id, ')');
+            
+            let totalPaid = 0;
+            let lastPaymentYear = null;
+            let lastPaymentMonth = null;
+            
+            // Calculate total paid and find last payment
+            const years = ['2022', '2023', '2024', '2025', '2026'];
+            years.forEach(year => {
+                const yearData = member[year];
+                if (yearData && typeof yearData === 'object') {
+                    MONTHS.forEach(month => {
+                        const payment = parseFloat(yearData[month]) || 0;
+                        totalPaid += payment;
+                        if (payment > 0) {
+                            lastPaymentYear = year;
+                            lastPaymentMonth = month;
+                        }
+                    });
+                }
+            });
+            
+            // Calculate what they owe (from 2022 to current date)
+            const currentYear = 2025;
+            const currentMonth = 7; // August
+            const monthlyFee = 15;
+            
+            let totalDue = 0;
+            for (let year = 2022; year <= currentYear; year++) {
+                const monthsInYear = year === currentYear ? currentMonth + 1 : 12;
+                totalDue += monthsInYear * monthlyFee;
+            }
+            
+            const balance = totalPaid - totalDue;
+            const isActive = totalPaid > 0 && lastPaymentYear && parseInt(lastPaymentYear) >= 2022;
+            
+            console.log('Total paid:', totalPaid);
+            console.log('Total due:', totalDue);
+            console.log('Balance:', balance);
+            console.log('Last payment:', lastPaymentMonth, lastPaymentYear);
+            console.log('Is active:', isActive);
+            console.log('=== END SIMPLIFIED CALCULATION ===');
+            
+            return {
+                currentBalance: balance,
+                totalPaid: totalPaid,
+                totalDue: totalDue,
+                lastPaymentYear: lastPaymentYear,
+                lastPaymentMonth: lastPaymentMonth,
+                isActiveMember: isActive,
+                status: isActive ? 'current' : 'inactive',
+                statusText: isActive ? '✅ Current' : '🚫 Inactive',
+                paidUpTo: lastPaymentMonth && lastPaymentYear ? `${lastPaymentMonth} ${lastPaymentYear}` : 'Never',
+                balanceDetails: balance >= 0 ? `Paid up to date` : `Owes $${Math.abs(balance)}`
+            };
         }
 
         // Add comprehensive debugging function
@@ -1612,7 +1609,7 @@
             `;
             
             data.forEach(member => {
-                const balanceInfo = calculateDetailedBalance(member);
+                const balanceInfo = calculateBalanceSimple(member);
                 const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
                 
                 html += `
@@ -1649,12 +1646,12 @@
         function updateStats() {
             const dataToUse = window.membersData || membersData;
             const activeMembers = dataToUse.filter(member => {
-                const balanceInfo = calculateDetailedBalance(member);
+                const balanceInfo = calculateBalanceSimple(member);
                 return balanceInfo.isActiveMember;
             });
             
             const inactiveMembers = dataToUse.filter(member => {
-                const balanceInfo = calculateDetailedBalance(member);
+                const balanceInfo = calculateBalanceSimple(member);
                 return !balanceInfo.isActiveMember;
             });
             
@@ -1665,26 +1662,14 @@
             let totalBalance = 0;
             
             activeMembers.forEach(member => {
-                const balanceInfo = calculateDetailedBalance(member);
+                const balanceInfo = calculateBalanceSimple(member);
                 // Only add negative balances (what they owe) to the total
                 if (balanceInfo.currentBalance < 0) {
                     totalBalance += Math.abs(balanceInfo.currentBalance);
                 }
                 
-                switch (balanceInfo.status) {
-                    case 'current':
-                        currentCount++;
-                        break;
-                    case 'issue':
-                        issueCount++;
-                        break;
-                    case 'risk':
-                        riskCount++;
-                        break;
-                    case 'risk-of-removal':
-                        riskOfRemovalCount++;
-                        break;
-                }
+                // For simplified calculation, all active members are current
+                currentCount++;
             });
             
             document.getElementById('total-members').textContent = activeMembers.length;
@@ -1710,7 +1695,7 @@
             
             const dataToUse = window.membersData || membersData;
             const filteredData = dataToUse.filter(member => {
-                const balanceInfo = calculateDetailedBalance(member);
+                const balanceInfo = calculateBalanceSimple(member);
                 return balanceInfo.status === status;
             });
             
