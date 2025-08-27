@@ -17,9 +17,17 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
             min-height: 100vh;
             padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .container {
@@ -32,24 +40,98 @@
         }
 
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(135deg, #1B4332 0%, #2D6A4F 50%, #40916C 100%);
             color: white;
             padding: 30px;
             text-align: center;
             position: relative;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 8px 32px rgba(27, 67, 50, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="10" cy="60" r="0.5" fill="rgba(255,255,255,0.1)"/><circle cx="90" cy="40" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .ethiopian-flag {
+            width: 80px;
+            height: 60px;
+            margin: 0 auto 20px;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .flag-stripe {
+            height: 33.33%;
+            width: 100%;
+        }
+
+        .flag-stripe.green { background: #009A49; }
+        .flag-stripe.yellow { background: #FEDD00; }
+        .flag-stripe.red { background: #EF3340; }
+
+        .flag-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: #0066CC;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .star {
+            color: #FFD700;
+            font-size: 16px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .location {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin: 10px 0;
+            font-weight: 500;
         }
 
         .logout-btn {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: #dc3545;
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 25px;
             cursor: pointer;
             font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
         }
 
         .logout-btn:hover {
@@ -78,8 +160,19 @@
 
         .controls {
             padding: 30px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+            border-bottom: 1px solid #DEE2E6;
+            position: relative;
+        }
+
+        .controls::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
         }
 
         .search-section {
@@ -107,23 +200,59 @@
         .btn {
             padding: 12px 25px;
             border: none;
-            border-radius: 8px;
+            border-radius: 25px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary { background: #667eea; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-warning { background: #ffc107; color: #212529; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-info { background: #17a2b8; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn-primary { 
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%); 
+            color: white; 
+        }
+        .btn-success { 
+            background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%); 
+            color: white; 
+        }
+        .btn-warning { 
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); 
+            color: white; 
+        }
+        .btn-danger { 
+            background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); 
+            color: white; 
+        }
+        .btn-info { 
+            background: linear-gradient(135deg, #FFD23F 0%, #F7931E 100%); 
+            color: #212529; 
+        }
+        .btn-secondary { 
+            background: linear-gradient(135deg, #6C757D 0%, #495057 100%); 
+            color: white; 
+        }
 
         .btn:hover { transform: translateY(-2px); }
 
@@ -147,13 +276,15 @@
         }
 
         .filter-tab.active {
-            background: #667eea;
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
             color: white;
+            box-shadow: 0 4px 15px rgba(27, 154, 170, 0.3);
         }
 
         .filter-tab:hover {
-            background: #5a6fd8;
+            background: linear-gradient(135deg, #06FFA5 0%, #1B9AAA 100%);
             color: white;
+            transform: translateY(-1px);
         }
 
         .stats {
@@ -164,17 +295,28 @@
         }
 
         .stat-card {
-            background: white;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
         }
 
         .stat-number {
-            font-size: 2em;
+            font-size: 2.2em;
             font-weight: bold;
-            color: #667eea;
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .stat-label {
@@ -205,17 +347,30 @@
         }
         
         .member-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border: 1px solid #e9ecef;
-            transition: transform 0.2s, box-shadow 0.2s;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .member-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
         }
         
         .member-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
         }
         
         .member-card.inactive {
@@ -231,12 +386,13 @@
         }
         
         .member-id {
-            background: #667eea;
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
             color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
+            padding: 6px 12px;
+            border-radius: 15px;
             font-weight: bold;
             font-size: 12px;
+            box-shadow: 0 2px 8px rgba(27, 154, 170, 0.3);
         }
         
         .member-status {
@@ -246,11 +402,41 @@
             font-weight: bold;
         }
         
-        .member-status.current { background: #d4edda; color: #155724; }
-        .member-status.issue { background: #fff3cd; color: #856404; }
-        .member-status.risk { background: #f8d7da; color: #721c24; }
-        .member-status.risk-of-removal { background: #dc3545; color: #ffffff; }
-        .member-status.inactive { background: #e2e3e5; color: #383d41; }
+        .member-status.current { 
+            background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(45, 106, 79, 0.3);
+        }
+        .member-status.issue { 
+            background: linear-gradient(135deg, #FFD23F 0%, #F7931E 100%); 
+            color: #212529; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(255, 210, 63, 0.3);
+        }
+        .member-status.risk { 
+            background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+        }
+        .member-status.risk-of-removal { 
+            background: linear-gradient(135deg, #DC3545 0%, #C82333 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        }
+        .member-status.inactive { 
+            background: linear-gradient(135deg, #6C757D 0%, #495057 100%); 
+            color: white; 
+            border-radius: 15px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+        }
         
         .member-info {
             margin-bottom: 15px;
@@ -278,8 +464,16 @@
             margin-bottom: 5px;
         }
         
-        .balance-amount.positive { color: #28a745; }
-        .balance-amount.negative { color: #dc3545; }
+        .balance-amount.positive { 
+            color: #2D6A4F; 
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(45, 106, 79, 0.2);
+        }
+        .balance-amount.negative { 
+            color: #DC3545; 
+            font-weight: bold;
+            text-shadow: 0 1px 2px rgba(220, 53, 69, 0.2);
+        }
         
         .balance-details {
             color: #6c757d;
@@ -305,22 +499,47 @@
         }
         
         .btn-record, .btn-reminder {
-            padding: 8px 12px;
+            padding: 10px 16px;
             border: none;
-            border-radius: 6px;
-            font-size: 12px;
+            border-radius: 20px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .btn-record {
+            background: linear-gradient(135deg, #2D6A4F 0%, #40916C 100%);
+            color: white;
+        }
+
+        .btn-reminder {
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            color: white;
         }
 
         .events-section {
             margin-top: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
+            padding: 25px;
+            background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .events-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #FF6B35 0%, #F7931E 25%, #FFD23F 50%, #06FFA5 75%, #1B9AAA 100%);
         }
 
         .events-section h3 {
@@ -335,16 +554,26 @@
         }
 
         .event-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, #FFFFFF 0%, #F8F9FA 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid #1B9AAA;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .event-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
         }
 
         .event-date {
             font-weight: bold;
-            color: #667eea;
+            background: linear-gradient(135deg, #1B9AAA 0%, #06FFA5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             font-size: 0.9em;
             margin-bottom: 5px;
         }
@@ -808,9 +1037,20 @@
     <div class="container">
         <div class="header">
             <button class="logout-btn" onclick="logout()">🚪 Logout</button>
-            <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
-            <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
-            <p><strong>Current Date: August 2025</strong></p>
+            <div class="header-content">
+                <div class="ethiopian-flag">
+                    <div class="flag-stripe green"></div>
+                    <div class="flag-stripe yellow"></div>
+                    <div class="flag-stripe red"></div>
+                    <div class="flag-circle">
+                        <div class="star">★</div>
+                    </div>
+                </div>
+                <h1>የአዲስ አበባ ማሕበር በቺካጎ የአባልነት ገጽ</h1>
+                <p>ክፍያን እንዲሁም አባልነት ቁጥርን ማረጋገጫ</p>
+                <p class="location">📍 Chicago, Illinois | 🇺🇸 United States</p>
+                <p><strong>Current Date: August 2025</strong></p>
+            </div>
         </div>
 
         <div class="controls">
