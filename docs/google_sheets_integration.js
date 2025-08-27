@@ -101,85 +101,112 @@ async function fetchSheetData(sheetName) {
 /**
  * Process Google Sheets data into our expected format
  */
-function processGoogleSheetsData(sheetData) {
-    if (!sheetData || sheetData.length < 2) {
-        throw new Error('Invalid sheet data');
+function processGoogleSheetsData(data) {
+    console.log('🔄 Processing Google Sheets data...');
+    
+    if (!data || !data.values || data.values.length === 0) {
+        console.error('❌ No data to process');
+        return [];
     }
     
-    const headers = sheetData[0];
-    const rows = sheetData.slice(1);
+    const rows = data.values;
+    const headers = rows[0];
+    const totalRows = rows.length - 1; // Exclude header
     
-    console.log('🔄 Processing Google Sheets data...');
     console.log('Headers:', headers);
     console.log('Headers length:', headers.length);
-    console.log('Total rows:', rows.length);
-    console.log('Sample row:', rows[0]);
-    console.log('Sample row length:', rows[0] ? rows[0].length : 0);
-    console.log('First 3 rows:', rows.slice(0, 3));
+    console.log('Total rows:', totalRows);
+    console.log('Sample row:', rows[1]);
+    console.log('Sample row length:', rows[1].length);
+    console.log('First 3 rows:', rows.slice(1, 4));
     
-    return rows.map((row, index) => {
-        const member = {};
-        
-        // Debug the condition
+    return rows.slice(1).map((row, index) => {
         console.log(`Member ${index + 1} - headers.length: ${headers.length}, row.length: ${row.length}`);
         console.log(`Member ${index + 1} - condition: ${headers.length > 1 && row.length > 1}`);
         
-        // If we have multiple columns, use them
+        let member = {};
+        
         if (headers.length > 1 && row.length > 1) {
-            console.log(`Using multi-column format for member ${index + 1}`);
-            headers.forEach((header, headerIndex) => {
-                member[header] = row[headerIndex] || '';
+            // Multi-column data
+            console.log(`Using multi-column parsing for member ${index + 1}`);
+            headers.forEach((header, i) => {
+                member[header] = row[i] || '';
             });
         } else {
-            // If we have a single column with CSV data, parse it
+            // Single-column CSV string data
             console.log(`Using CSV parsing for member ${index + 1}`);
-            const csvString = row[0] || '';
-            const csvValues = csvString.split(',');
+            const csvString = row[0];
+            console.log(`Parsing CSV for member ${index + 1}:`, csvString);
             
-            console.log(`Parsing CSV for member ${index + 1}:`, csvString.substring(0, 100) + '...');
-            console.log(`CSV values length:`, csvValues.length);
-            console.log(`First few CSV values:`, csvValues.slice(0, 5));
+            const values = csvString.split(',');
+            console.log(`CSV values length:`, values.length);
+            console.log(`First few CSV values:`, values.slice(0, 5));
             
-            // Map CSV values to expected fields
-            member.Member_ID = csvValues[0] || '';
-            member.Name = csvValues[1] || '';
-            member.Phone = csvValues[2] || '';
-            member.Status = csvValues[3] || '';
-            member.First_Payment_Year = csvValues[4] || '';
-            member.Registration_Fee_Paid = csvValues[5] || '';
-            member.Registration_Fee_Amount = csvValues[6] || '';
-            member.Last_Payment_Date = csvValues[7] || '';
-            member.Notes = csvValues[8] || '';
+            // Map CSV values to member properties based on the expected structure
+            member = {
+                id: values[0] || '',
+                name: values[1] || '',
+                phone: values[2] || '',
+                status: values[3] || 'Active',
+                firstPaymentYear: values[4] || '',
+                registrationFeePaid: values[5] || '0',
+                registrationFeeAmount: values[6] || '0',
+                lastPaymentDate: values[7] || '',
+                notes: values[8] || '',
+                '2022': {},
+                '2023': {},
+                '2024': {},
+                '2025': {},
+                '2026': {},
+                incidentals: {}
+            };
             
-            // Add all the payment months (2022_JAN through 2026_DEC)
-            for (let year = 2022; year <= 2026; year++) {
-                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                months.forEach(month => {
-                    const fieldName = `${year}_${month}`;
-                    const valueIndex = 9 + (year - 2022) * 12 + months.indexOf(month);
-                    member[fieldName] = csvValues[valueIndex] || '0.0';
-                });
+            // Parse monthly payments for each year
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            
+            // 2022 payments (columns 9-20)
+            for (let j = 0; j < 12; j++) {
+                const value = parseFloat(values[9 + j]) || 0;
+                member['2022'][monthNames[j]] = value;
             }
             
-            // Add incidentals
-            const incidentalStartIndex = 9 + 5 * 12; // After all payment months
-            member['2022_Incidentals'] = csvValues[incidentalStartIndex] || '0';
-            member['2022_Incidental_Notes'] = csvValues[incidentalStartIndex + 1] || '';
-            member['2023_Incidentals'] = csvValues[incidentalStartIndex + 2] || '0';
-            member['2023_Incidental_Notes'] = csvValues[incidentalStartIndex + 3] || '';
-            member['2024_Incidentals'] = csvValues[incidentalStartIndex + 4] || '0';
-            member['2024_Incidental_Notes'] = csvValues[incidentalStartIndex + 5] || '';
-            member['2025_Incidentals'] = csvValues[incidentalStartIndex + 6] || '0';
-            member['2025_Incidental_Notes'] = csvValues[incidentalStartIndex + 7] || '';
-            member['2026_Incidentals'] = csvValues[incidentalStartIndex + 8] || '0';
-            member['2026_Incidental_Notes'] = csvValues[incidentalStartIndex + 9] || '';
+            // 2023 payments (columns 21-32)
+            for (let j = 0; j < 12; j++) {
+                const value = parseFloat(values[21 + j]) || 0;
+                member['2023'][monthNames[j]] = value;
+            }
+            
+            // 2024 payments (columns 33-44)
+            for (let j = 0; j < 12; j++) {
+                const value = parseFloat(values[33 + j]) || 0;
+                member['2024'][monthNames[j]] = value;
+            }
+            
+            // 2025 payments (columns 45-56)
+            for (let j = 0; j < 12; j++) {
+                const value = parseFloat(values[45 + j]) || 0;
+                member['2025'][monthNames[j]] = value;
+            }
+            
+            // 2026 payments (columns 57-68)
+            for (let j = 0; j < 12; j++) {
+                const value = parseFloat(values[57 + j]) || 0;
+                member['2026'][monthNames[j]] = value;
+            }
+            
+            // Parse incidentals (columns 69-78)
+            for (let j = 0; j < 5; j++) {
+                const year = 2022 + j;
+                const value = parseFloat(values[69 + j]) || 0;
+                member.incidentals[year] = value;
+            }
         }
         
-        // Map Google Sheets fields to expected dashboard fields
-        member.id = member.Member_ID || member['Member ID'] || (index + 1);
-        member.name = member.Name || member['Member Name'] || 'Unknown';
-        member.phone = member.Phone || member['Phone Number'] || '';
-        member.status = member.Status || 'Active';
+        // Ensure we have the basic structure
+        member.id = member.id || member.Member_ID || member['Member ID'] || (index + 1).toString();
+        member.name = member.name || member.Name || member['Member Name'] || 'Unknown';
+        member.phone = member.phone || member.Phone || member['Phone Number'] || '';
+        member.status = member.status || member.Status || 'Active';
         
         console.log(`Processed member ${index + 1}:`, {
             id: member.id,
