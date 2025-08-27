@@ -917,7 +917,61 @@
             
             console.log('Parsing accountant data, total lines:', lines.length);
             
-            // Skip header line
+            if (lines.length < 2) {
+                console.error('CSV file is empty or has no data rows');
+                return [];
+            }
+            
+            // Parse header to get column positions
+            const headerLine = lines[0];
+            const headerColumns = headerLine.split(',');
+            console.log('Header columns:', headerColumns);
+            
+            // Find column positions for each year and month
+            const columnMap = {};
+            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+            
+            // Map basic member info columns
+            columnMap.id = 0; // Member_ID
+            columnMap.name = 1; // Name
+            columnMap.phone = 2; // Phone
+            columnMap.status = 3; // Status
+            columnMap.firstPaymentYear = 4; // First_Payment_Year
+            columnMap.registrationFeePaid = 5; // Registration_Fee_Paid
+            columnMap.registrationFeeAmount = 6; // Registration_Fee_Amount
+            columnMap.lastPaymentDate = 7; // Last_Payment_Date
+            columnMap.notes = 8; // Notes
+            
+            // Map payment columns for each year
+            for (let year = 2022; year <= 2026; year++) {
+                columnMap[year] = {};
+                for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+                    const monthName = monthNames[monthIndex];
+                    const columnName = `${year}_${monthName}`;
+                    const columnIndex = headerColumns.findIndex(col => col === columnName);
+                    if (columnIndex !== -1) {
+                        columnMap[year][monthName] = columnIndex;
+                    } else {
+                        console.warn(`Column not found: ${columnName}`);
+                    }
+                }
+            }
+            
+            // Map incidental columns
+            columnMap.incidentals = {};
+            for (let year = 2022; year <= 2026; year++) {
+                const columnName = `${year}_Incidentals`;
+                const columnIndex = headerColumns.findIndex(col => col === columnName);
+                if (columnIndex !== -1) {
+                    columnMap.incidentals[year] = columnIndex;
+                } else {
+                    console.warn(`Incidental column not found: ${columnName}`);
+                }
+            }
+            
+            console.log('Column mapping:', columnMap);
+            
+            // Parse data rows
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
@@ -926,15 +980,15 @@
                 if (columns.length < 10) continue;
                 
                 const member = {
-                    id: columns[0],
-                    name: columns[1],
-                    phone: columns[2],
-                    status: columns[3],
-                    firstPaymentYear: columns[4],
-                    registrationFeePaid: columns[5],
-                    registrationFeeAmount: columns[6],
-                    lastPaymentDate: columns[7],
-                    notes: columns[8],
+                    id: columns[columnMap.id] || '',
+                    name: columns[columnMap.name] || '',
+                    phone: columns[columnMap.phone] || '',
+                    status: columns[columnMap.status] || '',
+                    firstPaymentYear: columns[columnMap.firstPaymentYear] || '',
+                    registrationFeePaid: columns[columnMap.registrationFeePaid] || '0',
+                    registrationFeeAmount: columns[columnMap.registrationFeeAmount] || '0',
+                    lastPaymentDate: columns[columnMap.lastPaymentDate] || '',
+                    notes: columns[columnMap.notes] || '',
                     '2022': {},
                     '2023': {},
                     '2024': {},
@@ -944,43 +998,28 @@
                 };
                 
                 // Parse monthly payments for each year
-                const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                
-                // 2022 payments (columns 9-20)
-                for (let j = 0; j < 12; j++) {
-                    const value = parseFloat(columns[9 + j]) || 0;
-                    member['2022'][monthNames[j]] = value;
+                for (let year = 2022; year <= 2026; year++) {
+                    for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+                        const monthName = monthNames[monthIndex];
+                        const columnIndex = columnMap[year][monthName];
+                        if (columnIndex !== undefined && columnIndex < columns.length) {
+                            const value = parseFloat(columns[columnIndex]) || 0;
+                            member[year][monthName] = value;
+                        } else {
+                            member[year][monthName] = 0;
+                        }
+                    }
                 }
                 
-                // 2023 payments (columns 21-32)
-                for (let j = 0; j < 12; j++) {
-                    const value = parseFloat(columns[21 + j]) || 0;
-                    member['2023'][monthNames[j]] = value;
-                }
-                
-                // 2024 payments (columns 33-44)
-                for (let j = 0; j < 12; j++) {
-                    const value = parseFloat(columns[33 + j]) || 0;
-                    member['2024'][monthNames[j]] = value;
-                }
-                
-                // 2025 payments (columns 45-56)
-                for (let j = 0; j < 12; j++) {
-                    const value = parseFloat(columns[45 + j]) || 0;
-                    member['2025'][monthNames[j]] = value;
-                }
-                
-                // 2026 payments (columns 57-68)
-                for (let j = 0; j < 12; j++) {
-                    const value = parseFloat(columns[57 + j]) || 0;
-                    member['2026'][monthNames[j]] = value;
-                }
-                
-                // Parse incidentals (columns 69-78)
-                for (let j = 0; j < 5; j++) {
-                    const year = 2022 + j;
-                    const value = parseFloat(columns[69 + j]) || 0;
-                    member.incidentals[year] = value;
+                // Parse incidentals
+                for (let year = 2022; year <= 2026; year++) {
+                    const columnIndex = columnMap.incidentals[year];
+                    if (columnIndex !== undefined && columnIndex < columns.length) {
+                        const value = parseFloat(columns[columnIndex]) || 0;
+                        member.incidentals[year] = value;
+                    } else {
+                        member.incidentals[year] = 0;
+                    }
                 }
                 
                 // Debug for Habtamu
