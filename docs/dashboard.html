@@ -1431,25 +1431,42 @@
                 console.log('=== END HABTAMU DEBUG ===');
             }
             
-            // If not an active member, return early with inactive status
+            // Calculate current balance
+            const currentBalance = totalPaid - totalDue;
+            let balanceDetails = '';
+            
+            if (currentBalance > 0) {
+                balanceDetails = `Paid ahead by $${currentBalance}`;
+            } else if (currentBalance < 0) {
+                balanceDetails = `Owes $${Math.abs(currentBalance)} (${monthsBehind} months behind)`;
+            } else {
+                balanceDetails = 'Up to date';
+            }
+            
+            // Add incidentals info if any
+            if (totalIncidentals > 0) {
+                balanceDetails += ` | Incidentals: $${totalIncidentals}`;
+            }
+            
+            // If not an active member, return with inactive status but still calculate balance
             if (!isActiveMember) {
-                            return {
-                currentBalance: 0,
-                totalDue: 0,
-                totalPaid: totalPaid,
-                totalRegistrationPaid: totalRegistrationPaid,
-                totalIncidentals: totalIncidentals,
-                paidUpTo: 'Inactive Member',
-                balanceDetails: 'No recent payments or inactive 36+ months',
-                status: 'inactive',
-                statusText: '🚫 Inactive',
-                monthsBehind: 0,
-                firstPaymentMonth: firstPaymentMonth,
-                firstPaymentYear: firstPaymentYear,
-                lastPaidMonth: lastPaidMonth,
-                lastPaidYear: lastPaidYear,
-                isActiveMember: false
-            };
+                return {
+                    currentBalance: currentBalance,
+                    totalDue: totalDue,
+                    totalPaid: totalPaid,
+                    totalRegistrationPaid: totalRegistrationPaid,
+                    totalIncidentals: totalIncidentals,
+                    paidUpTo: 'Inactive Member',
+                    balanceDetails: 'No recent payments or inactive 36+ months',
+                    status: 'inactive',
+                    statusText: '🚫 Inactive',
+                    monthsBehind: monthsBehind,
+                    firstPaymentMonth: firstPaymentMonth,
+                    firstPaymentYear: firstPaymentYear,
+                    lastPaidMonth: lastPaidMonth,
+                    lastPaidYear: lastPaidYear,
+                    isActiveMember: false
+                };
             }
             
             // Calculate what's due from their first payment to current date
@@ -1499,8 +1516,9 @@
                 }
             } else {
                 // No payments at all - count from 2023 to current
-                totalDue = (currentYear - 2023) * 12 + currentMonth + 1;
-                monthsBehind = totalDue / MONTHLY_FEE;
+                const monthsFrom2023 = (currentYear - 2023) * 12 + currentMonth + 1;
+                totalDue = monthsFrom2023 * MONTHLY_FEE;
+                monthsBehind = monthsFrom2023;
             }
             
             // Debug for Habtamu
@@ -1523,23 +1541,6 @@
                 } else {
                     totalRegistrationPaid = OLD_REGISTRATION_FEE;
                 }
-            }
-            
-            // Calculate current balance
-            const currentBalance = totalPaid - totalDue;
-            let balanceDetails = '';
-            
-            if (currentBalance > 0) {
-                balanceDetails = `Paid ahead by $${currentBalance}`;
-            } else if (currentBalance < 0) {
-                balanceDetails = `Owes $${Math.abs(currentBalance)} (${monthsBehind} months behind)`;
-            } else {
-                balanceDetails = 'Up to date';
-            }
-            
-            // Add incidentals info if any
-            if (totalIncidentals > 0) {
-                balanceDetails += ` | Incidentals: $${totalIncidentals}`;
             }
             
             // Debug for Habtamu
