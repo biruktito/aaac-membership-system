@@ -1717,7 +1717,7 @@
             dataToUse.forEach(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 
-                // Debug first few members
+                // Debug first few members and track inactive members
                 if (member.id === '1' || member.id === '2' || member.id === '3') {
                     console.log(`=== UPDATE STATS FOR MEMBER ${member.id} ===`);
                     console.log('Member name:', member.name);
@@ -1726,6 +1726,11 @@
                     console.log('Months behind:', balanceInfo.monthsBehind);
                     console.log('Is active:', balanceInfo.isActiveMember);
                     console.log('Current balance:', balanceInfo.currentBalance);
+                }
+                
+                // Track all inactive members
+                if (balanceInfo.status === 'inactive') {
+                    console.log(`INACTIVE MEMBER: ID ${member.id}, Name: ${member.name}, Is Active: ${balanceInfo.isActiveMember}, Total Paid: ${balanceInfo.totalPaid}`);
                 }
                 
                 // Count by status
@@ -1770,6 +1775,9 @@
             console.log('  Risk of Removal:', riskOfRemovalCount);
             console.log('  Inactive:', inactiveCount);
             console.log('=== END TOTAL BALANCE DEBUG ===');
+            console.log('=== INACTIVE MEMBERS SUMMARY ===');
+            console.log(`Total inactive members found: ${inactiveCount}`);
+            console.log('=== END INACTIVE MEMBERS SUMMARY ===');
             
             document.getElementById('total-members').textContent = totalMembers;
             document.getElementById('current-members').textContent = currentCount;
