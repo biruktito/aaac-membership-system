@@ -191,21 +191,39 @@ function processGoogleSheetsData(data) {
         
         let member = {};
         
-        if (headers.length > 1 && row.length > 1) {
+        // Check if we need to split CSV strings
+        let headersArray = headers;
+        let rowArray = row;
+        
+        // If headers is a single CSV string, split it
+        if (headers.length === 1 && typeof headers[0] === 'string') {
+            console.log('Splitting headers CSV string:', headers[0]);
+            headersArray = headers[0].split(',');
+            console.log('Split headers array:', headersArray);
+        }
+        
+        // If row is a single CSV string, split it
+        if (row.length === 1 && typeof row[0] === 'string') {
+            console.log(`Splitting row ${index + 1} CSV string:`, row[0]);
+            rowArray = row[0].split(',');
+            console.log(`Split row ${index + 1} array:`, rowArray);
+        }
+        
+        if (headersArray.length > 1 && rowArray.length > 1) {
             // Multi-column data - this is the expected format from Google Sheets
             console.log(`Using multi-column parsing for member ${index + 1}`);
             
             // Initialize member structure
             member = {
-                id: row[headers.indexOf('Member_ID')] || row[headers.indexOf('Member ID')] || row[0] || '',
-                name: row[headers.indexOf('Name')] || row[1] || '',
-                phone: row[headers.indexOf('Phone')] || row[2] || '',
-                status: row[headers.indexOf('Status')] || row[3] || 'Active',
-                firstPaymentYear: row[headers.indexOf('First_Payment_Year')] || row[headers.indexOf('First Payment Year')] || row[4] || '',
-                registrationFeePaid: row[headers.indexOf('Registration_Fee_Paid')] || row[5] || '0',
-                registrationFeeAmount: row[headers.indexOf('Registration_Fee_Amount')] || row[6] || '0',
-                lastPaymentDate: row[headers.indexOf('Last_Payment_Date')] || row[headers.indexOf('Last Payment Date')] || row[7] || '',
-                notes: row[headers.indexOf('Notes')] || row[8] || '',
+                id: rowArray[headersArray.indexOf('Member_ID')] || rowArray[headersArray.indexOf('Member ID')] || rowArray[0] || '',
+                name: rowArray[headersArray.indexOf('Name')] || rowArray[1] || '',
+                phone: rowArray[headersArray.indexOf('Phone')] || rowArray[2] || '',
+                status: rowArray[headersArray.indexOf('Status')] || rowArray[3] || 'Active',
+                firstPaymentYear: rowArray[headersArray.indexOf('First_Payment_Year')] || rowArray[headersArray.indexOf('First Payment Year')] || rowArray[4] || '',
+                registrationFeePaid: rowArray[headersArray.indexOf('Registration_Fee_Paid')] || rowArray[5] || '0',
+                registrationFeeAmount: rowArray[headersArray.indexOf('Registration_Fee_Amount')] || rowArray[6] || '0',
+                lastPaymentDate: rowArray[headersArray.indexOf('Last_Payment_Date')] || rowArray[headersArray.indexOf('Last Payment Date')] || rowArray[7] || '',
+                notes: rowArray[headersArray.indexOf('Notes')] || rowArray[8] || '',
                 '2022': {},
                 '2023': {},
                 '2024': {},
@@ -221,9 +239,9 @@ function processGoogleSheetsData(data) {
             for (let year = 2022; year <= 2026; year++) {
                 monthNames.forEach((month) => {
                     const columnName = `${year}_${month}`;
-                    const columnIndex = headers.indexOf(columnName);
-                    if (columnIndex !== -1 && columnIndex < row.length) {
-                        const value = parseFloat(row[columnIndex]) || 0;
+                    const columnIndex = headersArray.indexOf(columnName);
+                    if (columnIndex !== -1 && columnIndex < rowArray.length) {
+                        const value = parseFloat(rowArray[columnIndex]) || 0;
                         member[year.toString()][month] = value;
                     } else {
                         member[year.toString()][month] = 0;
@@ -232,9 +250,9 @@ function processGoogleSheetsData(data) {
                 
                 // Parse incidentals for each year
                 const incidentalColumnName = `${year}_Incidentals`;
-                const incidentalColumnIndex = headers.indexOf(incidentalColumnName);
-                if (incidentalColumnIndex !== -1 && incidentalColumnIndex < row.length) {
-                    const value = parseFloat(row[incidentalColumnIndex]) || 0;
+                const incidentalColumnIndex = headersArray.indexOf(incidentalColumnName);
+                if (incidentalColumnIndex !== -1 && incidentalColumnIndex < rowArray.length) {
+                    const value = parseFloat(rowArray[incidentalColumnIndex]) || 0;
                     member.incidentals[year] = value;
                 } else {
                     member.incidentals[year] = 0;
@@ -244,20 +262,20 @@ function processGoogleSheetsData(data) {
             // Debug: Show column mapping for first member
             if (index === 0) {
                 console.log('=== HEADER DEBUG FOR FIRST MEMBER ===');
-                console.log('Headers array:', headers);
-                console.log('Row array:', row);
+                console.log('Headers array:', headersArray);
+                console.log('Row array:', rowArray);
                 console.log('Looking for columns like 2022_JAN, 2022_FEB, etc.');
                 monthNames.forEach(month => {
                     const columnName = `2022_${month}`;
-                    const columnIndex = headers.indexOf(columnName);
-                    console.log(`${columnName}: index ${columnIndex}, value: ${columnIndex !== -1 ? row[columnIndex] : 'NOT FOUND'}`);
+                    const columnIndex = headersArray.indexOf(columnName);
+                    console.log(`${columnName}: index ${columnIndex}, value: ${columnIndex !== -1 ? rowArray[columnIndex] : 'NOT FOUND'}`);
                 });
                 console.log('=== END HEADER DEBUG ===');
             }
         } else {
             // Single-column CSV string data (fallback)
             console.log(`Using CSV parsing for member ${index + 1}`);
-            const csvString = row[0];
+            const csvString = rowArray[0];
             console.log(`Parsing CSV for member ${index + 1}:`, csvString);
             
             const values = csvString.split(',');
@@ -290,7 +308,7 @@ function processGoogleSheetsData(data) {
             for (let year = 2022; year <= 2026; year++) {
                 monthNames.forEach((month, monthIndex) => {
                     const columnName = `${year}_${month}`;
-                    const columnIndex = headers.indexOf(columnName);
+                    const columnIndex = headersArray.indexOf(columnName);
                     if (columnIndex !== -1) {
                         const value = parseFloat(values[columnIndex]) || 0;
                         member[year.toString()][month] = value;
@@ -303,11 +321,11 @@ function processGoogleSheetsData(data) {
             // Debug: Show column mapping for first member
             if (index === 0) {
                 console.log('=== HEADER DEBUG FOR FIRST MEMBER ===');
-                console.log('Headers array:', headers);
+                console.log('Headers array:', headersArray);
                 console.log('Looking for columns like 2022_JAN, 2022_FEB, etc.');
                 monthNames.forEach(month => {
                     const columnName = `2022_${month}`;
-                    const columnIndex = headers.indexOf(columnName);
+                    const columnIndex = headersArray.indexOf(columnName);
                     console.log(`${columnName}: index ${columnIndex}, value: ${columnIndex !== -1 ? values[columnIndex] : 'NOT FOUND'}`);
                 });
                 console.log('=== END HEADER DEBUG ===');
@@ -317,7 +335,7 @@ function processGoogleSheetsData(data) {
             for (let j = 0; j < 5; j++) {
                 const year = 2022 + j;
                 const incidentalColumnName = `${year}_Incidentals`;
-                const incidentalColumnIndex = headers.indexOf(incidentalColumnName);
+                const incidentalColumnIndex = headersArray.indexOf(incidentalColumnName);
                 if (incidentalColumnIndex !== -1) {
                     const value = parseFloat(values[incidentalColumnIndex]) || 0;
                     if (value > 0) {
