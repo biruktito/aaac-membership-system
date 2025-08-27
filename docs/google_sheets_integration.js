@@ -76,6 +76,8 @@ async function loadDataFromGoogleSheets() {
         
     } catch (error) {
         console.error('❌ Error loading from Google Sheets:', error);
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
         console.log('🔄 Falling back to local CSV data...');
         return false;
     }
@@ -293,8 +295,11 @@ async function initializeGoogleSheets() {
     console.log('🚀 Initializing Google Sheets integration...');
     
     // Check if configuration is set
-    if (GOOGLE_SHEETS_CONFIG.SHEET_ID === 'YOUR_GOOGLE_SHEET_ID_HERE') {
+    if (!GOOGLE_SHEETS_CONFIG.SHEET_ID || !GOOGLE_SHEETS_CONFIG.API_KEY || 
+        GOOGLE_SHEETS_CONFIG.SHEET_ID === 'YOUR_GOOGLE_SHEET_ID_HERE') {
         console.log('⚠️ Google Sheets not configured, using local data');
+        console.log('  - SHEET_ID:', GOOGLE_SHEETS_CONFIG.SHEET_ID);
+        console.log('  - API_KEY:', GOOGLE_SHEETS_CONFIG.API_KEY ? 'Set' : 'Missing');
         return false;
     }
     
