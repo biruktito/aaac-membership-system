@@ -1663,14 +1663,20 @@
             
             console.log(`Active members: ${activeMembers.length}, Inactive members: ${inactiveMembers.length}`);
             
-            // Show all members for now (we can filter later)
+            // Get user role to determine what to display
+            const userRole = sessionStorage.getItem('aaacUserRole') || 'member';
+            const isAdminOrBoard = userRole === 'admin' || userRole === 'board';
+            
+            console.log('User role:', userRole, 'Can view inactive members:', isAdminOrBoard);
+            
+            // Show active members section
             let html = `
                 <div class="members-section">
-                    <h3>All Members (${data.length})</h3>
+                    <h3>Active Members (${activeMembers.length})</h3>
                     <div class="members-grid">
             `;
             
-            data.forEach(member => {
+            activeMembers.forEach(member => {
                 const balanceInfo = calculateDetailedBalance(member);
                 const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
                 
@@ -1701,6 +1707,47 @@
                     </div>
                 </div>
             `;
+            
+            // Show inactive members section only for admin/board users
+            if (isAdminOrBoard && inactiveMembers.length > 0) {
+                html += `
+                    <div class="members-section inactive-section">
+                        <h3>Inactive Members (${inactiveMembers.length}) - Board/Admin View Only</h3>
+                        <div class="members-grid">
+                `;
+                
+                inactiveMembers.forEach(member => {
+                    const balanceInfo = calculateDetailedBalance(member);
+                    const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
+                    
+                    html += `
+                        <div class="member-card inactive">
+                            <div class="member-header">
+                                <span class="member-id">${member.id}</span>
+                                <span class="member-status ${balanceInfo.status}">${balanceInfo.statusText}</span>
+                            </div>
+                            <div class="member-info">
+                                <div class="member-name">${member.name}</div>
+                                <div class="member-id">ID: ${member.id}</div>
+                            </div>
+                            <div class="member-balance">
+                                <div class="balance-amount ${balanceClass}">$${balanceInfo.currentBalance}</div>
+                                <div class="balance-details">${balanceInfo.balanceDetails}</div>
+                                <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
+                            </div>
+                            <div class="member-actions">
+                                <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
+                                <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
             
             container.innerHTML = html;
         }
@@ -1786,13 +1833,25 @@
             });
             console.log('=== END INACTIVE MEMBERS LIST ===');
             
+            // Get user role to determine what stats to show
+            const userRole = sessionStorage.getItem('aaacUserRole') || 'member';
+            const isAdminOrBoard = userRole === 'admin' || userRole === 'board';
+            
             document.getElementById('total-members').textContent = totalMembers;
             document.getElementById('current-members').textContent = currentCount;
             document.getElementById('issue-members').textContent = issueCount;
             document.getElementById('risk-members').textContent = riskCount;
             document.getElementById('risk-of-removal-members').textContent = riskOfRemovalCount;
             document.getElementById('total-balance').textContent = `$${totalBalance.toFixed(2)} (Total Owed)`;
-            document.getElementById('inactive-members').textContent = inactiveCount;
+            
+            // Show inactive count only to admin/board users
+            const inactiveElement = document.getElementById('inactive-members');
+            if (isAdminOrBoard) {
+                inactiveElement.textContent = inactiveCount;
+                inactiveElement.parentElement.style.display = 'block';
+            } else {
+                inactiveElement.parentElement.style.display = 'none';
+            }
         }
 
         function filterByStatus(status) {
