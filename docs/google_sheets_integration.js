@@ -97,6 +97,10 @@ function processGoogleSheetsData(sheetData) {
     return rows.map((row, index) => {
         const member = {};
         
+        // Debug the condition
+        console.log(`Member ${index + 1} - headers.length: ${headers.length}, row.length: ${row.length}`);
+        console.log(`Member ${index + 1} - condition: ${headers.length > 1 && row.length > 1}`);
+        
         // If we have multiple columns, use them
         if (headers.length > 1 && row.length > 1) {
             console.log(`Using multi-column format for member ${index + 1}`);
