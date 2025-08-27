@@ -43,6 +43,11 @@ async function loadDataFromGoogleSheets() {
         }
         console.log('=== END MEMBERS DATA STRUCTURE DEBUG ===');
         
+        // Debug: Show what we're about to pass to processGoogleSheetsData
+        console.log('=== ABOUT TO CALL processGoogleSheetsData ===');
+        console.log('Passing membersData to processGoogleSheetsData:', membersData);
+        console.log('=== END ABOUT TO CALL ===');
+        
         // Load settings
         const settings = await fetchSheetData(GOOGLE_SHEETS_CONFIG.SHEETS.SETTINGS);
         console.log('✅ Loaded settings from Google Sheets');
@@ -133,6 +138,20 @@ async function fetchSheetData(sheetName) {
  */
 function processGoogleSheetsData(data) {
     console.log('🔄 Processing Google Sheets data...');
+    console.log('=== DATA STRUCTURE DEBUG ===');
+    console.log('Data type:', typeof data);
+    console.log('Data is null:', data === null);
+    console.log('Data is undefined:', data === undefined);
+    console.log('Data is array:', Array.isArray(data));
+    console.log('Data length:', data ? data.length : 'N/A');
+    console.log('Data:', data);
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+        console.log('Data keys:', Object.keys(data));
+        console.log('Data.values type:', typeof data.values);
+        console.log('Data.values is array:', Array.isArray(data.values));
+        console.log('Data.values length:', data.values ? data.values.length : 'N/A');
+    }
+    console.log('=== END DATA STRUCTURE DEBUG ===');
     
     // Check if data is already an array (values) or needs to be extracted
     let rows;
