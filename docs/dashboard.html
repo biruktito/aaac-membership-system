@@ -1318,6 +1318,11 @@
         }
 
         function calculateDetailedBalance(member) {
+            console.log('=== CALCULATE DETAILED BALANCE CALLED ===');
+            console.log('Member:', member);
+            console.log('Member ID:', member.id);
+            console.log('Member name:', member.name);
+            
             // Comprehensive debug for first few members
             if (member.id === '1' || member.id === '2' || member.id === '3') {
                 debugMemberData(member);
@@ -1682,7 +1687,11 @@
         }
 
         function updateStats() {
+            console.log('=== UPDATE STATS FUNCTION CALLED ===');
             const dataToUse = window.membersData || membersData;
+            console.log('Data to use:', dataToUse);
+            console.log('Data length:', dataToUse ? dataToUse.length : 'undefined');
+            console.log('Sample member:', dataToUse && dataToUse.length > 0 ? dataToUse[0] : 'no data');
             
             let currentCount = 0;
             let issueCount = 0;
@@ -1927,6 +1936,10 @@
             document.getElementById('paymentForm').reset();
         }
 
+        // Test function to check if JavaScript is working
+        console.log('=== JAVASCRIPT IS LOADING ===');
+        console.log('Dashboard script loaded successfully');
+        
         // Close modal when clicking outside
         window.onclick = function(event) {
             const modals = document.querySelectorAll('.modal');
