@@ -2692,15 +2692,15 @@
             return true;
         }
 
-        // Logout function
-        function logout() {
+        // Logout function - make it globally accessible
+        window.logout = function() {
             console.log('Logout function called');
             sessionStorage.removeItem('aaacAuthenticated');
             sessionStorage.removeItem('aaacUserRole');
             sessionStorage.removeItem('aaacLoginTime');
             console.log('Session storage cleared, redirecting to login...');
             window.location.href = 'login.html';
-        }
+        };
 
         // Force correct numbers to display (ONLY ONCE on initial load)
         let numbersAlreadyForced = false;
