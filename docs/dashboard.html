@@ -2156,6 +2156,52 @@
             font-weight: 600;
             color: #212529;
         }
+
+        /* Storage Setup Modal Styles */
+        .storage-setup-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .setup-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .setup-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .setup-section ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .setup-section li {
+            margin: 8px 0;
+            color: #555;
+        }
+
+        .status-item {
+            background: white;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+
+        .storage-setup-content a {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .storage-setup-content a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -2187,6 +2233,7 @@
                     <button class="btn btn-primary" onclick="refreshDashboardNumbers()">🔄 Refresh Numbers</button>
                     <button class="btn btn-secondary" onclick="checkSystemStatus()">📊 System Status</button>
                     <button class="btn btn-success" onclick="exportPaymentData()">💾 Export Payment Data</button>
+                    <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
                 </div>
             </div>
 
@@ -2278,6 +2325,49 @@
             <h2>Member Payment Details</h2>
             <div id="memberDetailsContent">
                 <!-- Member details will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Storage Setup Modal -->
+    <div id="storageSetupModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeStorageSetupModal()">&times;</span>
+            <h2>🔧 Persistent Storage Setup</h2>
+            <div class="storage-setup-content">
+                <p><strong>Why This is Needed:</strong></p>
+                <ul>
+                    <li>✅ <strong>Admin records payment</strong> → Data saved permanently</li>
+                    <li>✅ <strong>Admin logs out</strong> → Data remains safe</li>
+                    <li>✅ <strong>User logs in</strong> → Sees updated payment information</li>
+                    <li>✅ <strong>Multiple users</strong> → All see the same data</li>
+                    <li>✅ <strong>Real production use</strong> → Data persists between sessions</li>
+                </ul>
+                
+                <div class="setup-section">
+                    <h3>Step 1: Create GitHub Token</h3>
+                    <p>1. Go to <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a></p>
+                    <p>2. Click "Generate new token (classic)"</p>
+                    <p>3. Name: "AAAC Membership System"</p>
+                    <p>4. Select scope: <strong>gist</strong></p>
+                    <p>5. Click "Generate token" and copy it</p>
+                </div>
+                
+                <div class="setup-section">
+                    <h3>Step 2: Initialize Storage</h3>
+                    <div class="form-group">
+                        <label for="githubToken">GitHub Personal Access Token:</label>
+                        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
+                    </div>
+                    <button onclick="initializeStorage()" class="btn btn-success">🚀 Initialize Storage</button>
+                </div>
+                
+                <div class="setup-section">
+                    <h3>Current Status</h3>
+                    <div id="storageStatus">
+                        <p>Storage not initialized</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2400,6 +2490,9 @@
     
     <!-- CSV Data Loader -->
     <script src="csv_data_loader.js"></script>
+    
+    <!-- GitHub Gist Persistent Storage -->
+    <script src="firebase-persistent-storage.js"></script>
 
     <script>
         // Enhanced Financial System
@@ -2442,9 +2535,8 @@
                 // Update membersData with enhanced data
                 membersData = members;
                 
-                // Load payment data from local storage to restore previous payments
-                console.log('🔄 Loading payment data from local storage...');
-                loadPaymentDataFromLocalStorage();
+                // Note: Payment data will be loaded when persistent storage is initialized
+                console.log('🔄 Payment data will be loaded when persistent storage is initialized');
                 
                 // Update dashboard with enhanced stats
                 updateEnhancedStats();
@@ -3272,13 +3364,81 @@
             console.log('✅ Dashboard numbers refreshed');
         }
 
+        // Show storage setup modal
+        function showStorageSetup() {
+            document.getElementById('storageSetupModal').style.display = 'block';
+            updateStorageStatus();
+        }
+
+        // Close storage setup modal
+        function closeStorageSetupModal() {
+            document.getElementById('storageSetupModal').style.display = 'none';
+        }
+
+        // Initialize storage with GitHub token
+        async function initializeStorage() {
+            const token = document.getElementById('githubToken').value.trim();
+            
+            if (!token) {
+                alert('Please enter your GitHub Personal Access Token');
+                return;
+            }
+
+            try {
+                const success = await initializePersistentStorage(token);
+                
+                if (success) {
+                    alert('✅ Storage initialized successfully!\n\nYour system now has persistent storage. Payments will be saved permanently and visible to all users.');
+                    closeStorageSetupModal();
+                    updateStorageStatus();
+                } else {
+                    alert('❌ Failed to initialize storage. Please check your token and try again.');
+                }
+            } catch (error) {
+                alert(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Update storage status display
+        function updateStorageStatus() {
+            const statusDiv = document.getElementById('storageStatus');
+            
+            if (gitHubStorage) {
+                const status = gitHubStorage.getStatus();
+                statusDiv.innerHTML = `
+                    <div class="status-item">
+                        <strong>Storage Initialized:</strong> ${status.isInitialized ? '✅ Yes' : '❌ No'}
+                    </div>
+                    <div class="status-item">
+                        <strong>Has Token:</strong> ${status.hasToken ? '✅ Yes' : '❌ No'}
+                    </div>
+                    <div class="status-item">
+                        <strong>Has Gist:</strong> ${status.hasGist ? '✅ Yes' : '❌ No'}
+                    </div>
+                    <div class="status-item">
+                        <strong>Payment Count:</strong> ${status.paymentCount}
+                    </div>
+                    <div class="status-item">
+                        <strong>Last Updated:</strong> ${status.lastUpdated ? new Date(status.lastUpdated).toLocaleString() : 'Never'}
+                    </div>
+                `;
+            } else {
+                statusDiv.innerHTML = '<p>Storage not initialized</p>';
+            }
+        }
+
         // Export payment data for backup and manual CSV updates
         function exportPaymentData() {
             try {
-                const paymentHistory = JSON.parse(localStorage.getItem('aaacPaymentHistory') || '[]');
+                if (!gitHubStorage || !gitHubStorage.isInitialized) {
+                    alert('Storage not initialized. Please set up persistent storage first using the "🔧 Storage Setup" button.');
+                    return;
+                }
+
+                const payments = gitHubStorage.getPayments();
                 const memberData = window.membersData || membersData;
                 
-                if (paymentHistory.length === 0) {
+                if (payments.length === 0) {
                     alert('No payment data to export. Record some payments first!');
                     return;
                 }
@@ -3286,8 +3446,8 @@
                 // Create CSV content
                 let csvContent = 'Date,Member Name,Member ID,Payment Type,Amount,Notes\n';
                 
-                paymentHistory.forEach(payment => {
-                    const date = new Date(payment.date).toLocaleDateString();
+                payments.forEach(payment => {
+                    const date = new Date(payment.createdAt).toLocaleDateString();
                     const member = memberData.find(m => m.name === payment.memberName);
                     const memberId = member ? member.id : 'Unknown';
                     
@@ -3305,8 +3465,8 @@
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
                 
-                console.log('💾 Payment data exported:', paymentHistory.length, 'payments');
-                alert(`Payment data exported successfully!\n\n📊 Total payments: ${paymentHistory.length}\n💾 File: AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv\n\n💡 Use this data to manually update your CSV files.`);
+                console.log('💾 Payment data exported from GitHub:', payments.length, 'payments');
+                alert(`Payment data exported successfully!\n\n📊 Total payments: ${payments.length}\n💾 File: AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv\n\n💡 Use this data to manually update your CSV files.`);
                 
             } catch (error) {
                 console.error('❌ Error exporting payment data:', error);
@@ -4300,8 +4460,14 @@
                     console.log(`Monthly payment recorded: ${memberName} - $${paymentAmount} added to ${currentMonthName} ${currentYear}`);
                 }
                 
-                // SAVE TO LOCAL STORAGE for persistence
-                savePaymentDataToLocalStorage(memberName, paymentType, paymentAmount, paymentNotes, member);
+                // SAVE TO GITHUB GIST for persistent storage
+                try {
+                    await savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member);
+                } catch (error) {
+                    console.error('❌ Failed to save payment to GitHub:', error);
+                    alert(`Payment recorded but failed to save permanently: ${error.message}\n\nPlease check your GitHub token setup.`);
+                    return;
+                }
                 
                 // Update display immediately
                 console.log('Updating display after payment...');
@@ -4315,7 +4481,7 @@
                 }, 500);
                 
                 // Show success message and close modal
-                alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})\n\n💾 Payment saved to local storage - will persist between sessions!`);
+                alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})\n\n💾 Payment saved to GitHub - will persist for all users!`);
                 closeModal();
                 
                 // Reset the payment form
@@ -4329,52 +4495,57 @@
             }
         }
 
-        // Save payment data to local storage for persistence
-        function savePaymentDataToLocalStorage(memberName, paymentType, paymentAmount, paymentNotes, member) {
+        // Initialize GitHub Gist storage for persistent data
+        let gitHubStorage = null;
+
+        // Initialize persistent storage
+        async function initializePersistentStorage(githubToken) {
             try {
-                // Get existing payment history from local storage
-                const existingPayments = JSON.parse(localStorage.getItem('aaacPaymentHistory') || '[]');
+                if (!githubToken) {
+                    throw new Error('GitHub token is required');
+                }
+
+                // Create storage instance
+                gitHubStorage = new GitHubGistStorage();
                 
-                // Add new payment record
-                const newPayment = {
-                    memberName: memberName,
-                    paymentType: paymentType,
-                    amount: paymentAmount,
-                    notes: paymentNotes,
-                    date: new Date().toISOString(),
-                    memberId: member.id,
-                    year: new Date().getFullYear(),
-                    month: new Date().getMonth()
-                };
+                // Initialize with token
+                const success = await gitHubStorage.initialize(null, githubToken);
                 
-                existingPayments.push(newPayment);
-                
-                // Save back to local storage
-                localStorage.setItem('aaacPaymentHistory', JSON.stringify(existingPayments));
-                
-                // Also save the updated member data
-                localStorage.setItem('aaacMemberData', JSON.stringify(window.membersData || membersData));
-                
-                console.log('💾 Payment data saved to local storage:', newPayment);
-                console.log('💾 Total payments in storage:', existingPayments.length);
-                
+                if (success) {
+                    console.log('✅ Persistent storage initialized successfully');
+                    
+                    // Load existing payment data and apply to member data
+                    await loadPaymentDataFromGitHub();
+                    
+                    // Update display
+                    displayMembers();
+                    updateStats();
+                    
+                    return true;
+                } else {
+                    throw new Error('Failed to initialize storage');
+                }
             } catch (error) {
-                console.error('❌ Error saving to local storage:', error);
-                alert('Warning: Payment recorded but could not save to local storage. Data may be lost on page refresh.');
+                console.error('❌ Error initializing persistent storage:', error);
+                alert(`Failed to initialize persistent storage: ${error.message}`);
+                return false;
             }
         }
 
-        // Load payment data from local storage on page load
-        function loadPaymentDataFromLocalStorage() {
+        // Load payment data from GitHub Gist and apply to member data
+        async function loadPaymentDataFromGitHub() {
             try {
-                const paymentHistory = JSON.parse(localStorage.getItem('aaacPaymentHistory') || '[]');
-                const savedMemberData = localStorage.getItem('aaacMemberData');
-                
-                if (paymentHistory.length > 0) {
-                    console.log('💾 Loading payment history from local storage:', paymentHistory.length, 'payments');
-                    
+                if (!gitHubStorage || !gitHubStorage.isInitialized) {
+                    console.log('Storage not initialized, skipping payment data load');
+                    return;
+                }
+
+                const payments = gitHubStorage.getPayments();
+                console.log('💾 Loading payment data from GitHub:', payments.length, 'payments');
+
+                if (payments.length > 0) {
                     // Apply saved payments to current member data
-                    paymentHistory.forEach(payment => {
+                    payments.forEach(payment => {
                         const member = (window.membersData || membersData).find(m => m.name === payment.memberName);
                         if (member && payment.paymentType === 'monthly') {
                             // Apply monthly payment
@@ -4389,18 +4560,38 @@
                         }
                     });
                     
-                    console.log('✅ Payment history applied to member data');
+                    console.log('✅ Payment history applied to member data from GitHub');
                 }
-                
-                if (savedMemberData) {
-                    console.log('💾 Loading saved member data from local storage');
-                    const parsedData = JSON.parse(savedMemberData);
-                    // Merge with current data
-                    Object.assign(window.membersData || membersData, parsedData);
-                }
-                
             } catch (error) {
-                console.error('❌ Error loading from local storage:', error);
+                console.error('❌ Error loading payment data from GitHub:', error);
+            }
+        }
+
+        // Save payment to GitHub Gist for persistence
+        async function savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member) {
+            try {
+                if (!gitHubStorage || !gitHubStorage.isInitialized) {
+                    throw new Error('Persistent storage not initialized. Please set up GitHub token first.');
+                }
+
+                const payment = {
+                    memberName: memberName,
+                    paymentType: paymentType,
+                    amount: paymentAmount,
+                    notes: paymentNotes,
+                    memberId: member.id,
+                    year: new Date().getFullYear(),
+                    month: new Date().getMonth()
+                };
+
+                // Save to GitHub Gist
+                await gitHubStorage.addPayment(payment);
+                
+                console.log('💾 Payment saved to GitHub Gist:', payment);
+                return true;
+            } catch (error) {
+                console.error('❌ Error saving payment to GitHub:', error);
+                throw error;
             }
         }
 
