@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Google Sheets API Test</h1>
+    
+    <button onclick="testAPI()">Test API Connection</button>
+    <button onclick="testSheetAccess()">Test Sheet Access</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const CONFIG = {
+            SHEET_ID: '1r3SF2Ba1UIEYS28rCX8j2S7BsAsJsWRzw9v4M37-jHw',
+            API_KEY: 'AIzaSyCLpLGtV9ui3Bm9o-ElkaIMKvk6wQk_Mtc'
+        };
+
+        function addResult(message, isError = false) {
+            const div = document.createElement('div');
+            div.className = `result ${isError ? 'error' : 'success'}`;
+            div.textContent = message;
+            document.getElementById('results').appendChild(div);
+        }
+
+        async function testAPI() {
+            addResult('🔄 Testing API connection...');
+            
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}?key=${CONFIG.API_KEY}`;
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ API Connection Successful! Sheet title: ${data.properties.title}`);
+                } else {
+                    addResult(`❌ API Error: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (error) {
+                addResult(`❌ Network Error: ${error.message}`, true);
+            }
+        }
+
+        async function testSheetAccess() {
+            addResult('🔄 Testing sheet access...');
+            
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/Members?key=${CONFIG.API_KEY}`;
+                const response = await fetch(url);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ Sheet Access Successful! Found ${data.values ? data.values.length : 0} rows`);
+                } else {
+                    addResult(`❌ Sheet Access Error: ${response.status} ${response.statusText}`, true);
+                }
+            } catch (error) {
+                addResult(`❌ Network Error: ${error.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>
