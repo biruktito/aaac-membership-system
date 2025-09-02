@@ -2186,6 +2186,7 @@
                     <button class="btn btn-warning" onclick="exportData()">Export Data</button>
                     <button class="btn btn-primary" onclick="refreshDashboardNumbers()">🔄 Refresh Numbers</button>
                     <button class="btn btn-secondary" onclick="checkSystemStatus()">📊 System Status</button>
+                    <button class="btn btn-success" onclick="exportPaymentData()">💾 Export Payment Data</button>
                 </div>
             </div>
 
@@ -2440,6 +2441,10 @@
                 
                 // Update membersData with enhanced data
                 membersData = members;
+                
+                // Load payment data from local storage to restore previous payments
+                console.log('🔄 Loading payment data from local storage...');
+                loadPaymentDataFromLocalStorage();
                 
                 // Update dashboard with enhanced stats
                 updateEnhancedStats();
@@ -3265,6 +3270,48 @@
             console.log('🔄 Manually refreshing dashboard numbers...');
             updateStats();
             console.log('✅ Dashboard numbers refreshed');
+        }
+
+        // Export payment data for backup and manual CSV updates
+        function exportPaymentData() {
+            try {
+                const paymentHistory = JSON.parse(localStorage.getItem('aaacPaymentHistory') || '[]');
+                const memberData = window.membersData || membersData;
+                
+                if (paymentHistory.length === 0) {
+                    alert('No payment data to export. Record some payments first!');
+                    return;
+                }
+                
+                // Create CSV content
+                let csvContent = 'Date,Member Name,Member ID,Payment Type,Amount,Notes\n';
+                
+                paymentHistory.forEach(payment => {
+                    const date = new Date(payment.date).toLocaleDateString();
+                    const member = memberData.find(m => m.name === payment.memberName);
+                    const memberId = member ? member.id : 'Unknown';
+                    
+                    csvContent += `"${date}","${payment.memberName}","${memberId}","${payment.paymentType}","${payment.amount}","${payment.notes || ''}"\n`;
+                });
+                
+                // Create and download file
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                console.log('💾 Payment data exported:', paymentHistory.length, 'payments');
+                alert(`Payment data exported successfully!\n\n📊 Total payments: ${paymentHistory.length}\n💾 File: AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv\n\n💡 Use this data to manually update your CSV files.`);
+                
+            } catch (error) {
+                console.error('❌ Error exporting payment data:', error);
+                alert('Error exporting payment data. Check console for details.');
+            }
         }
 
         // Enhanced balance calculation using the enhanced financial logic
@@ -4228,13 +4275,12 @@
                 } else if (paymentType === 'incidental') {
                     // For incidentals - track separately
                     if (!member.incidentals) {
-                        member.incidentals = [];
+                        member.incidentals.push({
+                            amount: paymentAmount,
+                            date: new Date().toISOString(),
+                            notes: paymentNotes
+                        });
                     }
-                    member.incidentals.push({
-                        amount: paymentAmount,
-                        date: new Date().toISOString(),
-                        notes: paymentNotes
-                    });
                     console.log(`Incidental fee recorded: ${memberName} - $${paymentAmount}`);
                     
                 } else if (paymentType === 'monthly') {
@@ -4254,6 +4300,9 @@
                     console.log(`Monthly payment recorded: ${memberName} - $${paymentAmount} added to ${currentMonthName} ${currentYear}`);
                 }
                 
+                // SAVE TO LOCAL STORAGE for persistence
+                savePaymentDataToLocalStorage(memberName, paymentType, paymentAmount, paymentNotes, member);
+                
                 // Update display immediately
                 console.log('Updating display after payment...');
                 displayMembers();
@@ -4266,7 +4315,7 @@
                 }, 500);
                 
                 // Show success message and close modal
-                alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})`);
+                alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})\n\n💾 Payment saved to local storage - will persist between sessions!`);
                 closeModal();
                 
                 // Reset the payment form
@@ -4277,6 +4326,81 @@
                 
             } else {
                 alert(`Member "${memberName}" not found. Please check the member name.`);
+            }
+        }
+
+        // Save payment data to local storage for persistence
+        function savePaymentDataToLocalStorage(memberName, paymentType, paymentAmount, paymentNotes, member) {
+            try {
+                // Get existing payment history from local storage
+                const existingPayments = JSON.parse(localStorage.getItem('aaacPaymentHistory') || '[]');
+                
+                // Add new payment record
+                const newPayment = {
+                    memberName: memberName,
+                    paymentType: paymentType,
+                    amount: paymentAmount,
+                    notes: paymentNotes,
+                    date: new Date().toISOString(),
+                    memberId: member.id,
+                    year: new Date().getFullYear(),
+                    month: new Date().getMonth()
+                };
+                
+                existingPayments.push(newPayment);
+                
+                // Save back to local storage
+                localStorage.setItem('aaacPaymentHistory', JSON.stringify(existingPayments));
+                
+                // Also save the updated member data
+                localStorage.setItem('aaacMemberData', JSON.stringify(window.membersData || membersData));
+                
+                console.log('💾 Payment data saved to local storage:', newPayment);
+                console.log('💾 Total payments in storage:', existingPayments.length);
+                
+            } catch (error) {
+                console.error('❌ Error saving to local storage:', error);
+                alert('Warning: Payment recorded but could not save to local storage. Data may be lost on page refresh.');
+            }
+        }
+
+        // Load payment data from local storage on page load
+        function loadPaymentDataFromLocalStorage() {
+            try {
+                const paymentHistory = JSON.parse(localStorage.getItem('aaacPaymentHistory') || '[]');
+                const savedMemberData = localStorage.getItem('aaacMemberData');
+                
+                if (paymentHistory.length > 0) {
+                    console.log('💾 Loading payment history from local storage:', paymentHistory.length, 'payments');
+                    
+                    // Apply saved payments to current member data
+                    paymentHistory.forEach(payment => {
+                        const member = (window.membersData || membersData).find(m => m.name === payment.memberName);
+                        if (member && payment.paymentType === 'monthly') {
+                            // Apply monthly payment
+                            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                            const monthName = monthNames[payment.month];
+                            
+                            if (!member[payment.year]) {
+                                member[payment.year] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                            }
+                            
+                            member[payment.year][monthName] = (member[payment.year][monthName] || 0) + payment.amount;
+                        }
+                    });
+                    
+                    console.log('✅ Payment history applied to member data');
+                }
+                
+                if (savedMemberData) {
+                    console.log('💾 Loading saved member data from local storage');
+                    const parsedData = JSON.parse(savedMemberData);
+                    // Merge with current data
+                    Object.assign(window.membersData || membersData, parsedData);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading from local storage:', error);
             }
         }
 
