@@ -2520,7 +2520,7 @@
         const CURRENT_MONTH = CURRENT_DATE.getMonth();
 
         // Initialize Enhanced Financial System
-        document.addEventListener('DOMContentLoaded', async function() {
+        document.addEventListener('DOMContentLoaded', function() {
             try {
                 // Initialize enhanced financial logic
                 enhancedLogic = new EnhancedFinancialLogic();
@@ -2528,24 +2528,29 @@
                 // Initialize CSV data loader
                 csvLoader = new CSVDataLoader();
                 
-                // Load member data
-                const members = await csvLoader.loadAllData();
-                console.log(`✅ Loaded ${members.length} members with enhanced system`);
-                
-                // Update membersData with enhanced data
-                membersData = members;
-                
-                // Note: Payment data will be loaded when persistent storage is initialized
-                console.log('🔄 Payment data will be loaded when persistent storage is initialized');
-                
-                // Update dashboard with enhanced stats
-                updateEnhancedStats();
-                
-                // Force fallback to run to ensure correct numbers
-                setTimeout(() => {
-                    console.log('Forcing fallback to ensure correct numbers...');
-                    updateStatsFallback();
-                }, 500);
+                // Load member data using Promise-based approach
+                csvLoader.loadAllData().then(members => {
+                    console.log(`✅ Loaded ${members.length} members with enhanced system`);
+                    
+                    // Update membersData with enhanced data
+                    membersData = members;
+                    
+                    // Note: Payment data will be loaded when persistent storage is initialized
+                    console.log('🔄 Payment data will be loaded when persistent storage is initialized');
+                    
+                    // Update dashboard with enhanced stats
+                    updateEnhancedStats();
+                    
+                    // Force fallback to run to ensure correct numbers
+                    setTimeout(() => {
+                        console.log('Forcing fallback to ensure correct numbers...');
+                        updateStatsFallback();
+                    }, 500);
+                }).catch(error => {
+                    console.error('❌ Failed to load member data:', error);
+                    // Fall back to existing system
+                    loadMembersData();
+                });
                 
             } catch (error) {
                 console.error('❌ Failed to initialize enhanced system:', error);
