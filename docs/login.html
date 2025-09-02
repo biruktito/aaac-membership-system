@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AAAC Membership System - Login</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         * {
             margin: 0;
@@ -26,23 +27,33 @@
             border-radius: 15px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             text-align: center;
         }
 
         .logo {
             margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .logo img {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 15px;
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .logo h1 {
             color: #2c3e50;
-            font-size: 2em;
+            font-size: 1.8em;
             margin-bottom: 10px;
+            font-weight: bold;
         }
 
         .logo p {
             color: #7f8c8d;
-            font-size: 1.1em;
+            font-size: 1em;
         }
 
         .form-group {
@@ -112,6 +123,24 @@
         .credentials-info p {
             margin-bottom: 5px;
         }
+
+        .member-id-field {
+            display: none;
+        }
+
+        .role-selector {
+            margin-bottom: 20px;
+        }
+
+        .role-selector label {
+            display: inline-block;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        .role-selector input[type="radio"] {
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -122,6 +151,18 @@
         </div>
         
         <form id="loginForm">
+            <div class="role-selector">
+                <label>
+                    <input type="radio" name="userType" value="member" checked> Member
+                </label>
+                <label>
+                    <input type="radio" name="userType" value="board"> Board
+                </label>
+                <label>
+                    <input type="radio" name="userType" value="admin"> Admin
+                </label>
+            </div>
+            
             <div class="form-group">
                 <label for="username">Username</label>
                 <input type="text" id="username" name="username" required>
@@ -132,68 +173,189 @@
                 <input type="password" id="password" name="password" required>
             </div>
             
+            <div class="form-group member-id-field" id="memberIdField">
+                <label for="memberId">Member ID</label>
+                <input type="text" id="memberId" name="memberId" placeholder="Enter your member ID number">
+            </div>
+            
             <button type="submit" class="login-btn">Login</button>
         </form>
         
         <div id="errorMessage" class="error-message">
-            Invalid username or password. Please try again.
+            Invalid credentials. Please check your username, password, and member ID (if applicable).
         </div>
         
         <div class="credentials-info">
-            <h4>Access Credentials</h4>
-            <p><strong>Member Access:</strong></p>
-            <p>Username: <strong>aaac</strong></p>
-            <p>Password: <strong>members2025</strong></p>
-            <p><em>Share these credentials with AAAC members for viewing only.</em></p>
+            <p><strong>Need Help?</strong></p>
+            <p>Contact your system administrator for login credentials.</p>
             <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
-            <p><strong>Board Member Access:</strong></p>
-            <p>Username: <strong>board</strong></p>
-            <p>Password: <strong>board2025</strong></p>
-            <p><em>For board members - can view phone numbers and send reminders.</em></p>
-            <hr style="margin: 15px 0; border: none; border-top: 1px solid #dee2e6;">
-            <p><strong>Admin Access:</strong></p>
-            <p>Username: <strong>admin</strong></p>
-            <p>Password: <strong>admin2025</strong></p>
-            <p><em>Keep these credentials private - for database uploads only.</em></p>
+            <p><strong>Manual Redirect:</strong></p>
+            <button onclick="manualRedirect()" style="background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px;">Go to Dashboard</button>
+            <p><em>Click this button if automatic redirect doesn't work after login.</em></p>
         </div>
     </div>
 
     <script>
+        // Handle role selection to show/hide member ID field
+        document.querySelectorAll('input[name="userType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const memberIdField = document.getElementById('memberIdField');
+                if (this.value === 'member') {
+                    memberIdField.style.display = 'block';
+                    document.getElementById('memberId').required = true;
+                } else {
+                    memberIdField.style.display = 'none';
+                    document.getElementById('memberId').required = false;
+                }
+            });
+        });
+
+        // Initialize member ID field visibility on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const memberIdField = document.getElementById('memberIdField');
+            const memberRadio = document.querySelector('input[name="userType"][value="member"]');
+            if (memberRadio.checked) {
+                memberIdField.style.display = 'block';
+                document.getElementById('memberId').required = true;
+            }
+        });
+
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const userType = document.querySelector('input[name="userType"]:checked').value;
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const memberId = document.getElementById('memberId').value;
             const errorMessage = document.getElementById('errorMessage');
             
+            console.log('Login attempt:', { userType, username, password, memberId });
+            
+            // Clear previous error
+            errorMessage.style.display = 'none';
+            
             // Three-tier authentication system
-            if (username === 'aaac' && password === 'members2025') {
-                // Member access - view only
-                sessionStorage.setItem('aaacAuthenticated', 'true');
-                sessionStorage.setItem('aaacUserRole', 'member');
-                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
-                
-                // Redirect to main system
-                window.location.href = 'aaac_membership_system.html';
-            } else if (username === 'board' && password === 'board2025') {
-                // Board member access - can view phone numbers and send reminders
-                sessionStorage.setItem('aaacAuthenticated', 'true');
-                sessionStorage.setItem('aaacUserRole', 'board');
-                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
-                
-                // Redirect to main system
-                window.location.href = 'aaac_membership_system.html';
-            } else if (username === 'admin' && password === 'admin2025') {
-                // Admin access - full control
-                sessionStorage.setItem('aaacAuthenticated', 'true');
-                sessionStorage.setItem('aaacUserRole', 'admin');
-                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
-                
-                // Redirect to main system
-                window.location.href = 'aaac_membership_system.html';
-            } else {
-                errorMessage.style.display = 'block';
-                document.getElementById('password').value = '';
+            if (userType === 'member') {
+                // Member access - requires username, password, AND member ID
+                if (username === 'member' && password === 'member2025' && memberId.trim() !== '') {
+                    console.log('Member login successful, setting session...');
+                    // Validate member ID exists in system (you can add more validation here)
+                    sessionStorage.setItem('aaacAuthenticated', 'true');
+                    sessionStorage.setItem('aaacUserRole', 'member');
+                    sessionStorage.setItem('aaacMemberId', memberId.trim());
+                    sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                    
+                    console.log('Session set, attempting redirect...');
+                    console.log('Session storage after login:', {
+                        authenticated: sessionStorage.getItem('aaacAuthenticated'),
+                        role: sessionStorage.getItem('aaacUserRole'),
+                        memberId: sessionStorage.getItem('aaacMemberId')
+                    });
+                    
+                    // Try multiple redirect methods
+                    try {
+                        console.log('Attempting redirect to dashboard.html...');
+                        window.location.href = 'dashboard.html';
+                        
+                        // Fallback redirect after 2 seconds
+                        setTimeout(() => {
+                            console.log('Fallback redirect attempt...');
+                            if (window.location.pathname.includes('login.html')) {
+                                console.log('Still on login page, forcing redirect...');
+                                window.location.replace('dashboard.html');
+                            }
+                        }, 2000);
+                        
+                    } catch (error) {
+                        console.error('Redirect error:', error);
+                        // Alternative redirect method
+                        window.location.replace('dashboard.html');
+                    }
+                } else {
+                    console.log('Member login failed');
+                    errorMessage.textContent = 'Invalid member credentials. Please check username, password, and member ID.';
+                    errorMessage.style.display = 'block';
+                    document.getElementById('password').value = '';
+                    document.getElementById('memberId').value = '';
+                }
+            } else if (userType === 'board') {
+                // Board member access - username and password only
+                if (username === 'board' && password === 'board2025') {
+                    console.log('Board login successful, setting session...');
+                    sessionStorage.setItem('aaacAuthenticated', 'true');
+                    sessionStorage.setItem('aaacUserRole', 'board');
+                    sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                    
+                    console.log('Session set, attempting redirect...');
+                    console.log('Session storage after login:', {
+                        authenticated: sessionStorage.getItem('aaacAuthenticated'),
+                        role: sessionStorage.getItem('aaacUserRole')
+                    });
+                    
+                    // Try multiple redirect methods
+                    try {
+                        console.log('Attempting redirect to dashboard.html...');
+                        window.location.href = 'dashboard.html';
+                        
+                        // Fallback redirect after 2 seconds
+                        setTimeout(() => {
+                            console.log('Fallback redirect attempt...');
+                            if (window.location.pathname.includes('login.html')) {
+                                console.log('Still on login page, forcing redirect...');
+                                window.location.replace('dashboard.html');
+                            }
+                        }, 2000);
+                        
+                    } catch (error) {
+                        console.error('Redirect error:', error);
+                        // Alternative redirect method
+                        window.location.replace('dashboard.html');
+                    }
+                } else {
+                    console.log('Board login failed');
+                    errorMessage.textContent = 'Invalid board member credentials. Please check username and password.';
+                    errorMessage.style.display = 'block';
+                    document.getElementById('password').value = '';
+                }
+            } else if (userType === 'admin') {
+                // Admin access - username and password only
+                if (username === 'admin' && password === 'admin2025') {
+                    console.log('Admin login successful, setting session...');
+                    sessionStorage.setItem('aaacAuthenticated', 'true');
+                    sessionStorage.setItem('aaacUserRole', 'admin');
+                    sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                    
+                    console.log('Session set, attempting redirect...');
+                    console.log('Session storage after login:', {
+                        authenticated: sessionStorage.getItem('aaacAuthenticated'),
+                        role: sessionStorage.getItem('aaacUserRole')
+                    });
+                    
+                    // Try multiple redirect methods
+                    try {
+                        console.log('Attempting redirect to dashboard.html...');
+                        window.location.href = 'dashboard.html';
+                        
+                        // Fallback redirect after 2 seconds
+                        setTimeout(() => {
+                            console.log('Fallback redirect attempt...');
+                            if (window.location.pathname.includes('login.html')) {
+                                console.log('Still on login page, forcing redirect...');
+                                window.location.replace('dashboard.html');
+                            }
+                        }, 2000);
+                        
+                    } catch (error) {
+                        console.error('Redirect error:', error);
+                        // Alternative redirect method
+                        window.location.replace('dashboard.html');
+                    }
+                } else {
+                    console.log('Admin login failed');
+                    errorMessage.textContent = 'Invalid admin credentials. Please check username and password.';
+                    errorMessage.style.display = 'block';
+                    document.getElementById('password').value = '';
+                }
             }
         });
 
@@ -205,12 +367,32 @@
             const sessionDuration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
             
             if (currentTime - loginTime < sessionDuration) {
-                window.location.href = 'aaac_membership_system.html';
+                console.log('Already authenticated, redirecting...');
+                window.location.href = 'dashboard.html';
             } else {
                 // Session expired, clear storage
+                console.log('Session expired, clearing storage');
                 sessionStorage.removeItem('aaacAuthenticated');
                 sessionStorage.removeItem('aaacUserRole');
+                sessionStorage.removeItem('aaacMemberId');
                 sessionStorage.removeItem('aaacLoginTime');
+            }
+        }
+
+        // Manual redirect function
+        function manualRedirect() {
+            console.log('Manual redirect triggered');
+            const isAuthenticated = sessionStorage.getItem('aaacAuthenticated');
+            const userRole = sessionStorage.getItem('aaacUserRole');
+            
+            if (isAuthenticated && userRole) {
+                console.log('User is authenticated, redirecting to dashboard...');
+                window.location.href = 'dashboard.html';
+            } else {
+                console.log('User not authenticated, showing error...');
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = 'Please log in first before accessing the dashboard.';
+                errorMessage.style.display = 'block';
             }
         }
     </script>
