@@ -3037,6 +3037,36 @@
             };
         }
 
+        // Function to check current storage status
+        window.checkStorageStatus = function() {
+            console.log('=== STORAGE STATUS CHECK ===');
+            console.log('window.gitHubStorage exists:', !!window.gitHubStorage);
+            
+            if (window.gitHubStorage) {
+                console.log('Storage object properties:', Object.keys(window.gitHubStorage));
+                console.log('isInitialized:', window.gitHubStorage.isInitialized);
+                console.log('gistToken exists:', !!window.gitHubStorage.gistToken);
+                console.log('gistId exists:', !!window.gitHubStorage.gistId);
+                
+                try {
+                    const status = window.gitHubStorage.getStatus();
+                    console.log('Storage status:', status);
+                } catch (error) {
+                    console.error('Error getting storage status:', error);
+                }
+            } else {
+                console.log('❌ Storage not initialized - window.gitHubStorage is undefined');
+            }
+            
+            // Check localStorage for any saved tokens
+            const savedToken = localStorage.getItem('aaacGistToken');
+            const savedGistId = localStorage.getItem('aaacGistId');
+            console.log('Saved token in localStorage:', !!savedToken);
+            console.log('Saved gist ID in localStorage:', !!savedGistId);
+            
+            console.log('=== END STORAGE STATUS CHECK ===');
+        };
+
         // Force correct numbers to display (ONLY ONCE on initial load)
         let numbersAlreadyForced = false;
         // Make it globally accessible
