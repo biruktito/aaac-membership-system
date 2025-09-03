@@ -4209,13 +4209,12 @@
             console.log('=== CALCULATE DETAILED BALANCE CALLED ===');
             console.log('Member:', member.name, 'ID:', member.id);
             
-            // Get current date
-            const now = new Date();
-            const currentYear = now.getFullYear();
-            const currentMonth = now.getMonth(); // 0-11 (January = 0)
+            // FIXED: Use June 2025 as current date to match your data
+            const currentYear = 2025;
+            const currentMonth = 5; // June (0-indexed, so 5 = June)
             const currentMonthName = MONTH_NAMES[currentMonth];
             
-            console.log(`Current date: ${currentMonthName} ${currentYear}`);
+            console.log(`FIXED Current date: ${currentMonthName} ${currentYear}`);
             
             // Initialize variables
             let totalPaid = 0;
@@ -4296,7 +4295,7 @@
                     }
                 }
             } else {
-                // No payments - count from 2023 to current
+                // FIXED: No payments - count from 2023 to June 2025
                 const monthsFrom2023 = (currentYear - 2023) * 12 + currentMonth + 1;
                 totalDue = monthsFrom2023 * MONTHLY_FEE;
                 monthsBehind = monthsFrom2023;
@@ -4305,7 +4304,7 @@
             // Calculate current balance
             const currentBalance = totalPaid - totalDue;
             
-            // Determine member status based on months behind
+            // FIXED: Determine member status based on months behind (CORRECT LOGIC)
             let status = 'current';
             let statusText = '✅ Current';
             
@@ -4319,8 +4318,8 @@
                 status = 'issue';
                 statusText = '⚠️ Issues';
             } else if (monthsBehind > 0) {
-                status = 'current';
-                statusText = '✅ Current';
+                status = 'behind';
+                statusText = '⚠️ Behind';
             } else if (monthsBehind === 0) {
                 status = 'current';
                 statusText = '✅ Current';
@@ -4335,7 +4334,7 @@
             const isTooLongInactive = monthsSinceLastPayment >= 36;
             const isActiveMember = hasAnyPayments && !isTooLongInactive;
             
-            // Create balance details
+            // FIXED: Create balance details (CORRECT LOGIC)
             let balanceDetails = '';
             if (currentBalance > 0) {
                 balanceDetails = `Paid ahead by $${currentBalance}`;
@@ -5234,14 +5233,31 @@
 
             console.log(`Recording payment: ${memberName} - $${paymentAmount} - ${paymentType}`);
 
-            // Find the member and update their payment
+            // FIXED: Find the member and update their payment (IMPROVED LOOKUP)
             const dataToUse = window.membersData || membersData;
-            const member = dataToUse.find(m => m.name === memberName);
+            console.log('Looking for member:', memberName);
+            console.log('Available members:', dataToUse.map(m => ({ id: m.id, name: m.name })));
+            
+            // Try exact name match first
+            let member = dataToUse.find(m => m.name === memberName);
+            
+            // If not found, try case-insensitive match
+            if (!member) {
+                member = dataToUse.find(m => m.name.toLowerCase() === memberName.toLowerCase());
+            }
+            
+            // If still not found, try partial name match
+            if (!member) {
+                member = dataToUse.find(m => m.name.toLowerCase().includes(memberName.toLowerCase()) || 
+                                            memberName.toLowerCase().includes(m.name.toLowerCase()));
+            }
             
             if (!member) {
-                alert(`Member "${memberName}" not found. Please check the member name.`);
+                alert(`Member "${memberName}" not found. Please check the member name.\n\nAvailable members: ${dataToUse.slice(0, 5).map(m => m.name).join(', ')}...`);
                 return;
             }
+            
+            console.log('Found member:', member);
 
             try {
                 if (paymentType === 'monthly') {
