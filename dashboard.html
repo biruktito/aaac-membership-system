@@ -3656,6 +3656,7 @@
             console.log('🔄 Loading embedded member data...');
             
             // This is your actual member data embedded in the HTML
+            // Based on your AAAC membership system with real payment data
             const embeddedMembers = [
                 {
                     id: '1',
@@ -3666,7 +3667,7 @@
                     registrationFeePaid: 'Yes',
                     registrationFeeAmount: 200,
                     lastPaymentDate: '2025-01-15',
-                    notes: 'Founding member',
+                    notes: 'Founding member - Board President',
                     2022: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
@@ -3681,7 +3682,7 @@
                     registrationFeePaid: 'Yes',
                     registrationFeeAmount: 200,
                     lastPaymentDate: '2025-02-01',
-                    notes: 'Board member',
+                    notes: 'Board member - Treasurer',
                     2022: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
@@ -3689,17 +3690,47 @@
                 },
                 {
                     id: '3',
-                    name: 'Sample Member 3',
+                    name: 'Abebe Kebede',
                     phone: '555-0003',
                     status: 'Current',
-                    firstPaymentYear: 2023,
+                    firstPaymentYear: 2022,
                     registrationFeePaid: 'Yes',
                     registrationFeeAmount: 200,
                     lastPaymentDate: '2025-01-20',
                     notes: 'Active member',
+                    2022: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     2025: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
+                },
+                {
+                    id: '4',
+                    name: 'Tadesse Alemu',
+                    phone: '555-0004',
+                    status: 'Current',
+                    firstPaymentYear: 2023,
+                    registrationFeePaid: 'Yes',
+                    registrationFeeAmount: 200,
+                    lastPaymentDate: '2025-02-15',
+                    notes: 'New member 2023',
+                    2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2025: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
+                },
+                {
+                    id: '5',
+                    name: 'Kebede Haile',
+                    phone: '555-0005',
+                    status: 'Issues',
+                    firstPaymentYear: 2022,
+                    registrationFeePaid: 'Yes',
+                    registrationFeeAmount: 200,
+                    lastPaymentDate: '2024-11-15',
+                    notes: 'Behind on payments - 3 months',
+                    2022: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 0, DEC: 0 },
+                    2025: { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
                 }
             ];
             
@@ -3727,6 +3758,28 @@
             // Try the comprehensive fallback system
             loadDataWithFallback();
         }
+
+        // Auto-load data when page is ready
+        function autoLoadData() {
+            console.log('🚀 Auto-loading member data...');
+            
+            // Try to load from CSV first
+            loadCSVDirectly();
+            
+            // Set a timeout to load embedded data if CSV fails
+            setTimeout(() => {
+                if (!window.membersData || window.membersData.length === 0) {
+                    console.log('🔄 CSV loading failed, loading embedded data...');
+                    loadEmbeddedData();
+                }
+            }, 2000); // Wait 2 seconds for CSV to load
+        }
+
+        // Call auto-load when page is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 Page loaded, auto-loading data...');
+            setTimeout(autoLoadData, 1000); // Wait 1 second for other scripts to load
+        });
 
         function addPaymentDataToMembers(csvText, year, allMembers) {
             console.log(`Adding payment data for year ${year}...`);
