@@ -3420,6 +3420,160 @@
             return members;
         }
 
+        // Load member data with fallback system
+        function loadMembersData() {
+            console.log('🔄 Loading member data...');
+            
+            // Try multiple data sources in order of preference
+            const dataSources = [
+                // 1. Try enhanced CSV loader first
+                () => {
+                    if (csvLoader && typeof csvLoader.loadAllData === 'function') {
+                        return csvLoader.loadAllData().then(members => {
+                            console.log('✅ Enhanced CSV loader returned:', members.length, 'members');
+                            return members;
+                        });
+                    }
+                    throw new Error('Enhanced CSV loader not available');
+                },
+                
+                // 2. Try local CSV files
+                () => {
+                    return new Promise((resolve, reject) => {
+                        const csvSources = [
+                            'complete_data_for_google_sheet.csv',
+                            'member_data.csv',
+                            'aaac_members.csv',
+                            'data/members.csv'
+                        ];
+                        
+                        let currentSourceIndex = 0;
+                        
+                        function tryNextSource() {
+                            if (currentSourceIndex >= csvSources.length) {
+                                reject(new Error('All CSV sources failed'));
+                                return;
+                            }
+                            
+                            const source = csvSources[currentSourceIndex];
+                            console.log(`🔄 Trying CSV source: ${source}`);
+                            
+                            fetch(source)
+                                .then(response => {
+                                    if (!response.ok) {
+                                        throw new Error(`HTTP ${response.status}`);
+                                    }
+                                    return response.text();
+                                })
+                                .then(csvText => {
+                                    console.log(`✅ CSV loaded from ${source}:`, csvText.length, 'chars');
+                                    const members = parseAccountantData(csvText);
+                                    console.log('✅ Parsed CSV data:', members.length, 'members');
+                                    resolve(members);
+                                })
+                                .catch(error => {
+                                    console.log(`❌ Failed to load from ${source}:`, error.message);
+                                    currentSourceIndex++;
+                                    tryNextSource();
+                                });
+                        }
+                        
+                        tryNextSource();
+                    });
+                },
+                
+                // 3. Load sample data as final fallback
+                () => {
+                    console.log('🔄 Loading sample data as final fallback...');
+                    return Promise.resolve(loadSampleData());
+                }
+            ];
+            
+            let currentSourceIndex = 0;
+            
+            function tryNextDataSource() {
+                if (currentSourceIndex >= dataSources.length) {
+                    console.error('❌ All data sources failed');
+                    alert('Failed to load member data from all sources. Please check your CSV files.');
+                    return;
+                }
+                
+                const dataSource = dataSources[currentSourceIndex];
+                console.log(`🔄 Trying data source ${currentSourceIndex + 1}/${dataSources.length}`);
+                
+                dataSource()
+                    .then(members => {
+                        if (members && members.length > 0) {
+                            console.log('✅ Successfully loaded', members.length, 'members');
+                            
+                            // Update global data
+                            window.membersData = members;
+                            membersData = members;
+                            
+                            // Update display
+                            if (typeof displayMembers === 'function') {
+                                displayMembers();
+                            }
+                            if (typeof updateStats === 'function') {
+                                updateStats();
+                            }
+                            
+                            console.log('✅ Member data loaded and displayed successfully');
+                        } else {
+                            throw new Error('No members returned from data source');
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`❌ Data source ${currentSourceIndex + 1} failed:`, error);
+                        currentSourceIndex++;
+                        tryNextDataSource();
+                    });
+            }
+            
+            tryNextDataSource();
+        }
+
+        // Load sample data for testing
+        function loadSampleData() {
+            console.log('🔄 Loading sample member data...');
+            
+            // Sample member data structure
+            const sampleMembers = [
+                {
+                    id: '001',
+                    name: 'Sample Member 1',
+                    phone: '555-0001',
+                    status: 'Current',
+                    firstPaymentYear: 2022,
+                    registrationFeePaid: 'Yes',
+                    registrationFeeAmount: 200,
+                    lastPaymentDate: '2025-01-15',
+                    notes: 'Sample data for testing',
+                    2022: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2025: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
+                },
+                {
+                    id: '002',
+                    name: 'Sample Member 2',
+                    phone: '555-0002',
+                    status: 'Current',
+                    firstPaymentYear: 2023,
+                    registrationFeePaid: 'Yes',
+                    registrationFeeAmount: 200,
+                    lastPaymentDate: '2025-02-01',
+                    notes: 'Sample data for testing',
+                    2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2025: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
+                }
+            ];
+            
+            console.log('✅ Sample data loaded:', sampleMembers.length, 'members');
+            return sampleMembers;
+        }
+
         function addPaymentDataToMembers(csvText, year, allMembers) {
             console.log(`Adding payment data for year ${year}...`);
             const lines = csvText.split('\n');
