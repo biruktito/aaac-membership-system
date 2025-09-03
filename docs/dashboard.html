@@ -2239,6 +2239,7 @@
                     <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
             <button class="btn btn-info" onclick="window.enhancedStorageSetup.getStatus()">📊 Storage Status</button>
             <button class="btn btn-info" onclick="window.paymentSync.getStatus()">📊 Sync Status</button>
+            <button class="btn btn-success" onclick="window.paymentSync.testSync()">🧪 Test Sync</button>
                 </div>
             </div>
 
@@ -2937,6 +2938,27 @@
                 }
             },
             
+            // Test sync functionality
+            testSync: function() {
+                console.log('🧪 Testing sync system...');
+                
+                // Add a test payment to the queue
+                const testPayment = {
+                    memberId: 999,
+                    memberName: 'TEST MEMBER',
+                    amount: 100,
+                    paymentType: 'test',
+                    notes: 'Test payment for sync testing',
+                    date: new Date().toISOString(),
+                    memberData: { id: 999, name: 'TEST MEMBER' }
+                };
+                
+                this.addPayment(testPayment);
+                
+                console.log('✅ Test payment added to sync queue');
+                alert('🧪 Test payment added! Check console and sync status.');
+            },
+            
             // Get sync status
             getStatus: function() {
                 const status = {
@@ -3012,12 +3034,12 @@
                             <h4>🔧 Actions:</h4>
                             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
                                 ${status.pendingPayments > 0 ? `
-                                    <button onclick="window.paymentSync.processSyncQueue()" 
-                                            style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                    <button onclick="console.log('🔄 Force Sync clicked'); window.paymentSync.processSyncQueue();" 
+                                            style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
                                         🔄 Force Sync Now
                                     </button>
-                                    <button onclick="window.paymentSync.clearSyncQueue()" 
-                                            style="background: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                    <button onclick="console.log('🗑️ Clear Queue clicked'); window.paymentSync.clearSyncQueue();" 
+                                            style="background: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
                                         🗑️ Clear Queue
                                     </button>
                                 ` : ''}
