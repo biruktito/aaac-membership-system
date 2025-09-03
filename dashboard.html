@@ -3590,19 +3590,19 @@
             console.log('✅ Dashboard numbers refreshed');
         }
 
-        // Show storage setup modal
-        function showStorageSetup() {
+        // Show storage setup modal - make it globally accessible
+        window.showStorageSetup = function() {
             document.getElementById('storageSetupModal').style.display = 'block';
             updateStorageStatus();
-        }
+        };
 
-        // Close storage setup modal
-        function closeStorageSetupModal() {
+        // Close storage setup modal - make it globally accessible
+        window.closeStorageSetupModal = function() {
             document.getElementById('storageSetupModal').style.display = 'none';
-        }
+        };
 
-        // Initialize storage with GitHub token
-        async function initializeStorage() {
+        // Initialize storage with GitHub token - make it globally accessible
+        window.initializeStorage = function() {
             const token = document.getElementById('githubToken').value.trim();
             
             if (!token) {
@@ -3611,15 +3611,17 @@
             }
 
             try {
-                const success = await initializePersistentStorage(token);
-                
-                if (success) {
-                    alert('✅ Storage initialized successfully!\n\nYour system now has persistent storage. Payments will be saved permanently and visible to all users.');
-                    closeStorageSetupModal();
-                    updateStorageStatus();
-                } else {
-                    alert('❌ Failed to initialize storage. Please check your token and try again.');
-                }
+                initializePersistentStorage(token).then(success => {
+                    if (success) {
+                        alert('✅ Storage initialized successfully!\n\nYour system now has persistent storage. Payments will be saved permanently and visible to all users.');
+                        closeStorageSetupModal();
+                        updateStorageStatus();
+                    } else {
+                        alert('❌ Failed to initialize storage. Please check your token and try again.');
+                    }
+                }).catch(error => {
+                    alert(`❌ Error: ${error.message}`);
+                });
             } catch (error) {
                 alert(`❌ Error: ${error.message}`);
             }
