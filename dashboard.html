@@ -2479,11 +2479,11 @@
         </div>
     </div>
 
-    <!-- Configuration -->
-    <script src="config.js"></script>
+    <!-- Configuration - REMOVED: Missing file causes 404 error -->
+    <!-- <script src="config.js"></script> -->
     
-    <!-- Google Sheets Integration -->
-    <script src="google_sheets_integration.js?v=20250203"></script>
+    <!-- Google Sheets Integration - REMOVED: Missing file causes 404 error -->
+    <!-- <script src="google_sheets_integration.js?v=20250203"></script> -->
 
     <!-- Enhanced Financial Logic -->
     <script src="enhanced_financial_logic.js"></script>
@@ -2503,6 +2503,19 @@
         let memberId = null;
         let currentFilter = 'all';
         let isAdminOrBoard = false;
+        
+        // Fallback configuration (replaces missing config.js)
+        const CONFIG = {
+            ZELLE_EMAIL: 'aaaichicago@gmail.com',
+            MONTHLY_FEE: 15,
+            REGISTRATION_FEE: 200,
+            INCIDENTAL_FEE: 10,
+            DEMO_CREDENTIALS: {
+                admin: { username: 'admin', password: 'admin123' },
+                board: { username: 'board', password: 'board123' },
+                member: { username: 'member', password: 'member123' }
+            }
+        };
 
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
@@ -3150,40 +3163,66 @@
         function loadLocalCSVData() {
             console.log('🔄 Loading local CSV data...');
             
-            fetch('complete_data_for_google_sheet.csv')
-                .then(response => {
-                    console.log('CSV fetch response status:', response.status);
-                    console.log('CSV fetch response ok:', response.ok);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.text();
-                })
-                .then(data => {
-                    console.log('✅ Local CSV loaded successfully');
-                    console.log('CSV data length:', data.length);
-                    console.log('CSV data preview:', data.substring(0, 200));
-                    
-                    const parsedData = parseAccountantData(data);
-                    console.log('Parsed data length:', parsedData.length);
-                    console.log('Sample parsed member:', parsedData[0]);
-                    
-                    if (parsedData.length > 0) {
-                        window.membersData = parsedData;
-                        console.log('✅ Local data set:', window.membersData.length, 'members');
-                        displayMembers();
-                        updateStats();
-                    } else {
-                        throw new Error('No members parsed from local CSV');
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Local CSV loading failed:', error);
-                    console.log('🔄 Loading sample data as fallback...');
-                    // Load sample data as final fallback
+            // Try multiple fallback sources
+            const csvSources = [
+                'complete_data_for_google_sheet.csv',
+                'member_data.csv',
+                'aaac_members.csv',
+                'data/members.csv'
+            ];
+            
+            let currentSourceIndex = 0;
+            
+            function tryNextSource() {
+                if (currentSourceIndex >= csvSources.length) {
+                    console.log('❌ All CSV sources failed, using sample data fallback');
                     loadSampleData();
-                });
+                    return;
+                }
+                
+                const source = csvSources[currentSourceIndex];
+                console.log(`🔄 Trying CSV source: ${source}`);
+                
+                fetch(source)
+                    .then(response => {
+                        console.log(`CSV fetch response for ${source}:`, response.status);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        return response.text();
+                    })
+                    .then(data => {
+                        console.log(`✅ Local CSV loaded successfully from ${source}`);
+                        console.log('CSV data length:', data.length);
+                        console.log('CSV data preview:', data.substring(0, 200));
+                        
+                        const parsedData = parseAccountantData(data);
+                        console.log('Parsed data length:', parsedData.length);
+                        console.log('Sample parsed member:', parsedData[0]);
+                        
+                        if (parsedData.length > 0) {
+                            window.membersData = parsedData;
+                            console.log('✅ Local data set:', window.membersData.length, 'members');
+                            if (typeof displayMembers === 'function') {
+                                displayMembers();
+                            }
+                            if (typeof updateStats === 'function') {
+                                updateStats();
+                            }
+                        } else {
+                            throw new Error('No members parsed from local CSV');
+                        }
+                    })
+                    .catch(error => {
+                        console.log(`❌ Failed to load from ${source}:`, error.message);
+                        currentSourceIndex++;
+                        tryNextSource();
+                    });
+            }
+            
+            tryNextSource();
         }
 
         function parseContactData(csvText) {
