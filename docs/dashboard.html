@@ -5572,6 +5572,41 @@
             container.innerHTML = html;
             console.log(`Displayed ${memberCount} members`);
         }
+        
+        // TEST FUNCTION - Run this in console to verify calculations
+        window.testFinancialCalculations = function() {
+            console.log('=== TESTING FINANCIAL CALCULATIONS ===');
+            
+            const dataToUse = window.membersData || membersData || [];
+            if (dataToUse.length === 0) {
+                console.log('❌ No member data available');
+                return;
+            }
+            
+            // Test Habtamu (ID: 1) specifically
+            const habtamu = dataToUse.find(m => m.id === '1');
+            if (habtamu) {
+                console.log('=== TESTING HABTAMU (ID: 1) ===');
+                const financials = calculateMemberFinancials(habtamu);
+                console.log('Expected: Habtamu should owe ~$45 and be 3 months behind');
+                console.log('Actual:', financials);
+                
+                // Verify calculations
+                const expectedOwed = 33 * 15; // 33 months from 2023 to Aug 2025
+                const expectedBalance = financials.totalPaid - expectedOwed;
+                console.log(`Expected total owed: $${expectedOwed} (33 months × $15)`);
+                console.log(`Expected balance: $${expectedBalance.toFixed(2)}`);
+                console.log(`Actual balance: $${financials.currentBalance.toFixed(2)}`);
+                console.log(`Match: ${Math.abs(expectedBalance - financials.currentBalance) < 1 ? '✅' : '❌'}`);
+            } else {
+                console.log('❌ Habtamu (ID: 1) not found in data');
+            }
+            
+            // Test overall system
+            console.log('=== TESTING OVERALL SYSTEM ===');
+            updateDashboardStats();
+            console.log('✅ Financial calculations test complete');
+        };
     </script>
 </body>
 </html>
