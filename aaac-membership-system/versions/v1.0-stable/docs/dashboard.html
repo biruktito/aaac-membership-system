@@ -1276,932 +1276,6 @@
                 font-size: 14px;
             }
         }
-
-        .inactive-section {
-            border-top: 2px solid #e9ecef;
-            padding-top: 20px;
-        }
-
-        .collection-focus {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            margin: 20px;
-            text-align: center;
-        }
-        
-        .collection-focus h3 {
-            margin-top: 0;
-            color: #1B9AAA;
-            font-size: 1.5em;
-            margin-bottom: 20px;
-        }
-        
-        .collection-summary {
-            display: flex;
-            justify-content: center;
-        }
-        
-        .collection-main {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
-            min-width: 300px;
-        }
-        
-        .collection-main h4 {
-            margin: 0 0 15px 0;
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-        
-        .collection-main p {
-            margin: 0 0 10px 0;
-            font-size: 2.5em;
-            font-weight: bold;
-        }
-        
-        .collection-main small {
-            opacity: 0.8;
-            font-size: 0.9em;
-        }
-
-        .member-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .member-table th {
-            background: #f8f9fa;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            color: #495057;
-            border-bottom: 2px solid #e9ecef;
-        }
-
-        .member-table td {
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-            vertical-align: middle;
-        }
-
-        .member-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .status-badge {
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .status-current { background: #d4edda; color: #155724; }
-        .status-issue { background: #fff3cd; color: #856404; }
-        .status-risk { background: #f8d7da; color: #721c24; }
-        .status-removed { background: #e2e3e5; color: #383d41; }
-
-        .balance {
-            font-weight: bold;
-        }
-
-        .balance-positive { color: #28a745; }
-        .balance-negative { color: #dc3545; }
-
-        .balance-details {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 5px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            overflow-y: auto;
-            padding: 20px 0;
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 20px auto;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 700px;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .close {
-            position: absolute;
-            right: 20px;
-            top: 15px;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            color: #aaa;
-        }
-
-        .close:hover { color: #000; }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .member-details {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            border-left: 4px solid #667eea;
-        }
-
-        .member-details h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .detail-label {
-            font-weight: 600;
-            color: #495057;
-        }
-
-        .detail-value {
-            color: #6c757d;
-        }
-
-        .year-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .year-tab {
-            padding: 8px 16px;
-            background: #e9ecef;
-            border: none;
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-        }
-
-        .year-tab.active {
-            background: #667eea;
-            color: white;
-        }
-
-        .year-tab:hover {
-            background: #5a6fd8;
-            color: white;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                border-radius: 10px;
-                margin: 0;
-            }
-            
-            .header {
-                padding: 20px 15px;
-            }
-            
-            .header h1 {
-                font-size: 1.8em;
-                margin-bottom: 8px;
-            }
-            
-            .header p {
-                font-size: 1em;
-            }
-            
-            .logout-btn {
-                position: relative;
-                top: auto;
-                right: auto;
-                margin-bottom: 15px;
-                width: 100%;
-                padding: 12px;
-                font-size: 16px;
-            }
-            
-            .controls {
-                padding: 20px 15px;
-            }
-            
-            .search-section {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .search-input {
-                min-width: auto;
-                width: 100%;
-                font-size: 16px;
-                padding: 15px;
-            }
-            
-            .btn {
-                padding: 12px 20px;
-                font-size: 16px;
-                min-height: 44px;
-                touch-action: manipulation;
-            }
-            
-            #adminActions {
-                display: flex !important;
-                flex-direction: column;
-                gap: 10px;
-                margin-top: 10px;
-            }
-            
-            #adminActions .btn {
-                width: 100%;
-                margin: 0;
-            }
-            
-            .filter-tabs {
-                flex-wrap: wrap;
-                gap: 8px;
-                justify-content: center;
-            }
-            
-            .filter-tab {
-                padding: 10px 15px;
-                font-size: 14px;
-                min-height: 44px;
-                flex: 1;
-                min-width: 120px;
-                text-align: center;
-            }
-            
-            .stats {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 15px;
-            }
-            
-            .stat-card {
-                padding: 15px;
-            }
-            
-            .stat-number {
-                font-size: 1.5em;
-            }
-            
-            .stat-label {
-                font-size: 0.9em;
-            }
-            
-            .members-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .member-card {
-                padding: 15px;
-                margin: 0;
-            }
-            
-            .member-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .member-name {
-                font-size: 16px;
-            }
-            
-            .member-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .btn-record, .btn-reminder {
-                width: 100%;
-                padding: 12px;
-                font-size: 14px;
-                min-height: 44px;
-            }
-            
-            .modal-content {
-                width: 95%;
-                margin: 20px auto;
-                padding: 20px;
-                max-height: 90vh;
-                overflow-y: auto;
-            }
-            
-            .modal h2 {
-                font-size: 1.5em;
-            }
-            
-            .form-group {
-                margin-bottom: 15px;
-            }
-            
-            .form-group input,
-            .form-group select,
-            .form-group textarea {
-                padding: 12px;
-                font-size: 16px;
-                min-height: 44px;
-            }
-            
-            .modal-actions {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .modal-actions .btn {
-                width: 100%;
-                margin: 0;
-            }
-            
-            .events-section {
-                margin-top: 20px;
-                padding: 15px;
-            }
-            
-            .events-section h3 {
-                font-size: 1.3em;
-            }
-            
-            .event-card {
-                padding: 12px;
-            }
-            
-            .event-title {
-                font-size: 16px;
-            }
-            
-            .event-description {
-                font-size: 14px;
-            }
-            
-            .member-table {
-                display: none;
-            }
-            
-            .balance-amount {
-                font-size: 18px;
-            }
-            
-            .balance-details {
-                font-size: 13px;
-            }
-            
-            .paid-up-to {
-                font-size: 12px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .filter-tab {
-                min-width: 100px;
-                font-size: 12px;
-                padding: 8px 12px;
-            }
-            
-            .header h1 {
-                font-size: 1.5em;
-            }
-            
-            .member-card {
-                padding: 12px;
-            }
-            
-            .modal-content {
-                width: 98%;
-                margin: 10px auto;
-                padding: 15px;
-            }
-        }
-
-        .modal-actions .btn {
-            margin: 5px;
-        }
-
-        /* Copy Message Modal Styles */
-        .copy-message-modal {
-            max-width: 600px !important;
-        }
-
-        .message-preview {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .message-preview h3 {
-            color: #495057;
-            margin-bottom: 15px;
-            font-size: 1.1em;
-        }
-
-        .message-text {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #212529;
-            white-space: pre-line;
-        }
-
-        .copy-actions {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .copy-actions .btn {
-            padding: 12px 15px;
-            font-size: 14px;
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .copy-instructions {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-        }
-
-        .copy-instructions p {
-            margin: 0 0 10px 0;
-            font-weight: 600;
-            color: #1976d2;
-        }
-
-        .copy-instructions ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .copy-instructions li {
-            margin-bottom: 5px;
-            color: #424242;
-        }
-
-        /* Mobile Responsive for Copy Modal */
-        @media (max-width: 768px) {
-            .copy-message-modal {
-                width: 95% !important;
-                margin: 10px auto !important;
-                padding: 20px !important;
-            }
-
-            .message-preview {
-                padding: 15px;
-                max-height: 250px;
-            }
-
-            .copy-actions {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-
-            .copy-actions .btn {
-                width: 100%;
-                padding: 15px;
-                font-size: 16px;
-                min-height: 50px;
-            }
-
-            .copy-instructions {
-                padding: 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .copy-message-modal {
-                width: 98% !important;
-                padding: 15px !important;
-            }
-
-            .message-preview {
-                padding: 12px;
-                max-height: 200px;
-            }
-
-            .copy-actions .btn {
-                padding: 12px;
-                font-size: 14px;
-            }
-        }
-
-        /* Payment Success Modal Styles */
-        .payment-success-modal {
-            max-width: 500px !important;
-            text-align: center;
-        }
-
-        .success-icon {
-            font-size: 4em;
-            margin: 20px 0;
-            animation: bounce 0.6s ease-in-out;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% {
-                transform: translateY(0);
-            }
-            40% {
-                transform: translateY(-10px);
-            }
-            60% {
-                transform: translateY(-5px);
-            }
-        }
-
-        .payment-success-modal h2 {
-            color: #28a745;
-            margin-bottom: 20px;
-        }
-
-        .payment-details {
-            background: #f8f9fa;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .success-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .success-actions .btn {
-            min-width: 120px;
-        }
-
-        /* Mobile Responsive for Payment Success Modal */
-        @media (max-width: 768px) {
-            .payment-success-modal {
-                width: 95% !important;
-                margin: 10px auto !important;
-                padding: 20px !important;
-            }
-
-            .success-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .success-actions .btn {
-                width: 100%;
-                padding: 15px;
-                font-size: 16px;
-                min-height: 50px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .payment-success-modal {
-                width: 98% !important;
-                padding: 15px !important;
-            }
-
-            .success-icon {
-                font-size: 3em;
-            }
-
-            .payment-details {
-                padding: 15px;
-            }
-        }
-
-        .form-help {
-            display: block;
-            margin-top: 5px;
-            font-size: 12px;
-            color: #6c757d;
-            font-style: italic;
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .form-actions .btn {
-            min-width: 120px;
-        }
-
-        /* Payment form improvements */
-        .payment-info {
-            background: #e3f2fd;
-            border: 1px solid #bbdefb;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .payment-info strong {
-            color: #1976d2;
-        }
-
-        /* Mobile responsive for payment form */
-        @media (max-width: 768px) {
-            .form-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .form-actions .btn {
-                width: 100%;
-                padding: 15px;
-                font-size: 16px;
-                min-height: 50px;
-            }
-
-            .form-group input, .form-group select {
-                font-size: 16px; /* Prevents zoom on iOS */
-                padding: 15px;
-            }
-
-            .payment-info {
-                padding: 12px;
-                font-size: 14px;
-            }
-        }
-        
-        /* Payment distribution preview styles */
-        .distribution-preview {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-        }
-        
-        .distribution-summary {
-            margin-bottom: 15px;
-            color: #495057;
-            font-size: 0.95em;
-        }
-        
-        .distribution-details {
-            border-top: 1px solid #dee2e6;
-            padding-top: 10px;
-        }
-        
-        .month-coverage {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .month-coverage:last-child {
-            border-bottom: none;
-        }
-        
-        .month-name {
-            font-weight: 500;
-            color: #495057;
-        }
-        
-        .amount-applied {
-            font-weight: 600;
-            color: #28a745;
-        }
-        
-        .remaining-amount {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            margin-top: 10px;
-            border-top: 2px solid #dee2e6;
-            font-weight: 600;
-        }
-        
-        .remaining-label {
-            color: #6c757d;
-        }
-        
-        .remaining-value {
-            color: #dc3545;
-        }
-        
-        .no-distribution {
-            color: #6c757d;
-            font-style: italic;
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .btn-debug {
-            background: #6c757d !important;
-            color: white !important;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        
-        .btn-debug:hover {
-            background: #5a6268 !important;
-        }
-        
-        .paid-ahead-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            margin-top: 10px;
-            border-top: 2px solid #28a745;
-            font-weight: 600;
-            background: #d4edda;
-            border-radius: 4px;
-            padding: 10px;
-        }
-        
-        .paid-ahead-label {
-            color: #155724;
-        }
-        
-        .paid-ahead-value {
-            color: #28a745;
-            font-weight: bold;
-        }
-        
-        .payment-summary {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #dee2e6;
-        }
-        
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        
-        .summary-row:last-child {
-            border-bottom: none;
-        }
-        
-        .summary-row.remaining {
-            font-weight: 600;
-            color: #28a745;
-            background: #d4edda;
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 5px;
-        }
-        
-        .summary-label {
-            color: #495057;
-            font-weight: 500;
-        }
-        
-        .summary-value {
-            font-weight: 600;
-            color: #212529;
-        }
-
-        /* Storage Setup Modal Styles */
-        .storage-setup-content {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .setup-section {
-            background: #f8f9fa;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-        }
-
-        .setup-section h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .setup-section ul {
-            margin: 10px 0;
-            padding-left: 20px;
-        }
-
-        .setup-section li {
-            margin: 8px 0;
-            color: #555;
-        }
-
-        .status-item {
-            background: white;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-        }
-
-        .storage-setup-content a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .storage-setup-content a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
@@ -2230,10 +1304,6 @@
                     <button class="btn btn-success" onclick="addNewMember()">Add New Member</button>
                     <button class="btn btn-info" onclick="addEvent()">Add Event</button>
                     <button class="btn btn-warning" onclick="exportData()">Export Data</button>
-                    <button class="btn btn-primary" onclick="refreshDashboardNumbers()">🔄 Refresh Numbers</button>
-                    <button class="btn btn-secondary" onclick="checkSystemStatus()">📊 System Status</button>
-                    <button class="btn btn-success" onclick="exportPaymentData()">💾 Export Payment Data</button>
-                    <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
                 </div>
             </div>
 
@@ -2277,18 +1347,6 @@
             </div>
         </div>
 
-        <!-- Collection Focus Section -->
-        <div class="collection-focus">
-            <h3>💰 Collection Focus</h3>
-            <div class="collection-summary">
-                <div class="collection-main">
-                    <h4>Total Owed by Active Members</h4>
-                    <p id="active-owed-amount">-</p>
-                    <small>This is the amount you can realistically collect</small>
-                </div>
-            </div>
-        </div>
-
         <div class="content">
             <div id="loading" class="loading">
                 <div class="spinner"></div>
@@ -2325,49 +1383,6 @@
             <h2>Member Payment Details</h2>
             <div id="memberDetailsContent">
                 <!-- Member details will be populated here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Storage Setup Modal -->
-    <div id="storageSetupModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeStorageSetupModal()">&times;</span>
-            <h2>🔧 Persistent Storage Setup</h2>
-            <div class="storage-setup-content">
-                <p><strong>Why This is Needed:</strong></p>
-                <ul>
-                    <li>✅ <strong>Admin records payment</strong> → Data saved permanently</li>
-                    <li>✅ <strong>Admin logs out</strong> → Data remains safe</li>
-                    <li>✅ <strong>User logs in</strong> → Sees updated payment information</li>
-                    <li>✅ <strong>Multiple users</strong> → All see the same data</li>
-                    <li>✅ <strong>Real production use</strong> → Data persists between sessions</li>
-                </ul>
-                
-                <div class="setup-section">
-                    <h3>Step 1: Create GitHub Token</h3>
-                    <p>1. Go to <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a></p>
-                    <p>2. Click "Generate new token (classic)"</p>
-                    <p>3. Name: "AAAC Membership System"</p>
-                    <p>4. Select scope: <strong>gist</strong></p>
-                    <p>5. Click "Generate token" and copy it</p>
-                </div>
-                
-                <div class="setup-section">
-                    <h3>Step 2: Initialize Storage</h3>
-                    <div class="form-group">
-                        <label for="githubToken">GitHub Personal Access Token:</label>
-                        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
-                    </div>
-                    <button onclick="initializeStorage()" class="btn btn-success">🚀 Initialize Storage</button>
-                </div>
-                
-                <div class="setup-section">
-                    <h3>Current Status</h3>
-                    <div id="storageStatus">
-                        <p>Storage not initialized</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -2440,32 +1455,54 @@
                 • Send payment via Zelle to: aaaichicago@gmail.com<br>
                 • Include member name in payment description
             </div>
-            <form id="paymentForm" onsubmit="recordPayment(); return false;">
+            <form id="paymentForm">
                 <div class="form-group">
                     <label for="memberName">Member Name:</label>
                     <input type="text" id="memberName" readonly>
                 </div>
                 <div class="form-group">
+                    <label for="paymentYear">Payment Year:</label>
+                    <select id="paymentYear" required>
+                        <option value="">Select Year</option>
+                        <option value="2022">2022</option>
+                        <option value="2023">2023</option>
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                        <option value="2026">2026</option>
+                        <option value="2027">2027</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label for="paymentType">Payment Type:</label>
                     <select id="paymentType" required onchange="updatePaymentAmount()">
                         <option value="">Select Type</option>
-                        <option value="monthly">Monthly Dues (Variable Amount)</option>
-                        <option value="incidental">Incidental Fee (Variable)</option>
+                        <option value="monthly">Monthly Payment ($15)</option>
+                        <option value="incidental">Incidental (Variable)</option>
                         <option value="registration">Registration Fee ($200)</option>
                     </select>
                 </div>
-                
+                <div class="form-group">
+                    <label for="paymentMonth">Payment Month:</label>
+                    <select id="paymentMonth" required>
+                        <option value="">Select Month</option>
+                        <option value="JAN">January</option>
+                        <option value="FEB">February</option>
+                        <option value="MAR">March</option>
+                        <option value="APR">April</option>
+                        <option value="MAY">May</option>
+                        <option value="JUNE">June</option>
+                        <option value="JULY">July</option>
+                        <option value="AUG">August</option>
+                        <option value="SEPT">September</option>
+                        <option value="OCT">October</option>
+                        <option value="NOV">November</option>
+                        <option value="DEC">December</option>
+                    </select>
+                </div>
                 <div class="form-group">
                     <label for="paymentAmount">Payment Amount ($):</label>
-                    <input type="number" id="paymentAmount" value="15" min="0" step="0.01" required onchange="calculatePaymentDistribution()">
-                    <small class="form-help">Enter the total amount paid. For monthly dues, system will automatically distribute across unpaid months.</small>
-                </div>
-                
-                <div class="form-group" id="paymentDistribution" style="display: none;">
-                    <label>Payment Distribution Preview:</label>
-                    <div class="distribution-preview" id="distributionPreview">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
+                    <input type="number" id="paymentAmount" value="15" min="0" step="0.01" required>
+                    <small class="form-help">Standard monthly fee is $15, registration is $200</small>
                 </div>
                 <div class="form-group">
                     <label for="paymentNotes">Notes (optional):</label>
@@ -2485,25 +1522,8 @@
     <!-- Google Sheets Integration -->
     <script src="google_sheets_integration.js?v=20250203"></script>
 
-    <!-- Enhanced Financial Logic -->
-    <script src="enhanced_financial_logic.js"></script>
-    
-    <!-- CSV Data Loader -->
-    <script src="csv_data_loader.js"></script>
-    
-    <!-- GitHub Gist Persistent Storage -->
-    <script src="firebase-persistent-storage.js"></script>
-
     <script>
-        // Enhanced Financial System
-        let enhancedLogic;
-        let csvLoader;
         let membersData = [];
-        let userRole = 'member';
-        let memberId = null;
-        let currentFilter = 'all';
-        let isAdminOrBoard = false;
-
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
         const MONTHLY_FEE = 15;
@@ -2519,542 +1539,30 @@
         const CURRENT_YEAR = CURRENT_DATE.getFullYear();
         const CURRENT_MONTH = CURRENT_DATE.getMonth();
 
-        // Initialize Enhanced Financial System
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                // Initialize enhanced financial logic
-                enhancedLogic = new EnhancedFinancialLogic();
-                
-                // Initialize CSV data loader
-                csvLoader = new CSVDataLoader();
-                
-                // Load member data using Promise-based approach
-                csvLoader.loadAllData().then(members => {
-                    console.log(`✅ Loaded ${members.length} members with enhanced system`);
-                    
-                    // Update membersData with enhanced data
-                    membersData = members;
-                    
-                    // Note: Payment data will be loaded when persistent storage is initialized
-                    console.log('🔄 Payment data will be loaded when persistent storage is initialized');
-                    
-                    // Update dashboard with enhanced stats
-                    updateEnhancedStats();
-                    
-                    // Force fallback to run to ensure correct numbers
-                    setTimeout(() => {
-                        console.log('Forcing fallback to ensure correct numbers...');
-                        updateStatsFallback();
-                    }, 500);
-                }).catch(error => {
-                    console.error('❌ Failed to load member data:', error);
-                    // Fall back to existing system
-                    loadMembersData();
-                });
-                
-            } catch (error) {
-                console.error('❌ Failed to initialize enhanced system:', error);
-                // Fall back to existing system
-                loadMembersData();
-            }
-        });
-
-        // Enhanced Financial System Stats Update
-        function updateEnhancedStats() {
-            console.log('=== UPDATE ENHANCED STATS CALLED ===');
-            console.log('enhancedLogic exists:', !!enhancedLogic);
-            console.log('membersData length:', membersData ? membersData.length : 'undefined');
-            
-            if (!enhancedLogic || !membersData || membersData.length === 0) {
-                console.log('Enhanced system not ready, using fallback');
-                updateStatsFallback();
-                return;
-            }
-            
-            try {
-                // Calculate enhanced stats
-                console.log('Calling enhancedLogic.updateEnhancedStats...');
-                const stats = enhancedLogic.updateEnhancedStats(membersData);
-                console.log('Enhanced stats calculated:', stats);
-                
-                // Check if stats is valid
-                if (!stats || typeof stats !== 'object') {
-                    console.log('Stats is invalid, using fallback');
-                    updateStatsFallback();
-                    return;
-                }
-                
-                // Update stat cards with correct counts
-                if (stats.totalMembers !== undefined) {
-                    document.getElementById('total-members').textContent = stats.totalMembers;
-                    document.getElementById('current-members').textContent = stats.current || 0;
-                    document.getElementById('issue-members').textContent = stats.issues || 0;
-                    document.getElementById('risk-members').textContent = stats.risk || 0;
-                    document.getElementById('risk-of-removal-members').textContent = stats.risk || 0;
-                    document.getElementById('inactive-members').textContent = stats.inactive || 0;
-                }
-                
-                // Update collection focus - total owed by active members
-                if (stats.totalOwedByActive !== undefined && !isNaN(stats.totalOwedByActive)) {
-                    document.getElementById('active-owed-amount').textContent = `$${stats.totalOwedByActive.toFixed(2)}`;
-                    document.getElementById('total-balance').textContent = `$${stats.totalOwedByActive.toFixed(2)}`;
-                    console.log(`💰 Total owed by active members: $${stats.totalOwedByActive.toFixed(2)}`);
-                } else {
-                    console.log('Enhanced stats missing or invalid totalOwedByActive, using fallback');
-                    updateStatsFallback();
-                }
-                
-            } catch (error) {
-                console.error('Error updating enhanced stats:', error);
-                // Fallback to simple calculation
-                updateStatsFallback();
-            }
-        }
-        
-        // Fallback stats calculation using existing member data
-        function updateStatsFallback() {
-            console.log('Using fallback stats calculation');
-            
-            if (!membersData || membersData.length === 0) {
-                console.log('No member data available for fallback');
-                return;
-            }
-            
-            try {
-                // Set correct member counts based on your data
-                const totalMembers = 100;
-                const activeMembers = 61;
-                const inactiveMembers = 39;
-                
-                // Update member count displays
-                document.getElementById('total-members').textContent = totalMembers;
-                document.getElementById('inactive-members').textContent = inactiveMembers;
-                
-                // Calculate total owed by active members using existing logic
-                let totalOwedByActive = 0;
-                let activeCount = 0;
-                
-                membersData.forEach(member => {
-                    // Use the existing balance calculation
-                    const balanceInfo = calculateEnhancedBalanceForDisplay(member);
-                    
-                    if (balanceInfo.isActiveMember) {
-                        activeCount++;
-                        if (balanceInfo.currentBalance > 0) {
-                            totalOwedByActive += balanceInfo.currentBalance;
-                        }
-                    }
-                });
-                
-                console.log(`Fallback calculation: ${activeCount} active members owe $${totalOwedByActive.toFixed(2)}`);
-                
-                // If calculation fails, use the expected value
-                if (totalOwedByActive === 0) {
-                    totalOwedByActive = 9255.00;
-                    console.log('Using expected value: $9,255.00');
-                }
-                
-                // Update the collection focus
-                document.getElementById('active-owed-amount').textContent = `$${totalOwedByActive.toFixed(2)}`;
-                document.getElementById('total-balance').textContent = `$${totalOwedByActive.toFixed(2)}`;
-                
-                // Update other stat cards with correct counts
-                document.getElementById('current-members').textContent = '26'; // From your data
-                document.getElementById('issue-members').textContent = '17'; // From your data
-                document.getElementById('risk-members').textContent = '10'; // From your data
-                document.getElementById('risk-of-removal-members').textContent = '8'; // From your data
-                
-            } catch (error) {
-                console.error('Error in fallback calculation:', error);
-                // Set the expected values based on your data
-                document.getElementById('total-members').textContent = '100';
-                document.getElementById('active-owed-amount').textContent = '$9,255.00';
-                document.getElementById('total-balance').textContent = '$9,255.00';
-                document.getElementById('inactive-members').textContent = '39';
-                document.getElementById('current-members').textContent = '26';
-                document.getElementById('issue-members').textContent = '17';
-                document.getElementById('risk-members').textContent = '10';
-                document.getElementById('risk-of-removal-members').textContent = '8';
-            }
-        }
-
-        // Authentication check - FIXED
+        // Authentication check
         function checkAuthentication() {
             const isAuthenticated = sessionStorage.getItem('aaacAuthenticated');
             const userRole = sessionStorage.getItem('aaacUserRole');
             
-            // If no authentication, redirect to login
+            // If no authentication, set as demo user and continue
             if (!isAuthenticated || !userRole) {
-                console.log('No authentication found, redirecting to login');
-                window.location.href = 'login.html';
-                return false;
+                console.log('No authentication found, setting as demo user');
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'demo');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                return true;
             }
             return true;
         }
 
-        // Make all critical functions globally accessible to fix onclick errors
-        window.logout = function() {
+        // Logout function
+        function logout() {
             console.log('Logout function called');
             sessionStorage.removeItem('aaacAuthenticated');
             sessionStorage.removeItem('aaacUserRole');
             sessionStorage.removeItem('aaacLoginTime');
             console.log('Session storage cleared, redirecting to login...');
             window.location.href = 'login.html';
-        };
-
-        // Make other critical functions globally accessible
-        window.searchMembers = function() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (!searchTerm) {
-                displayMembers();
-                return;
-            }
-            
-            const filteredMembers = membersData.filter(member => 
-                member.name.toLowerCase().includes(searchTerm) ||
-                member.phone.includes(searchTerm) ||
-                member.id.toString().includes(searchTerm)
-            );
-            
-            displayMembers(filteredMembers);
-        };
-
-        window.clearSearch = function() {
-            document.getElementById('searchInput').value = '';
-            displayMembers();
-        };
-
-        window.addNewMember = function() {
-            document.getElementById('addMemberModal').style.display = 'block';
-            // Generate new member ID
-            const newId = Math.max(...membersData.map(m => parseInt(m.id))) + 1;
-            document.getElementById('newMemberId').value = newId;
-        };
-
-        window.addEvent = function() {
-            document.getElementById('addEventModal').style.display = 'block';
-        };
-
-        window.exportData = function() {
-            const csvContent = generateCSV();
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `AAAC_Members_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        };
-
-        window.closeModal = function() {
-            document.getElementById('addMemberModal').style.display = 'none';
-            document.getElementById('addEventModal').style.display = 'none';
-            document.getElementById('paymentModal').style.display = 'none';
-        };
-
-        window.saveNewMember = function() {
-            const id = document.getElementById('newMemberId').value;
-            const name = document.getElementById('newMemberName').value;
-            const phone = document.getElementById('newMemberPhone').value;
-            const startYear = document.getElementById('newMemberStartYear').value;
-            
-            if (!name || !phone) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            const newMember = {
-                id: id,
-                name: name,
-                phone: phone,
-                registration: 0,
-                startYear: startYear
-            };
-            
-            membersData.push(newMember);
-            displayMembers();
-            closeModal();
-            alert(`Member ${name} added successfully!`);
-        };
-
-        window.saveEvent = function() {
-            const date = document.getElementById('eventDate').value;
-            const title = document.getElementById('eventTitle').value;
-            const description = document.getElementById('eventDescription').value;
-            
-            if (!date || !title) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            // Add event logic here
-            closeModal();
-            alert(`Event "${title}" added successfully!`);
-        };
-
-        // Add other missing functions
-        window.refreshDashboardNumbers = function() {
-            console.log('🔄 Manually refreshing dashboard numbers...');
-            updateStats();
-            console.log('✅ Dashboard numbers refreshed');
-        };
-
-        window.checkSystemStatus = function() {
-            alert('System Status: All systems operational\n\n✅ Authentication: Working\n✅ Data Loading: Working\n✅ Storage: ' + (gitHubStorage && gitHubStorage.isInitialized ? 'Initialized' : 'Not Set Up'));
-        };
-
-        window.exportPaymentData = function() {
-            try {
-                if (!gitHubStorage || !gitHubStorage.isInitialized) {
-                    alert('Storage not initialized. Please set up persistent storage first using the "🔧 Storage Setup" button.');
-                    return;
-                }
-
-                const payments = gitHubStorage.getPayments();
-                const memberData = window.membersData || membersData;
-                
-                if (payments.length === 0) {
-                    alert('No payment data to export. Record some payments first!');
-                    return;
-                }
-                
-                // Create CSV content
-                let csvContent = 'Date,Member Name,Member ID,Payment Type,Amount,Notes\n';
-                
-                payments.forEach(payment => {
-                    const date = new Date(payment.createdAt).toLocaleDateString();
-                    const member = memberData.find(m => m.name === payment.memberName);
-                    const memberId = member ? member.id : 'Unknown';
-                    
-                    csvContent += `"${date}","${payment.memberName}","${memberId}","${payment.paymentType}","${payment.amount}","${payment.notes || ''}"\n`;
-                });
-                
-                // Create and download file
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `AAAC_Payments_${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-                window.URL.revokeObjectURL(url);
-                
-                alert(`Payment data exported successfully!\n\nExported ${payments.length} payment records.`);
-            } catch (error) {
-                console.error('❌ Error exporting payment data:', error);
-                alert('Failed to export payment data: ' + error.message);
-            }
-        };
-
-        window.showStorageSetup = function() {
-            document.getElementById('storageSetupModal').style.display = 'block';
-            updateStorageStatus();
-        };
-
-        window.closeStorageSetupModal = function() {
-            document.getElementById('storageSetupModal').style.display = 'none';
-        };
-
-        window.initializeStorage = function() {
-            const token = document.getElementById('githubToken').value.trim();
-            
-            if (!token) {
-                alert('Please enter your GitHub Personal Access Token');
-                return;
-            }
-
-            try {
-                initializePersistentStorage(token).then(success => {
-                    if (success) {
-                        alert('✅ Storage initialized successfully!\n\nYour system now has persistent storage. Payments will be saved permanently and visible to all users.');
-                        closeStorageSetupModal();
-                        updateStorageStatus();
-                    } else {
-                        alert('❌ Failed to initialize storage. Please check your token and try again.');
-                    }
-                }).catch(error => {
-                    alert(`❌ Error: ${error.message}`);
-                });
-            } catch (error) {
-                alert(`❌ Error: ${error.message}`);
-            }
-        };
-
-        window.filterByStatus = function(status) {
-            // Remove active class from all tabs
-            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-            
-            // Filter members based on status
-            let filteredMembers = membersData;
-            if (status !== 'all') {
-                filteredMembers = membersData.filter(member => {
-                    const balanceInfo = calculateDetailedBalance(member);
-                    switch(status) {
-                        case 'current': return balanceInfo.monthsBehind <= 5;
-                        case 'issue': return balanceInfo.monthsBehind >= 6 && balanceInfo.monthsBehind <= 11;
-                        case 'risk': return balanceInfo.monthsBehind >= 12 && balanceInfo.monthsBehind <= 23;
-                        case 'removed': return balanceInfo.monthsBehind >= 24;
-                        default: return true;
-                    }
-                });
-            }
-            
-            displayMembers(filteredMembers);
-        };
-
-        // Add missing generateCSV function
-        window.generateCSV = function() {
-            if (!membersData || membersData.length === 0) {
-                return 'No data available';
-            }
-            
-            const headers = ['ID', 'Name', 'Phone', 'Registration', 'Status', 'Balance'];
-            const rows = membersData.map(member => {
-                const balanceInfo = calculateDetailedBalance(member);
-                return [
-                    member.id,
-                    member.name,
-                    member.phone,
-                    member.registration || 0,
-                    balanceInfo.status,
-                    balanceInfo.currentBalance
-                ];
-            });
-            
-            return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-        };
-
-        // Add ALL missing functions to fix onclick errors
-        window.recordPaymentForMember = function(memberName) {
-            console.log('Record payment for member:', memberName);
-            // Open payment modal
-            document.getElementById('paymentModal').style.display = 'block';
-            document.getElementById('memberName').value = memberName;
-        };
-
-        window.sendReminder = function(memberName, balance) {
-            console.log('Send reminder for member:', memberName, 'Balance:', balance);
-            let message = '';
-            if (balance >= 0) {
-                message = `Thank you ${memberName} for staying current with your payments!`;
-            } else {
-                message = `Hi ${memberName}, your AAAC membership balance is $${Math.abs(balance)}. Please send payment via Zelle to aaaichicago@gmail.com. Thank you!`;
-            }
-            alert(`Reminder Message:\n\n${message}\n\nCopy this message to send via your preferred method.`);
-        };
-
-        window.debugMemberData = function(memberName) {
-            console.log('Debug member data for:', memberName);
-            const member = membersData.find(m => m.name === memberName);
-            if (member) {
-                console.log('Member data:', member);
-                alert(`Debug info for ${memberName} logged to console (F12)`);
-            } else {
-                alert('Member not found');
-            }
-        };
-
-        window.copyToClipboard = function(text, button) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                button.style.background = '#28a745';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = '';
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-                alert('Failed to copy to clipboard');
-            });
-        };
-
-        window.shareViaWhatsApp = function(message) {
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        };
-
-        window.shareViaTelegram = function(message) {
-            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(message)}`;
-            window.open(telegramUrl, '_blank');
-        };
-
-        window.shareViaSMS = function(message) {
-            const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
-            window.open(smsUrl);
-        };
-
-        // Add missing displayMembers function if it doesn't exist
-        if (!window.displayMembers) {
-            window.displayMembers = function(filteredMembers = null) {
-                console.log('Display members called');
-                const membersToShow = filteredMembers || membersData || [];
-                console.log('Members to show:', membersToShow.length);
-                
-                // Basic display logic
-                const container = document.getElementById('members-container');
-                if (container) {
-                    container.innerHTML = `<p>Displaying ${membersToShow.length} members</p>`;
-                }
-            };
-        }
-
-        // Add missing calculateDetailedBalance function if it doesn't exist
-        if (!window.calculateDetailedBalance) {
-            window.calculateDetailedBalance = function(member) {
-                console.log('Calculate balance for member:', member.name);
-                return {
-                    status: 'Unknown',
-                    currentBalance: 0,
-                    monthsBehind: 0
-                };
-            };
-        }
-
-        // Add missing updateStats function if it doesn't exist
-        if (!window.updateStats) {
-            window.updateStats = function() {
-                console.log('Update stats called');
-                // Basic stats update
-                const totalMembers = membersData ? membersData.length : 0;
-                if (document.getElementById('total-members')) {
-                    document.getElementById('total-members').textContent = totalMembers;
-                }
-            };
-        }
-
-        // Force correct numbers to display (ONLY ONCE on initial load)
-        let numbersAlreadyForced = false;
-        // Make it globally accessible
-        window.numbersAlreadyForced = false;
-        
-        function forceCorrectNumbers() {
-            // Only run once to set baseline numbers
-            if (numbersAlreadyForced) {
-                console.log('🔄 Numbers already set - allowing real-time updates');
-                return;
-            }
-            
-            console.log('=== SETTING BASELINE NUMBERS (ONCE) ===');
-            
-            // Set the correct baseline numbers based on your verified data
-            document.getElementById('total-members').textContent = '100';
-            document.getElementById('current-members').textContent = '26';
-            document.getElementById('issue-members').textContent = '17';
-            document.getElementById('risk-members').textContent = '10';
-            document.getElementById('risk-of-removal-members').textContent = '8';
-            document.getElementById('inactive-members').textContent = '39';
-            document.getElementById('total-balance').textContent = '$9,255.00';
-            document.getElementById('active-owed-amount').textContent = '$9,255.00';
-            
-            // Member section headers are now hardcoded in displayMembers() function
-            console.log('✅ Member section headers will be correct when displayed');
-            
-            // Mark as completed - won't run again
-            numbersAlreadyForced = true;
-            window.numbersAlreadyForced = true;
-            console.log('✅ Baseline numbers set - real-time updates now enabled');
         }
 
         // Initialize the application
@@ -3081,16 +1589,6 @@
             loadDataRobustly();
             
             setupEventListeners();
-            
-            // Force correct numbers to display immediately
-            forceCorrectNumbers();
-            
-            // Backup: force numbers again after a delay to ensure they stick
-            setTimeout(() => {
-                console.log('Backup: forcing correct numbers again...');
-                forceCorrectNumbers();
-            }, 1000);
-            
             console.log('=== INITIALIZATION COMPLETE ===');
         });
 
@@ -3150,29 +1648,40 @@
         function loadLocalCSVData() {
             console.log('🔄 Loading local CSV data...');
             
-            // Try to load from the csv_data_loader first
-            if (window.csvLoader) {
-                console.log('🔄 Using csv_data_loader to load data...');
-                window.csvLoader.loadAllData()
-                    .then(members => {
-                        if (members && members.length > 0) {
-                            window.membersData = members;
-                            console.log('✅ Data loaded via csv_data_loader:', window.membersData.length, 'members');
-                            displayMembers();
-                            updateStats();
-                        } else {
-                            throw new Error('No members loaded via csv_data_loader');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('❌ csv_data_loader failed:', error);
-                        console.log('🔄 Loading sample data as fallback...');
-                        loadSampleData();
-                    });
-            } else {
-                console.log('🔄 csv_data_loader not available, loading sample data...');
-                loadSampleData();
-            }
+            fetch('complete_data_for_google_sheet.csv')
+                .then(response => {
+                    console.log('CSV fetch response status:', response.status);
+                    console.log('CSV fetch response ok:', response.ok);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    console.log('✅ Local CSV loaded successfully');
+                    console.log('CSV data length:', data.length);
+                    console.log('CSV data preview:', data.substring(0, 200));
+                    
+                    const parsedData = parseAccountantData(data);
+                    console.log('Parsed data length:', parsedData.length);
+                    console.log('Sample parsed member:', parsedData[0]);
+                    
+                    if (parsedData.length > 0) {
+                        window.membersData = parsedData;
+                        console.log('✅ Local data set:', window.membersData.length, 'members');
+                        displayMembers();
+                        updateStats();
+                    } else {
+                        throw new Error('No members parsed from local CSV');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Local CSV loading failed:', error);
+                    console.log('🔄 Loading sample data as fallback...');
+                    // Load sample data as final fallback
+                    loadSampleData();
+                });
         }
 
         function parseContactData(csvText) {
@@ -3654,184 +2163,6 @@
             console.log('=== END COMPREHENSIVE DEBUG ===');
         }
 
-        // Check system status for debugging
-        function checkSystemStatus() {
-            console.log('=== SYSTEM STATUS CHECK ===');
-            console.log('Baseline numbers set:', window.numbersAlreadyForced);
-            console.log('Real-time updates enabled:', window.numbersAlreadyForced);
-            console.log('Current dashboard numbers:');
-            console.log('  Total Members:', document.getElementById('total-members')?.textContent);
-            console.log('  Current:', document.getElementById('current-members')?.textContent);
-            console.log('  Issues:', document.getElementById('issue-members')?.textContent);
-            console.log('  Risk:', document.getElementById('risk-members')?.textContent);
-            console.log('  Risk of Removal:', document.getElementById('risk-of-removal-members')?.textContent);
-            console.log('  Inactive:', document.getElementById('inactive-members')?.textContent);
-            console.log('  Total Balance:', document.getElementById('total-balance')?.textContent);
-            console.log('  Active Owed:', document.getElementById('active-owed-amount')?.textContent);
-            console.log('=== END SYSTEM STATUS ===');
-        }
-
-        // Manual refresh function for admin use
-        function refreshDashboardNumbers() {
-            console.log('🔄 Manually refreshing dashboard numbers...');
-            updateStats();
-            console.log('✅ Dashboard numbers refreshed');
-        }
-
-        // Show storage setup modal - make it globally accessible
-        window.showStorageSetup = function() {
-            document.getElementById('storageSetupModal').style.display = 'block';
-            updateStorageStatus();
-        };
-
-        // Close storage setup modal - make it globally accessible
-        window.closeStorageSetupModal = function() {
-            document.getElementById('storageSetupModal').style.display = 'none';
-        };
-
-        // Initialize storage with GitHub token - make it globally accessible
-        window.initializeStorage = function() {
-            const token = document.getElementById('githubToken').value.trim();
-            
-            if (!token) {
-                alert('Please enter your GitHub Personal Access Token');
-                return;
-            }
-
-            try {
-                initializePersistentStorage(token).then(success => {
-                    if (success) {
-                        alert('✅ Storage initialized successfully!\n\nYour system now has persistent storage. Payments will be saved permanently and visible to all users.');
-                        closeStorageSetupModal();
-                        updateStorageStatus();
-                    } else {
-                        alert('❌ Failed to initialize storage. Please check your token and try again.');
-                    }
-                }).catch(error => {
-                    alert(`❌ Error: ${error.message}`);
-                });
-            } catch (error) {
-                alert(`❌ Error: ${error.message}`);
-            }
-        }
-
-        // Update storage status display
-        function updateStorageStatus() {
-            const statusDiv = document.getElementById('storageStatus');
-            
-            if (window.gitHubStorage) {
-                const status = window.gitHubStorage.getStatus();
-                statusDiv.innerHTML = `
-                    <div class="status-item">
-                        <strong>Storage Initialized:</strong> ${status.isInitialized ? '✅ Yes' : '❌ No'}
-                    </div>
-                    <div class="status-item">
-                        <strong>Has Token:</strong> ${status.hasToken ? '✅ Yes' : '❌ No'}
-                    </div>
-                    <div class="status-item">
-                        <strong>Has Gist:</strong> ${status.hasGist ? '✅ Yes' : '❌ No'}
-                    </div>
-                    <div class="status-item">
-                        <strong>Payment Count:</strong> ${status.paymentCount}
-                    </div>
-                    <div class="status-item">
-                        <strong>Last Updated:</strong> ${status.lastUpdated ? new Date(status.lastUpdated).toLocaleString() : 'Never'}
-                    </div>
-                `;
-            } else {
-                statusDiv.innerHTML = '<p>Storage not initialized</p>';
-            }
-        }
-
-        // Export payment data for backup and manual CSV updates
-        function exportPaymentData() {
-            try {
-                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
-                    alert('Storage not initialized. Please set up persistent storage first using the "🔧 Storage Setup" button.');
-                    return;
-                }
-
-                const payments = window.gitHubStorage.getPayments();
-                const memberData = window.membersData || membersData;
-                
-                if (payments.length === 0) {
-                    alert('No payment data to export. Record some payments first!');
-                    return;
-                }
-                
-                // Create CSV content
-                let csvContent = 'Date,Member Name,Member ID,Payment Type,Amount,Notes\n';
-                
-                payments.forEach(payment => {
-                    const date = new Date(payment.createdAt).toLocaleDateString();
-                    const member = memberData.find(m => m.name === payment.memberName);
-                    const memberId = member ? member.id : 'Unknown';
-                    
-                    csvContent += `"${date}","${payment.memberName}","${memberId}","${payment.paymentType}","${payment.amount}","${payment.notes || ''}"\n`;
-                });
-                
-                // Create and download file
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                
-                console.log('💾 Payment data exported from GitHub:', payments.length, 'payments');
-                alert(`Payment data exported successfully!\n\n📊 Total payments: ${payments.length}\n💾 File: AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv\n\n💡 Use this data to manually update your CSV files.`);
-                
-            } catch (error) {
-                console.error('❌ Error exporting payment data:', error);
-                alert('Error exporting payment data. Check console for details.');
-            }
-        }
-
-        // Enhanced balance calculation using the enhanced financial logic
-        function calculateEnhancedBalanceForDisplay(member) {
-            if (!enhancedLogic) {
-                // Fallback to old calculation if enhanced logic not available
-                console.log('Enhanced logic not available, using fallback');
-                return calculateDetailedBalance(member);
-            }
-            
-            try {
-                console.log(`Calculating enhanced balance for ${member.name}`);
-                const balanceInfo = enhancedLogic.calculateEnhancedBalance(member);
-                console.log('Enhanced balance result:', balanceInfo);
-                
-                // Calculate if member is paid ahead
-                let balanceDetails = '';
-                if (balanceInfo.totalOwed < 0) {
-                    // Member is paid ahead
-                    const paidAheadAmount = Math.abs(balanceInfo.totalOwed);
-                    balanceDetails = `Paid ahead by $${paidAheadAmount}`;
-                } else if (balanceInfo.monthsBehind > 0) {
-                    balanceDetails = `Owes $${balanceInfo.totalOwed} (${balanceInfo.monthsBehind} months behind)`;
-                } else {
-                    balanceDetails = 'Up to date';
-                }
-                
-                return {
-                    currentBalance: balanceInfo.totalOwed,
-                    balanceDetails: balanceDetails,
-                    paidUpTo: balanceInfo.paidUpToMonth || 'Not Started',
-                    status: balanceInfo.status,
-                    statusText: balanceInfo.statusText,
-                    isActiveMember: balanceInfo.status !== 'inactive',
-                    monthsBehind: balanceInfo.monthsBehind,
-                    paidAheadAmount: balanceInfo.totalOwed < 0 ? Math.abs(balanceInfo.totalOwed) : 0
-                };
-            } catch (error) {
-                console.error('Error in enhanced balance calculation:', error);
-                console.log('Falling back to old calculation');
-                return calculateDetailedBalance(member);
-            }
-        }
-
         function calculateDetailedBalance(member) {
             console.log('=== CALCULATE DETAILED BALANCE CALLED ===');
             console.log('Member:', member.name, 'ID:', member.id);
@@ -4090,12 +2421,12 @@
             }
             
             const activeMembers = data.filter(member => {
-                const balanceInfo = calculateEnhancedBalanceForDisplay(member);
+                const balanceInfo = calculateDetailedBalance(member);
                 return balanceInfo.isActiveMember;
             });
             
             const inactiveMembers = data.filter(member => {
-                const balanceInfo = calculateEnhancedBalanceForDisplay(member);
+                const balanceInfo = calculateDetailedBalance(member);
                 return !balanceInfo.isActiveMember;
             });
             
@@ -4110,12 +2441,12 @@
             // Show active members section
             let html = `
                 <div class="members-section">
-                    <h3>Active Members (61)</h3>
+                    <h3>Active Members (${activeMembers.length})</h3>
                     <div class="members-grid">
             `;
             
             activeMembers.forEach(member => {
-                const balanceInfo = calculateEnhancedBalanceForDisplay(member);
+                const balanceInfo = calculateDetailedBalance(member);
                 const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
                 
                 html += `
@@ -4136,8 +2467,6 @@
                         <div class="member-actions">
                             <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
                             <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
-                            <button onclick="debugMemberData('${member.name}')" class="btn-debug" style="background: #6c757d; color: white; padding: 5px 10px; font-size: 12px; margin-top: 5px;">Debug</button>
-                <button onclick="checkSystemStatus()" class="btn-debug" style="background: #17a2b8; color: white; padding: 5px 10px; font-size: 12px; margin-top: 5px;">System Status</button>
                         </div>
                     </div>
                 `;
@@ -4182,7 +2511,7 @@
                 // Find the specific member
                 const member = data.find(m => m.id === memberId);
                 if (member) {
-                    const balanceInfo = calculateEnhancedBalanceForDisplay(member);
+                    const balanceInfo = calculateDetailedBalance(member);
                     const balanceClass = balanceInfo.currentBalance >= 0 ? 'positive' : 'negative';
                     
                     html = `
@@ -4249,7 +2578,7 @@
                 if (isAdminOrBoard && inactiveMembers.length > 0) {
                     html += `
                         <div class="members-section inactive-section">
-                            <h3>Inactive Members (39) - Board/Admin View Only</h3>
+                            <h3>Inactive Members (${inactiveMembers.length}) - Board/Admin View Only</h3>
                             <div class="members-grid">
                     `;
                     
@@ -4360,22 +2689,6 @@
             console.log('  Risk of Removal:', riskOfRemovalCount);
             console.log('  Inactive:', inactiveCount);
             console.log('=== END TOTAL BALANCE DEBUG ===');
-            
-            // Update dashboard numbers in real-time (only if baseline numbers were already set)
-            if (window.numbersAlreadyForced) {
-                console.log('🔄 Updating dashboard numbers in real-time...');
-                
-                // Update stat cards with calculated values
-                document.getElementById('current-members').textContent = currentCount;
-                document.getElementById('issue-members').textContent = issueCount;
-                document.getElementById('risk-members').textContent = riskCount;
-                document.getElementById('risk-of-removal-members').textContent = riskOfRemovalCount;
-                document.getElementById('inactive-members').textContent = inactiveCount;
-                document.getElementById('total-balance').textContent = `$${totalBalance.toFixed(2)}`;
-                document.getElementById('active-owed-amount').textContent = `$${totalBalance.toFixed(2)}`;
-                
-                console.log('✅ Dashboard numbers updated in real-time');
-            }
             
             // Show inactive members list
             console.log('=== INACTIVE MEMBERS LIST ===');
@@ -4636,92 +2949,11 @@
             }
         }
 
-        // Simple payment recording - no complex distribution logic
-        
-        // Debug function to show member data structure
-        function debugMemberData(memberName) {
-            const dataToUse = window.membersData || membersData;
-            const member = dataToUse.find(m => m.name === memberName);
-            if (member) {
-                console.log('=== MEMBER DATA DEBUG ===');
-                console.log('Member:', member.name, 'ID:', member.id);
-                console.log('Full member object:', member);
-                
-                // Show yearly payment data
-                for (let year = 2022; year <= 2026; year++) {
-                    if (member[year]) {
-                        console.log(`${year} payments:`, member[year]);
-                    }
-                }
-                
-                // Show enhanced balance calculation
-                if (enhancedLogic) {
-                    try {
-                        const balanceInfo = enhancedLogic.calculateEnhancedBalance(member);
-                        console.log('Enhanced balance:', balanceInfo);
-                    } catch (error) {
-                        console.error('Enhanced balance error:', error);
-                    }
-                }
-                
-                console.log('=== END DEBUG ===');
-            } else {
-                console.log(`Member "${memberName}" not found`);
-            }
-        }
-
-        function calculatePaymentDistribution() {
-            const paymentType = document.getElementById('paymentType').value;
-            const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
-            const memberName = document.getElementById('memberName').value;
-            
-            if (paymentType !== 'monthly' || !paymentAmount || !memberName) {
-                document.getElementById('paymentDistribution').style.display = 'none';
-                return;
-            }
-            
-            // Simple calculation: how many months this covers
-            const monthlyFee = 15;
-            const monthsCovered = Math.floor(paymentAmount / monthlyFee);
-            const remainingAmount = paymentAmount % monthlyFee;
-            
-            // Show simple preview
-            const preview = document.getElementById('distributionPreview');
-            let previewHTML = '';
-            
-            if (monthsCovered > 0) {
-                previewHTML = `
-                    <div class="distribution-summary">
-                        <strong>This payment will cover ${monthsCovered} month(s):</strong>
-                    </div>
-                    <div class="distribution-details">
-                        <div class="month-coverage">
-                            <span class="month-name">Monthly Dues</span>
-                            <span class="amount-applied">$${monthsCovered * monthlyFee}</span>
-                        </div>
-                `;
-                
-                if (remainingAmount > 0) {
-                    previewHTML += `
-                        <div class="remaining-amount">
-                            <span class="remaining-label">Remaining (Paid Ahead):</span>
-                            <span class="remaining-value">$${remainingAmount}</span>
-                        </div>
-                    `;
-                }
-                
-                previewHTML += '</div>';
-            } else {
-                previewHTML = '<div class="no-distribution">Payment amount must be at least $15.</div>';
-            }
-            
-            preview.innerHTML = previewHTML;
-            document.getElementById('paymentDistribution').style.display = 'block';
-        }
-
         function recordPayment() {
             const memberName = document.getElementById('memberName').value;
+            const paymentYear = document.getElementById('paymentYear').value;
             const paymentType = document.getElementById('paymentType').value;
+            const paymentMonth = document.getElementById('paymentMonth').value;
             const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
             const paymentNotes = document.getElementById('paymentNotes').value;
 
@@ -4730,209 +2962,87 @@
                 return;
             }
 
-            console.log(`Recording payment: ${memberName} - $${paymentAmount} - ${paymentType}`);
-
             // Find the member and update their payment
             const dataToUse = window.membersData || membersData;
             const member = dataToUse.find(m => m.name === memberName);
             if (member) {
-                if (paymentType === 'registration') {
-                    // For registration fees - track separately
-                    if (!member.registrationFees) {
-                        member.registrationFees = [];
-                    }
-                    member.registrationFees.push({
-                        amount: paymentAmount,
-                        date: new Date().toISOString(),
-                        notes: paymentNotes
-                    });
-                    console.log(`Registration fee recorded: ${memberName} - $${paymentAmount}`);
-                    
-                } else if (paymentType === 'incidental') {
-                    // For incidentals - track separately
-                    if (!member.incidentals) {
-                        member.incidentals.push({
-                        amount: paymentAmount,
-                            date: new Date().toISOString(),
-                            notes: paymentNotes
-                        });
-                    }
-                    console.log(`Incidental fee recorded: ${memberName} - $${paymentAmount}`);
-                    
-                } else if (paymentType === 'monthly') {
-                    // For monthly dues - simple approach: add to current month
-                    const currentYear = new Date().getFullYear();
-                    const currentMonth = new Date().getMonth();
-                    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                    const currentMonthName = monthNames[currentMonth];
-                    
-                    // Initialize year data if it doesn't exist
-                    if (!member[currentYear]) {
-                        member[currentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
-                    }
-                    
-                    // Add payment to current month
-                    member[currentYear][currentMonthName] = (member[currentYear][currentMonthName] || 0) + paymentAmount;
-                    console.log(`Monthly payment recorded: ${memberName} - $${paymentAmount} added to ${currentMonthName} ${currentYear}`);
+                if (!member[paymentYear]) {
+                    member[paymentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 };
                 }
                 
-                        // SAVE TO GITHUB GIST for persistent storage
-        try {
-            savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member).then(() => {
-                console.log('✅ Payment saved to GitHub successfully');
-            }).catch(error => {
-                console.error('❌ Failed to save payment to GitHub:', error);
-                alert(`Payment recorded but failed to save permanently: ${error.message}\n\nPlease check your GitHub token setup.`);
-            });
-        } catch (error) {
-            console.error('❌ Failed to save payment to GitHub:', error);
-            alert(`Payment recorded but failed to save permanently: ${error.message}\n\nPlease check your GitHub token setup.`);
-            return;
-        }
+                if (paymentType === 'incidental') {
+                    // For incidentals, add to a special field
+                    if (!member[paymentYear].incidentals) {
+                        member[paymentYear].incidentals = [];
+                    }
+                    member[paymentYear].incidentals.push({
+                        amount: paymentAmount,
+                        month: paymentMonth,
+                        notes: paymentNotes,
+                        date: new Date().toISOString()
+                    });
+                } else {
+                    // For regular monthly payments
+                    member[paymentYear][paymentMonth] = (member[paymentYear][paymentMonth] || 0) + paymentAmount;
+                }
                 
-                // Update display immediately
-                console.log('Updating display after payment...');
+                console.log(`Payment recorded: ${memberName} - ${paymentMonth} ${paymentYear} - $${paymentAmount}`);
+                
+                // Update display
                 displayMembers();
                 updateStats();
-                
-                // Force a refresh of all dashboard numbers to show payment impact
-                setTimeout(() => {
-                    console.log('🔄 Refreshing dashboard after payment...');
-                    updateStats();
-                }, 500);
-                
-                // Show success message and close modal
-                alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})\n\n💾 Payment saved to GitHub - will persist for all users!`);
                 closeModal();
                 
-                // Reset the payment form
-                document.getElementById('paymentForm').reset();
-                
-                // Make sure we're back to the main dashboard view
-                document.getElementById('paymentModal').style.display = 'none';
-                
+                // Show success message with details
+                showPaymentSuccessModal(memberName, paymentAmount, paymentMonth, paymentYear, paymentType);
             } else {
                 alert(`Member "${memberName}" not found. Please check the member name.`);
             }
         }
 
-        // Initialize GitHub Gist storage for persistent data
-        let gitHubStorage = null;
-
-        // Initialize persistent storage
-        function initializePersistentStorage(githubToken) {
-            try {
-                if (!githubToken) {
-                    throw new Error('GitHub token is required');
-                }
-
-                // Create storage instance - make it globally accessible
-                window.gitHubStorage = new GitHubGistStorage();
-                
-                // Initialize with token - handle the async properly
-                return window.gitHubStorage.initialize(null, githubToken).then(success => {
-                    if (success) {
-                        console.log('✅ Persistent storage initialized successfully');
-                        
-                        // Load existing payment data and apply to member data
-                        return loadPaymentDataFromGitHub().then(() => {
-                            // Update display
-                            if (typeof displayMembers === 'function') {
-                                displayMembers();
-                            }
-                            if (typeof updateStats === 'function') {
-                                updateStats();
-                            }
-                            return true;
-                        }).catch(error => {
-                            console.error('❌ Error loading payment data:', error);
-                            return true; // Still return true since storage initialized
-                        });
-                    } else {
-                        throw new Error('Failed to initialize storage');
-                    }
-                }).catch(error => {
-                    console.error('❌ Error initializing persistent storage:', error);
-                    alert(`Failed to initialize persistent storage: ${error.message}`);
-                    return false;
-                });
-            } catch (error) {
-                console.error('❌ Error initializing persistent storage:', error);
-                alert(`Failed to initialize persistent storage: ${error.message}`);
-                return false;
-                }
-        }
-
-        // Load payment data from GitHub Gist and apply to member data
-        function loadPaymentDataFromGitHub() {
-            try {
-                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
-                    console.log('Storage not initialized, skipping payment data load');
-                    return Promise.resolve();
-                }
-
-                const payments = window.gitHubStorage.getPayments();
-                console.log('💾 Loading payment data from GitHub:', payments.length, 'payments');
-
-                if (payments.length > 0) {
-                    // Apply saved payments to current member data
-                    payments.forEach(payment => {
-                        const member = (window.membersData || membersData).find(m => m.name === payment.memberName);
-                        if (member && payment.paymentType === 'monthly') {
-                            // Apply monthly payment
-                            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                            const monthName = monthNames[payment.month];
-                            
-                            if (!member[payment.year]) {
-                                member[payment.year] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
-                            }
-                            
-                            member[payment.year][monthName] = (member[payment.year][monthName] || 0) + payment.amount;
-                        }
-                    });
+        function showPaymentSuccessModal(memberName, amount, month, year, type) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            
+            modal.innerHTML = `
+                <div class="modal-content payment-success-modal">
+                    <span class="close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+                    <div class="success-icon">✅</div>
+                    <h2>Payment Recorded Successfully!</h2>
                     
-                    console.log('✅ Payment history applied to member data from GitHub');
-                }
-                
-                return Promise.resolve();
-            } catch (error) {
-                console.error('❌ Error loading payment data from GitHub:', error);
-                return Promise.reject(error);
-            }
+                    <div class="payment-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Member:</span>
+                            <span class="detail-value">${memberName}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Amount:</span>
+                            <span class="detail-value">$${amount}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Type:</span>
+                            <span class="detail-value">${type}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Period:</span>
+                            <span class="detail-value">${month} ${year}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="success-actions">
+                        <button class="btn btn-success" onclick="this.parentElement.parentElement.parentElement.remove()">
+                            Continue
+                        </button>
+                        <button class="btn btn-info" onclick="recordPaymentForMember('${memberName}')">
+                            Record Another Payment
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
         }
-
-        // Save payment to GitHub Gist for persistence
-        function savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member) {
-            try {
-                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
-                    throw new Error('Persistent storage not initialized. Please set up GitHub token first.');
-                }
-
-                const payment = {
-                    memberName: memberName,
-                    paymentType: paymentType,
-                    amount: paymentAmount,
-                    notes: paymentNotes,
-                    memberId: member.id,
-                    year: new Date().getFullYear(),
-                    month: new Date().getMonth()
-                };
-
-                // Save to GitHub Gist
-                return window.gitHubStorage.addPayment(payment).then(() => {
-                    console.log('💾 Payment saved to GitHub Gist:', payment);
-                    return true;
-                }).catch(error => {
-                    console.error('❌ Error saving payment to GitHub:', error);
-                    throw error;
-                });
-            } catch (error) {
-                console.error('❌ Error saving payment to GitHub:', error);
-                return Promise.reject(error);
-            }
-        }
-
-        // Simple success message - no complex modal
 
         function sendReminder(memberName, balance) {
             let message, messageType;
@@ -5091,15 +3201,25 @@
 
         function validatePaymentForm() {
             const memberName = document.getElementById('memberName').value;
+            const paymentYear = document.getElementById('paymentYear').value;
             const paymentType = document.getElementById('paymentType').value;
+            const paymentMonth = document.getElementById('paymentMonth').value;
             const paymentAmount = parseFloat(document.getElementById('paymentAmount').value);
 
             if (!memberName) {
                 alert('Please select a member.');
                 return false;
             }
+            if (!paymentYear) {
+                alert('Please select a payment year.');
+                return false;
+            }
             if (!paymentType) {
                 alert('Please select a payment type.');
+                return false;
+            }
+            if (!paymentMonth) {
+                alert('Please select a payment month.');
                 return false;
             }
             if (!paymentAmount || paymentAmount <= 0) {
@@ -5149,12 +3269,6 @@
             document.getElementById('addMemberModal').style.display = 'none';
             document.getElementById('addEventModal').style.display = 'none';
             document.getElementById('paymentForm').reset();
-            
-            // Clear member selection so it doesn't show "Please select a member"
-            const memberNameField = document.getElementById('memberName');
-            if (memberNameField) {
-                memberNameField.value = '';
-            }
         }
 
         // Update current date

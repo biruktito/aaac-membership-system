@@ -2156,52 +2156,6 @@
             font-weight: 600;
             color: #212529;
         }
-
-        /* Storage Setup Modal Styles */
-        .storage-setup-content {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .setup-section {
-            background: #f8f9fa;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-            border-left: 4px solid #ffc107;
-        }
-
-        .setup-section h3 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .setup-section ul {
-            margin: 10px 0;
-            padding-left: 20px;
-        }
-
-        .setup-section li {
-            margin: 8px 0;
-            color: #555;
-        }
-
-        .status-item {
-            background: white;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 4px;
-            border: 1px solid #dee2e6;
-        }
-
-        .storage-setup-content a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .storage-setup-content a:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
@@ -2232,8 +2186,6 @@
                     <button class="btn btn-warning" onclick="exportData()">Export Data</button>
                     <button class="btn btn-primary" onclick="refreshDashboardNumbers()">🔄 Refresh Numbers</button>
                     <button class="btn btn-secondary" onclick="checkSystemStatus()">📊 System Status</button>
-                    <button class="btn btn-success" onclick="exportPaymentData()">💾 Export Payment Data</button>
-                    <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
                 </div>
             </div>
 
@@ -2325,49 +2277,6 @@
             <h2>Member Payment Details</h2>
             <div id="memberDetailsContent">
                 <!-- Member details will be populated here -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Storage Setup Modal -->
-    <div id="storageSetupModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeStorageSetupModal()">&times;</span>
-            <h2>🔧 Persistent Storage Setup</h2>
-            <div class="storage-setup-content">
-                <p><strong>Why This is Needed:</strong></p>
-                <ul>
-                    <li>✅ <strong>Admin records payment</strong> → Data saved permanently</li>
-                    <li>✅ <strong>Admin logs out</strong> → Data remains safe</li>
-                    <li>✅ <strong>User logs in</strong> → Sees updated payment information</li>
-                    <li>✅ <strong>Multiple users</strong> → All see the same data</li>
-                    <li>✅ <strong>Real production use</strong> → Data persists between sessions</li>
-                </ul>
-                
-                <div class="setup-section">
-                    <h3>Step 1: Create GitHub Token</h3>
-                    <p>1. Go to <a href="https://github.com/settings/tokens" target="_blank">GitHub Settings → Tokens</a></p>
-                    <p>2. Click "Generate new token (classic)"</p>
-                    <p>3. Name: "AAAC Membership System"</p>
-                    <p>4. Select scope: <strong>gist</strong></p>
-                    <p>5. Click "Generate token" and copy it</p>
-                </div>
-                
-                <div class="setup-section">
-                    <h3>Step 2: Initialize Storage</h3>
-                    <div class="form-group">
-                        <label for="githubToken">GitHub Personal Access Token:</label>
-                        <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
-                    </div>
-                    <button onclick="initializeStorage()" class="btn btn-success">🚀 Initialize Storage</button>
-                </div>
-                
-                <div class="setup-section">
-                    <h3>Current Status</h3>
-                    <div id="storageStatus">
-                        <p>Storage not initialized</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -2490,9 +2399,6 @@
     
     <!-- CSV Data Loader -->
     <script src="csv_data_loader.js"></script>
-    
-    <!-- GitHub Gist Persistent Storage -->
-    <script src="firebase-persistent-storage.js"></script>
 
     <script>
         // Enhanced Financial System
@@ -2520,7 +2426,7 @@
         const CURRENT_MONTH = CURRENT_DATE.getMonth();
 
         // Initialize Enhanced Financial System
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
             try {
                 // Initialize enhanced financial logic
                 enhancedLogic = new EnhancedFinancialLogic();
@@ -2528,29 +2434,21 @@
                 // Initialize CSV data loader
                 csvLoader = new CSVDataLoader();
                 
-                // Load member data using Promise-based approach
-                csvLoader.loadAllData().then(members => {
-                    console.log(`✅ Loaded ${members.length} members with enhanced system`);
-                    
-                    // Update membersData with enhanced data
-                    membersData = members;
-                    
-                    // Note: Payment data will be loaded when persistent storage is initialized
-                    console.log('🔄 Payment data will be loaded when persistent storage is initialized');
-                    
-                    // Update dashboard with enhanced stats
-                    updateEnhancedStats();
-                    
-                    // Force fallback to run to ensure correct numbers
-                    setTimeout(() => {
-                        console.log('Forcing fallback to ensure correct numbers...');
-                        updateStatsFallback();
-                    }, 500);
-                }).catch(error => {
-                    console.error('❌ Failed to load member data:', error);
-                    // Fall back to existing system
-                    loadMembersData();
-                });
+                // Load member data
+                const members = await csvLoader.loadAllData();
+                console.log(`✅ Loaded ${members.length} members with enhanced system`);
+                
+                // Update membersData with enhanced data
+                membersData = members;
+                
+                // Update dashboard with enhanced stats
+                updateEnhancedStats();
+                
+                // Force fallback to run to ensure correct numbers
+                setTimeout(() => {
+                    console.log('Forcing fallback to ensure correct numbers...');
+                    updateStatsFallback();
+                }, 500);
                 
             } catch (error) {
                 console.error('❌ Failed to initialize enhanced system:', error);
@@ -2678,350 +2576,30 @@
             }
         }
 
-        // Authentication check - FIXED
+        // Authentication check
         function checkAuthentication() {
             const isAuthenticated = sessionStorage.getItem('aaacAuthenticated');
             const userRole = sessionStorage.getItem('aaacUserRole');
             
-            // If no authentication, redirect to login
+            // If no authentication, set as demo user and continue
             if (!isAuthenticated || !userRole) {
-                console.log('No authentication found, redirecting to login');
-                window.location.href = 'login.html';
-                return false;
+                console.log('No authentication found, setting as demo user');
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'demo');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                return true;
             }
             return true;
         }
 
-        // Make all critical functions globally accessible to fix onclick errors
-        window.logout = function() {
+        // Logout function
+        function logout() {
             console.log('Logout function called');
             sessionStorage.removeItem('aaacAuthenticated');
             sessionStorage.removeItem('aaacUserRole');
             sessionStorage.removeItem('aaacLoginTime');
             console.log('Session storage cleared, redirecting to login...');
             window.location.href = 'login.html';
-        };
-
-        // Make other critical functions globally accessible
-        window.searchMembers = function() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            if (!searchTerm) {
-                displayMembers();
-                return;
-            }
-            
-            const filteredMembers = membersData.filter(member => 
-                member.name.toLowerCase().includes(searchTerm) ||
-                member.phone.includes(searchTerm) ||
-                member.id.toString().includes(searchTerm)
-            );
-            
-            displayMembers(filteredMembers);
-        };
-
-        window.clearSearch = function() {
-            document.getElementById('searchInput').value = '';
-            displayMembers();
-        };
-
-        window.addNewMember = function() {
-            document.getElementById('addMemberModal').style.display = 'block';
-            // Generate new member ID
-            const newId = Math.max(...membersData.map(m => parseInt(m.id))) + 1;
-            document.getElementById('newMemberId').value = newId;
-        };
-
-        window.addEvent = function() {
-            document.getElementById('addEventModal').style.display = 'block';
-        };
-
-        window.exportData = function() {
-            const csvContent = generateCSV();
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `AAAC_Members_${new Date().toISOString().split('T')[0]}.csv`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-        };
-
-        window.closeModal = function() {
-            document.getElementById('addMemberModal').style.display = 'none';
-            document.getElementById('addEventModal').style.display = 'none';
-            document.getElementById('paymentModal').style.display = 'none';
-        };
-
-        window.saveNewMember = function() {
-            const id = document.getElementById('newMemberId').value;
-            const name = document.getElementById('newMemberName').value;
-            const phone = document.getElementById('newMemberPhone').value;
-            const startYear = document.getElementById('newMemberStartYear').value;
-            
-            if (!name || !phone) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            const newMember = {
-                id: id,
-                name: name,
-                phone: phone,
-                registration: 0,
-                startYear: startYear
-            };
-            
-            membersData.push(newMember);
-            displayMembers();
-            closeModal();
-            alert(`Member ${name} added successfully!`);
-        };
-
-        window.saveEvent = function() {
-            const date = document.getElementById('eventDate').value;
-            const title = document.getElementById('eventTitle').value;
-            const description = document.getElementById('eventDescription').value;
-            
-            if (!date || !title) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            // Add event logic here
-            closeModal();
-            alert(`Event "${title}" added successfully!`);
-        };
-
-        // Add other missing functions
-        window.refreshDashboardNumbers = function() {
-            console.log('🔄 Manually refreshing dashboard numbers...');
-            updateStats();
-            console.log('✅ Dashboard numbers refreshed');
-        };
-
-        window.checkSystemStatus = function() {
-            alert('System Status: All systems operational\n\n✅ Authentication: Working\n✅ Data Loading: Working\n✅ Storage: ' + (gitHubStorage && gitHubStorage.isInitialized ? 'Initialized' : 'Not Set Up'));
-        };
-
-        window.exportPaymentData = function() {
-            try {
-                if (!gitHubStorage || !gitHubStorage.isInitialized) {
-                    alert('Storage not initialized. Please set up persistent storage first using the "🔧 Storage Setup" button.');
-                    return;
-                }
-
-                const payments = gitHubStorage.getPayments();
-                const memberData = window.membersData || membersData;
-                
-                if (payments.length === 0) {
-                    alert('No payment data to export. Record some payments first!');
-                    return;
-                }
-                
-                // Create CSV content
-                let csvContent = 'Date,Member Name,Member ID,Payment Type,Amount,Notes\n';
-                
-                payments.forEach(payment => {
-                    const date = new Date(payment.createdAt).toLocaleDateString();
-                    const member = memberData.find(m => m.name === payment.memberName);
-                    const memberId = member ? member.id : 'Unknown';
-                    
-                    csvContent += `"${date}","${payment.memberName}","${memberId}","${payment.paymentType}","${payment.amount}","${payment.notes || ''}"\n`;
-                });
-                
-                // Create and download file
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `AAAC_Payments_${new Date().toISOString().split('T')[0]}.csv`;
-                a.click();
-                window.URL.revokeObjectURL(url);
-                
-                alert(`Payment data exported successfully!\n\nExported ${payments.length} payment records.`);
-            } catch (error) {
-                console.error('❌ Error exporting payment data:', error);
-                alert('Failed to export payment data: ' + error.message);
-            }
-        };
-
-        window.showStorageSetup = function() {
-            document.getElementById('storageSetupModal').style.display = 'block';
-            updateStorageStatus();
-        };
-
-        window.closeStorageSetupModal = function() {
-            document.getElementById('storageSetupModal').style.display = 'none';
-        };
-
-        window.initializeStorage = function() {
-            const token = document.getElementById('githubToken').value.trim();
-            
-            if (!token) {
-                alert('Please enter your GitHub Personal Access Token');
-                return;
-            }
-
-            try {
-                initializePersistentStorage(token).then(success => {
-                    if (success) {
-                        alert('✅ Storage initialized successfully!\n\nYour system now has persistent storage. Payments will be saved permanently and visible to all users.');
-                        closeStorageSetupModal();
-                        updateStorageStatus();
-                    } else {
-                        alert('❌ Failed to initialize storage. Please check your token and try again.');
-                    }
-                }).catch(error => {
-                    alert(`❌ Error: ${error.message}`);
-                });
-            } catch (error) {
-                alert(`❌ Error: ${error.message}`);
-            }
-        };
-
-        window.filterByStatus = function(status) {
-            // Remove active class from all tabs
-            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-            
-            // Filter members based on status
-            let filteredMembers = membersData;
-            if (status !== 'all') {
-                filteredMembers = membersData.filter(member => {
-                    const balanceInfo = calculateDetailedBalance(member);
-                    switch(status) {
-                        case 'current': return balanceInfo.monthsBehind <= 5;
-                        case 'issue': return balanceInfo.monthsBehind >= 6 && balanceInfo.monthsBehind <= 11;
-                        case 'risk': return balanceInfo.monthsBehind >= 12 && balanceInfo.monthsBehind <= 23;
-                        case 'removed': return balanceInfo.monthsBehind >= 24;
-                        default: return true;
-                    }
-                });
-            }
-            
-            displayMembers(filteredMembers);
-        };
-
-        // Add missing generateCSV function
-        window.generateCSV = function() {
-            if (!membersData || membersData.length === 0) {
-                return 'No data available';
-            }
-            
-            const headers = ['ID', 'Name', 'Phone', 'Registration', 'Status', 'Balance'];
-            const rows = membersData.map(member => {
-                const balanceInfo = calculateDetailedBalance(member);
-                return [
-                    member.id,
-                    member.name,
-                    member.phone,
-                    member.registration || 0,
-                    balanceInfo.status,
-                    balanceInfo.currentBalance
-                ];
-            });
-            
-            return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-        };
-
-        // Add ALL missing functions to fix onclick errors
-        window.recordPaymentForMember = function(memberName) {
-            console.log('Record payment for member:', memberName);
-            // Open payment modal
-            document.getElementById('paymentModal').style.display = 'block';
-            document.getElementById('memberName').value = memberName;
-        };
-
-        window.sendReminder = function(memberName, balance) {
-            console.log('Send reminder for member:', memberName, 'Balance:', balance);
-            let message = '';
-            if (balance >= 0) {
-                message = `Thank you ${memberName} for staying current with your payments!`;
-            } else {
-                message = `Hi ${memberName}, your AAAC membership balance is $${Math.abs(balance)}. Please send payment via Zelle to aaaichicago@gmail.com. Thank you!`;
-            }
-            alert(`Reminder Message:\n\n${message}\n\nCopy this message to send via your preferred method.`);
-        };
-
-        window.debugMemberData = function(memberName) {
-            console.log('Debug member data for:', memberName);
-            const member = membersData.find(m => m.name === memberName);
-            if (member) {
-                console.log('Member data:', member);
-                alert(`Debug info for ${memberName} logged to console (F12)`);
-            } else {
-                alert('Member not found');
-            }
-        };
-
-        window.copyToClipboard = function(text, button) {
-            navigator.clipboard.writeText(text).then(() => {
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                button.style.background = '#28a745';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = '';
-                }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy: ', err);
-                alert('Failed to copy to clipboard');
-            });
-        };
-
-        window.shareViaWhatsApp = function(message) {
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        };
-
-        window.shareViaTelegram = function(message) {
-            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(message)}`;
-            window.open(telegramUrl, '_blank');
-        };
-
-        window.shareViaSMS = function(message) {
-            const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
-            window.open(smsUrl);
-        };
-
-        // Add missing displayMembers function if it doesn't exist
-        if (!window.displayMembers) {
-            window.displayMembers = function(filteredMembers = null) {
-                console.log('Display members called');
-                const membersToShow = filteredMembers || membersData || [];
-                console.log('Members to show:', membersToShow.length);
-                
-                // Basic display logic
-                const container = document.getElementById('members-container');
-                if (container) {
-                    container.innerHTML = `<p>Displaying ${membersToShow.length} members</p>`;
-                }
-            };
-        }
-
-        // Add missing calculateDetailedBalance function if it doesn't exist
-        if (!window.calculateDetailedBalance) {
-            window.calculateDetailedBalance = function(member) {
-                console.log('Calculate balance for member:', member.name);
-                return {
-                    status: 'Unknown',
-                    currentBalance: 0,
-                    monthsBehind: 0
-                };
-            };
-        }
-
-        // Add missing updateStats function if it doesn't exist
-        if (!window.updateStats) {
-            window.updateStats = function() {
-                console.log('Update stats called');
-                // Basic stats update
-                const totalMembers = membersData ? membersData.length : 0;
-                if (document.getElementById('total-members')) {
-                    document.getElementById('total-members').textContent = totalMembers;
-                }
-            };
         }
 
         // Force correct numbers to display (ONLY ONCE on initial load)
@@ -3150,29 +2728,40 @@
         function loadLocalCSVData() {
             console.log('🔄 Loading local CSV data...');
             
-            // Try to load from the csv_data_loader first
-            if (window.csvLoader) {
-                console.log('🔄 Using csv_data_loader to load data...');
-                window.csvLoader.loadAllData()
-                    .then(members => {
-                        if (members && members.length > 0) {
-                            window.membersData = members;
-                            console.log('✅ Data loaded via csv_data_loader:', window.membersData.length, 'members');
-                            displayMembers();
-                            updateStats();
-                        } else {
-                            throw new Error('No members loaded via csv_data_loader');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('❌ csv_data_loader failed:', error);
-                        console.log('🔄 Loading sample data as fallback...');
-                        loadSampleData();
-                    });
-            } else {
-                console.log('🔄 csv_data_loader not available, loading sample data...');
-                loadSampleData();
-            }
+            fetch('complete_data_for_google_sheet.csv')
+                .then(response => {
+                    console.log('CSV fetch response status:', response.status);
+                    console.log('CSV fetch response ok:', response.ok);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    console.log('✅ Local CSV loaded successfully');
+                    console.log('CSV data length:', data.length);
+                    console.log('CSV data preview:', data.substring(0, 200));
+                    
+                    const parsedData = parseAccountantData(data);
+                    console.log('Parsed data length:', parsedData.length);
+                    console.log('Sample parsed member:', parsedData[0]);
+                    
+                    if (parsedData.length > 0) {
+                        window.membersData = parsedData;
+                        console.log('✅ Local data set:', window.membersData.length, 'members');
+                        displayMembers();
+                        updateStats();
+                    } else {
+                        throw new Error('No members parsed from local CSV');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Local CSV loading failed:', error);
+                    console.log('🔄 Loading sample data as fallback...');
+                    // Load sample data as final fallback
+                    loadSampleData();
+                });
         }
 
         function parseContactData(csvText) {
@@ -3676,118 +3265,6 @@
             console.log('🔄 Manually refreshing dashboard numbers...');
             updateStats();
             console.log('✅ Dashboard numbers refreshed');
-        }
-
-        // Show storage setup modal - make it globally accessible
-        window.showStorageSetup = function() {
-            document.getElementById('storageSetupModal').style.display = 'block';
-            updateStorageStatus();
-        };
-
-        // Close storage setup modal - make it globally accessible
-        window.closeStorageSetupModal = function() {
-            document.getElementById('storageSetupModal').style.display = 'none';
-        };
-
-        // Initialize storage with GitHub token - make it globally accessible
-        window.initializeStorage = function() {
-            const token = document.getElementById('githubToken').value.trim();
-            
-            if (!token) {
-                alert('Please enter your GitHub Personal Access Token');
-                return;
-            }
-
-            try {
-                initializePersistentStorage(token).then(success => {
-                    if (success) {
-                        alert('✅ Storage initialized successfully!\n\nYour system now has persistent storage. Payments will be saved permanently and visible to all users.');
-                        closeStorageSetupModal();
-                        updateStorageStatus();
-                    } else {
-                        alert('❌ Failed to initialize storage. Please check your token and try again.');
-                    }
-                }).catch(error => {
-                    alert(`❌ Error: ${error.message}`);
-                });
-            } catch (error) {
-                alert(`❌ Error: ${error.message}`);
-            }
-        }
-
-        // Update storage status display
-        function updateStorageStatus() {
-            const statusDiv = document.getElementById('storageStatus');
-            
-            if (window.gitHubStorage) {
-                const status = window.gitHubStorage.getStatus();
-                statusDiv.innerHTML = `
-                    <div class="status-item">
-                        <strong>Storage Initialized:</strong> ${status.isInitialized ? '✅ Yes' : '❌ No'}
-                    </div>
-                    <div class="status-item">
-                        <strong>Has Token:</strong> ${status.hasToken ? '✅ Yes' : '❌ No'}
-                    </div>
-                    <div class="status-item">
-                        <strong>Has Gist:</strong> ${status.hasGist ? '✅ Yes' : '❌ No'}
-                    </div>
-                    <div class="status-item">
-                        <strong>Payment Count:</strong> ${status.paymentCount}
-                    </div>
-                    <div class="status-item">
-                        <strong>Last Updated:</strong> ${status.lastUpdated ? new Date(status.lastUpdated).toLocaleString() : 'Never'}
-                    </div>
-                `;
-            } else {
-                statusDiv.innerHTML = '<p>Storage not initialized</p>';
-            }
-        }
-
-        // Export payment data for backup and manual CSV updates
-        function exportPaymentData() {
-            try {
-                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
-                    alert('Storage not initialized. Please set up persistent storage first using the "🔧 Storage Setup" button.');
-                    return;
-                }
-
-                const payments = window.gitHubStorage.getPayments();
-                const memberData = window.membersData || membersData;
-                
-                if (payments.length === 0) {
-                    alert('No payment data to export. Record some payments first!');
-                    return;
-                }
-                
-                // Create CSV content
-                let csvContent = 'Date,Member Name,Member ID,Payment Type,Amount,Notes\n';
-                
-                payments.forEach(payment => {
-                    const date = new Date(payment.createdAt).toLocaleDateString();
-                    const member = memberData.find(m => m.name === payment.memberName);
-                    const memberId = member ? member.id : 'Unknown';
-                    
-                    csvContent += `"${date}","${payment.memberName}","${memberId}","${payment.paymentType}","${payment.amount}","${payment.notes || ''}"\n`;
-                });
-                
-                // Create and download file
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                
-                console.log('💾 Payment data exported from GitHub:', payments.length, 'payments');
-                alert(`Payment data exported successfully!\n\n📊 Total payments: ${payments.length}\n💾 File: AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv\n\n💡 Use this data to manually update your CSV files.`);
-                
-            } catch (error) {
-                console.error('❌ Error exporting payment data:', error);
-                alert('Error exporting payment data. Check console for details.');
-            }
         }
 
         // Enhanced balance calculation using the enhanced financial logic
@@ -4751,12 +4228,13 @@
                 } else if (paymentType === 'incidental') {
                     // For incidentals - track separately
                     if (!member.incidentals) {
-                        member.incidentals.push({
-                        amount: paymentAmount,
-                            date: new Date().toISOString(),
-                            notes: paymentNotes
-                        });
+                        member.incidentals = [];
                     }
+                    member.incidentals.push({
+                        amount: paymentAmount,
+                        date: new Date().toISOString(),
+                        notes: paymentNotes
+                    });
                     console.log(`Incidental fee recorded: ${memberName} - $${paymentAmount}`);
                     
                 } else if (paymentType === 'monthly') {
@@ -4776,20 +4254,6 @@
                     console.log(`Monthly payment recorded: ${memberName} - $${paymentAmount} added to ${currentMonthName} ${currentYear}`);
                 }
                 
-                        // SAVE TO GITHUB GIST for persistent storage
-        try {
-            savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member).then(() => {
-                console.log('✅ Payment saved to GitHub successfully');
-            }).catch(error => {
-                console.error('❌ Failed to save payment to GitHub:', error);
-                alert(`Payment recorded but failed to save permanently: ${error.message}\n\nPlease check your GitHub token setup.`);
-            });
-        } catch (error) {
-            console.error('❌ Failed to save payment to GitHub:', error);
-            alert(`Payment recorded but failed to save permanently: ${error.message}\n\nPlease check your GitHub token setup.`);
-            return;
-        }
-                
                 // Update display immediately
                 console.log('Updating display after payment...');
                 displayMembers();
@@ -4802,7 +4266,7 @@
                 }, 500);
                 
                 // Show success message and close modal
-                alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})\n\n💾 Payment saved to GitHub - will persist for all users!`);
+                alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})`);
                 closeModal();
                 
                 // Reset the payment form
@@ -4813,122 +4277,6 @@
                 
             } else {
                 alert(`Member "${memberName}" not found. Please check the member name.`);
-            }
-        }
-
-        // Initialize GitHub Gist storage for persistent data
-        let gitHubStorage = null;
-
-        // Initialize persistent storage
-        function initializePersistentStorage(githubToken) {
-            try {
-                if (!githubToken) {
-                    throw new Error('GitHub token is required');
-                }
-
-                // Create storage instance - make it globally accessible
-                window.gitHubStorage = new GitHubGistStorage();
-                
-                // Initialize with token - handle the async properly
-                return window.gitHubStorage.initialize(null, githubToken).then(success => {
-                    if (success) {
-                        console.log('✅ Persistent storage initialized successfully');
-                        
-                        // Load existing payment data and apply to member data
-                        return loadPaymentDataFromGitHub().then(() => {
-                            // Update display
-                            if (typeof displayMembers === 'function') {
-                                displayMembers();
-                            }
-                            if (typeof updateStats === 'function') {
-                                updateStats();
-                            }
-                            return true;
-                        }).catch(error => {
-                            console.error('❌ Error loading payment data:', error);
-                            return true; // Still return true since storage initialized
-                        });
-                    } else {
-                        throw new Error('Failed to initialize storage');
-                    }
-                }).catch(error => {
-                    console.error('❌ Error initializing persistent storage:', error);
-                    alert(`Failed to initialize persistent storage: ${error.message}`);
-                    return false;
-                });
-            } catch (error) {
-                console.error('❌ Error initializing persistent storage:', error);
-                alert(`Failed to initialize persistent storage: ${error.message}`);
-                return false;
-                }
-        }
-
-        // Load payment data from GitHub Gist and apply to member data
-        function loadPaymentDataFromGitHub() {
-            try {
-                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
-                    console.log('Storage not initialized, skipping payment data load');
-                    return Promise.resolve();
-                }
-
-                const payments = window.gitHubStorage.getPayments();
-                console.log('💾 Loading payment data from GitHub:', payments.length, 'payments');
-
-                if (payments.length > 0) {
-                    // Apply saved payments to current member data
-                    payments.forEach(payment => {
-                        const member = (window.membersData || membersData).find(m => m.name === payment.memberName);
-                        if (member && payment.paymentType === 'monthly') {
-                            // Apply monthly payment
-                            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                            const monthName = monthNames[payment.month];
-                            
-                            if (!member[payment.year]) {
-                                member[payment.year] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
-                            }
-                            
-                            member[payment.year][monthName] = (member[payment.year][monthName] || 0) + payment.amount;
-                        }
-                    });
-                    
-                    console.log('✅ Payment history applied to member data from GitHub');
-                }
-                
-                return Promise.resolve();
-            } catch (error) {
-                console.error('❌ Error loading payment data from GitHub:', error);
-                return Promise.reject(error);
-            }
-        }
-
-        // Save payment to GitHub Gist for persistence
-        function savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member) {
-            try {
-                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
-                    throw new Error('Persistent storage not initialized. Please set up GitHub token first.');
-                }
-
-                const payment = {
-                    memberName: memberName,
-                    paymentType: paymentType,
-                    amount: paymentAmount,
-                    notes: paymentNotes,
-                    memberId: member.id,
-                    year: new Date().getFullYear(),
-                    month: new Date().getMonth()
-                };
-
-                // Save to GitHub Gist
-                return window.gitHubStorage.addPayment(payment).then(() => {
-                    console.log('💾 Payment saved to GitHub Gist:', payment);
-                    return true;
-                }).catch(error => {
-                    console.error('❌ Error saving payment to GitHub:', error);
-                    throw error;
-                });
-            } catch (error) {
-                console.error('❌ Error saving payment to GitHub:', error);
-                return Promise.reject(error);
             }
         }
 

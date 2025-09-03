@@ -40,36 +40,57 @@ class CSVDataLoader {
 
     // Load contact list for member names and IDs
     async loadContactList() {
-        try {
-            const response = await fetch('data/AAAC_members_contact_list.xlsx - Sheet1.csv');
-            if (!response.ok) {
-                throw new Error(`Failed to load contact list: ${response.status}`);
+        // Try multiple paths (relative first, then raw GitHub fallbacks)
+        const paths = [
+            'data/AAAC_members_contact_list.xlsx - Sheet1.csv',
+            'AAAC_members_contact_list.xlsx - Sheet1.csv',
+            'AAAC_members_contact_list.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/data/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/data/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv'
+        ];
+        for (const path of paths) {
+            try {
+                console.log('🔄 Loading contact list from:', path);
+                const response = await fetch(path, { cache: 'no-store' });
+                if (!response.ok) continue;
+                const csvText = await response.text();
+                return this.parseCSV(csvText);
+            } catch (e) {
+                // Try next
             }
-            
-            const csvText = await response.text();
-            return this.parseCSV(csvText);
-            
-        } catch (error) {
-            console.warn('⚠️ Could not load contact list, using accountant database only');
-            return [];
         }
+        console.warn('⚠️ Could not load contact list from any path; proceeding without it');
+        return [];
     }
 
     // Load accountant database (primary data source)
     async loadAccountantDatabase() {
-        try {
-            const response = await fetch('data/AAAC_Accountant_Database_20250826.csv');
-            if (!response.ok) {
-                throw new Error(`Failed to load accountant database: ${response.status}`);
+        const paths = [
+            'data/AAAC_Real_Data.csv',
+            'data/AAAC_Accountant_Database_20250826.csv',
+            'AAAC_Accountant_Database_20250826.csv',
+            'AAAC_Real_Data.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/data/AAAC_Real_Data.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/data/AAAC_Accountant_Database_20250826.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/data/AAAC_Real_Data.csv',
+            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/data/AAAC_Accountant_Database_20250826.csv'
+        ];
+        let lastStatus = null;
+        for (const path of paths) {
+            try {
+                console.log('🔄 Loading accountant database from:', path);
+                const response = await fetch(path, { cache: 'no-store' });
+                lastStatus = response.status;
+                if (!response.ok) continue;
+                const csvText = await response.text();
+                return this.parseCSV(csvText);
+            } catch (e) {
+                // Try next
             }
-            
-            const csvText = await response.text();
-            return this.parseCSV(csvText);
-            
-        } catch (error) {
-            console.error('❌ Failed to load accountant database:', error);
-            throw error;
         }
+        throw new Error(`Failed to load accountant database from all paths (last status: ${lastStatus})`);
     }
 
     // Parse CSV text into array of objects

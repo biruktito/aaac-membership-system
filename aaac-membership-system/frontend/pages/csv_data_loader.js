@@ -41,7 +41,7 @@ class CSVDataLoader {
     // Load contact list for member names and IDs
     async loadContactList() {
         try {
-            const response = await fetch('data/AAAC_members_contact_list.xlsx - Sheet1.csv');
+            const response = await fetch('AAAC_members_contact_list.xlsx - Sheet1.csv');
             if (!response.ok) {
                 throw new Error(`Failed to load contact list: ${response.status}`);
             }
@@ -58,7 +58,7 @@ class CSVDataLoader {
     // Load accountant database (primary data source)
     async loadAccountantDatabase() {
         try {
-            const response = await fetch('data/AAAC_Accountant_Database_20250826.csv');
+            const response = await fetch('AAAC_Accountant_Database_20250826.csv');
             if (!response.ok) {
                 throw new Error(`Failed to load accountant database: ${response.status}`);
             }

@@ -3150,29 +3150,40 @@
         function loadLocalCSVData() {
             console.log('🔄 Loading local CSV data...');
             
-            // Try to load from the csv_data_loader first
-            if (window.csvLoader) {
-                console.log('🔄 Using csv_data_loader to load data...');
-                window.csvLoader.loadAllData()
-                    .then(members => {
-                        if (members && members.length > 0) {
-                            window.membersData = members;
-                            console.log('✅ Data loaded via csv_data_loader:', window.membersData.length, 'members');
-                            displayMembers();
-                            updateStats();
-                        } else {
-                            throw new Error('No members loaded via csv_data_loader');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('❌ csv_data_loader failed:', error);
-                        console.log('🔄 Loading sample data as fallback...');
-                        loadSampleData();
-                    });
-            } else {
-                console.log('🔄 csv_data_loader not available, loading sample data...');
-                loadSampleData();
-            }
+            fetch('complete_data_for_google_sheet.csv')
+                .then(response => {
+                    console.log('CSV fetch response status:', response.status);
+                    console.log('CSV fetch response ok:', response.ok);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(data => {
+                    console.log('✅ Local CSV loaded successfully');
+                    console.log('CSV data length:', data.length);
+                    console.log('CSV data preview:', data.substring(0, 200));
+                    
+                    const parsedData = parseAccountantData(data);
+                    console.log('Parsed data length:', parsedData.length);
+                    console.log('Sample parsed member:', parsedData[0]);
+                    
+                    if (parsedData.length > 0) {
+                        window.membersData = parsedData;
+                        console.log('✅ Local data set:', window.membersData.length, 'members');
+                        displayMembers();
+                        updateStats();
+                    } else {
+                        throw new Error('No members parsed from local CSV');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Local CSV loading failed:', error);
+                    console.log('🔄 Loading sample data as fallback...');
+                    // Load sample data as final fallback
+                    loadSampleData();
+                });
         }
 
         function parseContactData(csvText) {
