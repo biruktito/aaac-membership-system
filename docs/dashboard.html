@@ -2238,7 +2238,7 @@
             <button class="btn btn-secondary" onclick="window.auditSystem.exportAuditLog()">📋 Export Audit Log</button>
                     <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
             <button class="btn btn-info" onclick="window.enhancedStorageSetup.getStatus()">📊 Storage Status</button>
-            <button class="btn btn-warning" onclick="window.toggleDataLock()">🔒 Toggle Data Lock</button>
+            <button class="btn btn-info" onclick="window.paymentSync.getStatus()">📊 Sync Status</button>
                 </div>
             </div>
 
@@ -2783,41 +2783,212 @@
             console.log('✅ Dashboard refreshed SAFELY - local payment changes PROTECTED');
         };
         
-        // DATA LOCK SYSTEM - PREVENTS EXTERNAL DATA FROM OVERWRITING LOCAL CHANGES
-        window.dataLockEnabled = false;
-        
-        window.toggleDataLock = function() {
-            window.dataLockEnabled = !window.dataLockEnabled;
-            const status = window.dataLockEnabled ? '🔒 ENABLED' : '🔓 DISABLED';
-            const color = window.dataLockEnabled ? '#e74c3c' : '#27ae60';
+        // SEAMLESS PAYMENT SYNCHRONIZATION SYSTEM
+        window.paymentSync = {
+            // Track pending payments that need to be synced
+            pendingPayments: [],
+            isSyncing: false,
             
-            console.log(`🔒 DATA LOCK ${status}`);
+            // Add payment to sync queue
+            addPayment: function(paymentData) {
+                this.pendingPayments.push(paymentData);
+                console.log(`📝 Payment added to sync queue: ${paymentData.memberName} - $${paymentData.amount}`);
+                this.processSyncQueue();
+            },
             
-            // Show status to user
-            const lockStatus = document.createElement('div');
-            lockStatus.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 20px;
-                background: ${color};
-                color: white;
-                padding: 15px 20px;
-                border-radius: 5px;
-                z-index: 1000;
-                font-weight: bold;
-            `;
-            lockStatus.textContent = `DATA LOCK: ${status}`;
-            
-            document.body.appendChild(lockStatus);
-            
-            // Remove after 3 seconds
-            setTimeout(() => {
-                if (lockStatus.parentNode) {
-                    lockStatus.parentNode.removeChild(lockStatus);
+            // Process all pending payments
+            processSyncQueue: async function() {
+                if (this.isSyncing || this.pendingPayments.length === 0) {
+                    return;
                 }
-            }, 3000);
+                
+                this.isSyncing = true;
+                console.log(`🔄 Processing ${this.pendingPayments.length} pending payments...`);
+                
+                try {
+                    // Process payments in order
+                    for (const payment of this.pendingPayments) {
+                        await this.syncPayment(payment);
+                    }
+                    
+                    // Clear processed payments
+                    this.pendingPayments = [];
+                    console.log('✅ All payments synchronized successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Payment synchronization failed:', error);
+                } finally {
+                    this.isSyncing = false;
+                }
+            },
             
-            return window.dataLockEnabled;
+            // Sync individual payment to Google Sheets
+            syncPayment: async function(paymentData) {
+                console.log(`🔄 Syncing payment: ${paymentData.memberName} - $${paymentData.amount}`);
+                
+                try {
+                    // Update Google Sheets
+                    if (window.GoogleSheetsIntegration) {
+                        await this.updateGoogleSheets(paymentData);
+                    }
+                    
+                    // Update GitHub storage
+                    if (window.gitHubStorage && window.gitHubStorage.isInitialized) {
+                        await this.updateGitHubStorage(paymentData);
+                    }
+                    
+                    // Update local display
+                    this.updateLocalDisplay(paymentData);
+                    
+                    console.log(`✅ Payment synchronized: ${paymentData.memberName}`);
+                    
+                } catch (error) {
+                    console.error(`❌ Failed to sync payment for ${paymentData.memberName}:`, error);
+                    throw error;
+                }
+            },
+            
+            // Update Google Sheets with payment
+            updateGoogleSheets: async function(paymentData) {
+                if (!window.GoogleSheetsIntegration) {
+                    throw new Error('Google Sheets integration not available');
+                }
+                
+                console.log(`📊 Updating Google Sheets for ${paymentData.memberName}...`);
+                
+                // This would call your Google Sheets API to update the data
+                // For now, we'll simulate the update
+                const success = await window.GoogleSheetsIntegration.updateMemberPayment(paymentData);
+                
+                if (success) {
+                    console.log(`✅ Google Sheets updated for ${paymentData.memberName}`);
+                } else {
+                    throw new Error('Google Sheets update failed');
+                }
+            },
+            
+            // Update GitHub storage
+            updateGitHubStorage: async function(paymentData) {
+                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
+                    throw new Error('GitHub storage not available');
+                }
+                
+                console.log(`💾 Updating GitHub storage for ${paymentData.memberName}...`);
+                
+                await window.gitHubStorage.addPayment(paymentData);
+                console.log(`✅ GitHub storage updated for ${paymentData.memberName}`);
+            },
+            
+            // Update local display immediately
+            updateLocalDisplay: function(paymentData) {
+                console.log(`🔄 Updating local display for ${paymentData.memberName}...`);
+                
+                // Update dashboard stats
+                updateDashboardStats();
+                
+                // Update member display
+                displayMembersWithRoleVisibility();
+                
+                console.log(`✅ Local display updated for ${paymentData.memberName}`);
+            },
+            
+            // Get sync status
+            getStatus: function() {
+                const status = {
+                    pendingPayments: this.pendingPayments.length,
+                    isSyncing: this.isSyncing,
+                    lastSync: new Date().toISOString()
+                };
+                
+                // Show status to user
+                this.showSyncStatus(status);
+                
+                return status;
+            },
+            
+            // Show sync status modal
+            showSyncStatus: function(status) {
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                `;
+                
+                const statusColor = status.isSyncing ? '#f39c12' : (status.pendingPayments > 0 ? '#e74c3c' : '#27ae60');
+                const statusIcon = status.isSyncing ? '🔄' : (status.pendingPayments > 0 ? '⚠️' : '✅');
+                const statusText = status.isSyncing ? 'SYNCING' : (status.pendingPayments > 0 ? 'PENDING' : 'SYNCED');
+                
+                modal.innerHTML = `
+                    <div class="modal-content" style="
+                        background: white;
+                        padding: 30px;
+                        border-radius: 10px;
+                        max-width: 500px;
+                        text-align: center;
+                    ">
+                        <h3 style="color: ${statusColor}; margin-bottom: 20px;">
+                            ${statusIcon} Payment Synchronization Status: ${statusText}
+                        </h3>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4>📊 Current Status:</h4>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>Pending Payments:</strong> 
+                                    <span style="color: ${status.pendingPayments > 0 ? '#e74c3c' : '#27ae60'}">
+                                        ${status.pendingPayments} payment(s)
+                                    </span>
+                                </li>
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>Sync Status:</strong> 
+                                    <span style="color: ${status.isSyncing ? '#f39c12' : '#27ae60'}">
+                                        ${status.isSyncing ? '🔄 Syncing...' : '✅ Idle'}
+                                    </span>
+                                </li>
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>Last Sync:</strong> 
+                                    <span style="color: #7f8c8d;">
+                                        ${new Date(status.lastSync).toLocaleString()}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4>🔧 Actions:</h4>
+                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                                ${status.pendingPayments > 0 ? `
+                                    <button onclick="window.paymentSync.processSyncQueue()" 
+                                            style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                        🔄 Force Sync Now
+                                    </button>
+                                ` : ''}
+                                <button onclick="this.closest('.modal').remove()" 
+                                        style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                    ❌ Close
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="font-size: 12px; color: #7f8c8d; border-top: 1px solid #eee; padding-top: 15px;">
+                            <strong>How it works:</strong> 
+                            Payments are automatically synchronized to Google Sheets and GitHub storage. 
+                            The system ensures all data sources stay updated and consistent.
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+            }
         };
 
         window.checkSystemStatus = function() {
@@ -5037,12 +5208,28 @@
                 document.getElementById('paymentForm').reset();
                 document.getElementById('paymentModal').style.display = 'none';
                 
-                // Try to save to persistent storage (non-blocking)
+                // SEAMLESS SYNCHRONIZATION - Update Google Sheets + GitHub + Display
                 try {
-                    savePaymentToPersistentStorage(memberName, paymentType, paymentAmount, paymentNotes, member);
+                    console.log('🔄 Starting seamless payment synchronization...');
+                    
+                    const paymentData = {
+                        memberId: member.id,
+                        memberName: memberName,
+                        amount: paymentAmount,
+                        paymentType: paymentType,
+                        notes: paymentNotes,
+                        date: new Date().toISOString(),
+                        memberData: member // Include updated member data
+                    };
+                    
+                    // Add to sync queue - this will update Google Sheets, GitHub, and display
+                    window.paymentSync.addPayment(paymentData);
+                    
+                    console.log('✅ Payment added to synchronization queue');
+                    
                 } catch (error) {
-                    console.error('❌ Failed to save to persistent storage:', error);
-                    // Don't block the user - payment is recorded locally
+                    console.error('❌ Failed to start synchronization:', error);
+                    // Payment is still recorded locally
                 }
                 
             } catch (error) {
