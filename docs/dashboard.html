@@ -2687,7 +2687,8 @@
         window.searchMembers = function() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             if (!searchTerm) {
-                displayMembers();
+                // FIXED: Use the correct display function that respects role visibility
+                displayMembersWithRoleVisibility();
                 return;
             }
             
@@ -2697,12 +2698,14 @@
                 member.id.toString().includes(searchTerm)
             );
             
-            displayMembers(filteredMembers);
+            // FIXED: Use the correct display function that respects role visibility
+            displayMembersWithRoleVisibility(filteredMembers);
         };
 
         window.clearSearch = function() {
             document.getElementById('searchInput').value = '';
-            displayMembers();
+            // FIXED: Use the correct display function that respects role visibility
+            displayMembersWithRoleVisibility();
         };
 
         window.addNewMember = function() {
@@ -2753,7 +2756,8 @@
             };
             
             membersData.push(newMember);
-            displayMembers();
+            // FIXED: Use the correct display function that respects role visibility
+            displayMembersWithRoleVisibility();
             closeModal();
             alert(`Member ${name} added successfully!`);
         };
@@ -4780,7 +4784,8 @@
             event.target.classList.add('active');
             
             if (status === 'all') {
-                displayMembers();
+                // FIXED: Use the correct display function that respects role visibility
+                displayMembersWithRoleVisibility();
                 return;
             }
             
@@ -4790,7 +4795,8 @@
                 return balanceInfo.status === status;
             });
             
-            displayMembers(filteredData);
+            // FIXED: Use the correct display function that respects role visibility
+            displayMembersWithRoleVisibility(filteredData);
         }
 
         function searchMembers() {
@@ -4829,13 +4835,15 @@
             console.log('Filtered results:', filteredData);
             console.log('=== END SEARCH FUNCTION ===');
             
-            displayMembers(filteredData);
+            // FIXED: Use the correct display function that respects role visibility
+            displayMembersWithRoleVisibility(filteredData);
         }
 
         function clearSearch() {
             console.log('=== CLEAR SEARCH CALLED ===');
             document.getElementById('searchInput').value = '';
-            displayMembers(); // Show all members
+            // FIXED: Use the correct display function that respects role visibility
+            displayMembersWithRoleVisibility(); // Show all members
             console.log('Search cleared, showing all members');
         }
 
@@ -4899,8 +4907,9 @@
             dataToUse.push(newMember);
             
             // Update display
-            displayMembers();
-            updateStats();
+            // FIXED: Use the correct display function that respects role visibility
+            displayMembersWithRoleVisibility();
+            updateDashboardStats();
             
             // Close modal
             closeModal();
@@ -5509,11 +5518,12 @@
                         // Load existing payment data and apply to member data
                         return loadPaymentDataFromGitHub().then(() => {
                             // Update display
-                            if (typeof displayMembers === 'function') {
-                                displayMembers();
+                            // FIXED: Use the correct display function that respects role visibility
+                            if (typeof displayMembersWithRoleVisibility === 'function') {
+                                displayMembersWithRoleVisibility();
                             }
-                            if (typeof updateStats === 'function') {
-                                updateStats();
+                            if (typeof updateDashboardStats === 'function') {
+                                updateDashboardStats();
                             }
                             return true;
                         }).catch(error => {
