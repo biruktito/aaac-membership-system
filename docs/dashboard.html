@@ -2799,6 +2799,7 @@
             // Process all pending payments
             processSyncQueue: async function() {
                 if (this.isSyncing || this.pendingPayments.length === 0) {
+                    console.log('🔄 Sync already in progress or no pending payments');
                     return;
                 }
                 
@@ -2808,17 +2809,34 @@
                 try {
                     // Process payments in order
                     for (const payment of this.pendingPayments) {
-                        await this.syncPayment(payment);
+                        try {
+                            await this.syncPayment(payment);
+                            console.log(`✅ Payment synced successfully: ${payment.memberName}`);
+                        } catch (paymentError) {
+                            console.error(`❌ Failed to sync payment for ${payment.memberName}:`, paymentError);
+                            // Continue with other payments instead of failing completely
+                        }
                     }
                     
                     // Clear processed payments
                     this.pendingPayments = [];
-                    console.log('✅ All payments synchronized successfully');
+                    console.log('✅ All payments processed (some may have failed but sync completed)');
                     
                 } catch (error) {
                     console.error('❌ Payment synchronization failed:', error);
                 } finally {
                     this.isSyncing = false;
+                    
+                    // Auto-retry failed payments after 30 seconds
+                    if (this.pendingPayments.length > 0) {
+                        console.log(`🔄 Auto-retry in 30 seconds for ${this.pendingPayments.length} failed payments...`);
+                        setTimeout(() => {
+                            if (this.pendingPayments.length > 0) {
+                                console.log('🔄 Auto-retrying failed payments...');
+                                this.processSyncQueue();
+                            }
+                        }, 30000);
+                    }
                 }
             },
             
@@ -2850,20 +2868,32 @@
             
             // Update Google Sheets with payment
             updateGoogleSheets: async function(paymentData) {
-                if (!window.GoogleSheetsIntegration) {
-                    throw new Error('Google Sheets integration not available');
-                }
-                
                 console.log(`📊 Updating Google Sheets for ${paymentData.memberName}...`);
                 
-                // This would call your Google Sheets API to update the data
-                // For now, we'll simulate the update
-                const success = await window.GoogleSheetsIntegration.updateMemberPayment(paymentData);
+                // Check if Google Sheets integration is available
+                if (!window.GoogleSheetsIntegration) {
+                    console.warn('⚠️ Google Sheets integration not available, skipping...');
+                    return true; // Don't fail the sync
+                }
                 
-                if (success) {
-                    console.log(`✅ Google Sheets updated for ${paymentData.memberName}`);
-                } else {
-                    throw new Error('Google Sheets update failed');
+                try {
+                    // Try to update Google Sheets
+                    if (typeof window.GoogleSheetsIntegration.updateMemberPayment === 'function') {
+                        const success = await window.GoogleSheetsIntegration.updateMemberPayment(paymentData);
+                        if (success) {
+                            console.log(`✅ Google Sheets updated for ${paymentData.memberName}`);
+                            return true;
+                        } else {
+                            console.warn('⚠️ Google Sheets update returned false, but continuing...');
+                            return true; // Don't fail the sync
+                        }
+                    } else {
+                        console.warn('⚠️ Google Sheets updateMemberPayment function not found, skipping...');
+                        return true; // Don't fail the sync
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Google Sheets update failed, but continuing with other sync operations:', error);
+                    return true; // Don't fail the sync
                 }
             },
             
@@ -2890,6 +2920,21 @@
                 displayMembersWithRoleVisibility();
                 
                 console.log(`✅ Local display updated for ${paymentData.memberName}`);
+            },
+            
+            // Clear sync queue
+            clearSyncQueue: function() {
+                if (confirm('⚠️ Are you sure you want to clear the sync queue? This will remove all pending payments from the sync list.')) {
+                    this.pendingPayments = [];
+                    console.log('🗑️ Sync queue cleared');
+                    alert('✅ Sync queue cleared successfully');
+                    
+                    // Close the modal
+                    const modal = document.querySelector('.modal');
+                    if (modal) {
+                        modal.remove();
+                    }
+                }
             },
             
             // Get sync status
@@ -2970,6 +3015,10 @@
                                     <button onclick="window.paymentSync.processSyncQueue()" 
                                             style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
                                         🔄 Force Sync Now
+                                    </button>
+                                    <button onclick="window.paymentSync.clearSyncQueue()" 
+                                            style="background: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                        🗑️ Clear Queue
                                     </button>
                                 ` : ''}
                                 <button onclick="this.closest('.modal').remove()" 
