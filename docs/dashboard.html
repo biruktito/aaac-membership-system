@@ -2548,11 +2548,8 @@
                 // Display members with role-based visibility
                 displayMembersWithRoleVisibility();
                 
-                // Force refresh after a short delay to ensure data is loaded
-                setTimeout(() => {
-                    updateDashboardStats();
-                    displayMembersWithRoleVisibility();
-                }, 1000);
+                // NO MORE FORCED REFRESHES - This was causing data reversion!
+                console.log('✅ Dashboard updated - NO forced refresh to prevent data reversion');
                 }).catch(error => {
                     console.error('❌ Failed to load member data:', error);
                     // Fall back to existing system
@@ -3097,9 +3094,9 @@
             }
         }
 
-        // Simplified, robust data loading system
+        // Simplified, robust data loading system WITH LOCAL CHANGE PROTECTION
         function loadDataRobustly() {
-            console.log('=== ROBUST DATA LOADING SYSTEM ===');
+            console.log('=== ROBUST DATA LOADING SYSTEM WITH LOCAL CHANGE PROTECTION ===');
             console.log('GoogleSheetsIntegration available:', !!window.GoogleSheetsIntegration);
             console.log('GoogleSheetsIntegration.initialize available:', !!(window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function'));
             
@@ -3113,6 +3110,11 @@
                     
                     if (success && window.membersData && window.membersData.length > 0) {
                         console.log('✅ Using Google Sheets data:', window.membersData.length, 'members');
+                        
+                        // PROTECT LOCAL CHANGES FROM BEING OVERWRITTEN
+                        const protectedData = protectLocalChanges(window.membersData);
+                        window.membersData = protectedData;
+                        
                         updateDashboardStats();
                         displayMembersWithRoleVisibility();
                     } else {
@@ -3128,6 +3130,37 @@
                 loadLocalCSVData();
             }
         }
+        
+        // PROTECT LOCAL CHANGES FROM BEING OVERWRITTEN BY EXTERNAL DATA
+        function protectLocalChanges(externalData) {
+            if (!window.dataSourceManager || !window.membersData) {
+                return externalData;
+            }
+            
+            console.log('🛡️ Checking for local changes to protect...');
+            let changesProtected = 0;
+            
+            const protectedData = externalData.map(externalMember => {
+                // Check if we have local changes for this member
+                const localMember = window.membersData.find(m => m.id === externalMember.id);
+                
+                if (localMember && window.dataSourceManager.shouldOverwrite(externalMember.id, 'payment', externalMember)) {
+                    // No recent local changes, use external data
+                    return externalMember;
+                } else if (localMember && !window.dataSourceManager.shouldOverwrite(externalMember.id, 'payment', externalMember)) {
+                    // Recent local changes exist, PROTECT them
+                    console.log(`🛡️ Protecting local changes for member ${externalMember.id} (${externalMember.name})`);
+                    changesProtected++;
+                    return localMember; // Keep local version
+                } else {
+                    // No local data, use external
+                    return externalMember;
+                }
+            });
+            
+            console.log(`🛡️ Protected ${changesProtected} local changes from being overwritten`);
+            return protectedData;
+        }
 
         function loadLocalCSVData() {
             console.log('🔄 Loading local CSV data...');
@@ -3138,8 +3171,13 @@
                 window.csvLoader.loadAllData()
                     .then(members => {
                         if (members && members.length > 0) {
-                            window.membersData = members;
+                            // PROTECT LOCAL CHANGES FROM BEING OVERWRITTEN
+                            const protectedData = protectLocalChanges(members);
+                            window.membersData = protectedData;
+                            
                             console.log('✅ Data loaded via csv_data_loader:', window.membersData.length, 'members');
+                            console.log('🛡️ Local changes protected during CSV load');
+                            
                             updateDashboardStats();
                             displayMembersWithRoleVisibility();
                         } else {
@@ -4925,23 +4963,30 @@
                     
                     console.log(`Smart distribution complete for ${memberName} - Total distributed: $${paymentAmount - remainingAmount}`);
                     
-                    // IMMEDIATE DATA REFRESH - Update dashboard in real-time
-                    console.log('🔄 Refreshing dashboard data immediately after payment...');
+                    // PROTECT LOCAL PAYMENT CHANGES FROM BEING OVERWRITTEN
+                    console.log('🛡️ Protecting local payment changes...');
                     
-                    // Force immediate stats update
-                    updateDashboardStats();
+                    // Record this change to prevent data reversion
+                    window.dataSourceManager.recordChange(member.id, 'payment', {
+                        memberName: memberName,
+                        amount: paymentAmount,
+                        type: paymentType,
+                        timestamp: Date.now()
+                    });
                     
-                    // Force immediate member display update
-                    displayMembersWithRoleVisibility();
-                    
-                    // Force refresh of all member data
+                    // Update local data structure IMMEDIATELY
                     if (window.membersData) {
                         window.membersData = window.membersData.map(m => 
                             m.name === memberName ? member : m
                         );
                     }
                     
-                    console.log('✅ Dashboard updated immediately after payment submission');
+                    // IMMEDIATE DASHBOARD UPDATE WITH LOCAL DATA ONLY
+                    console.log('🔄 Updating dashboard with LOCAL payment data...');
+                    updateDashboardStats();
+                    displayMembersWithRoleVisibility();
+                    
+                    console.log('✅ Payment recorded and dashboard updated - PROTECTED from reversion');
                     
                     // Try to save to persistent storage
                     savePaymentToPersistentStorage(memberName, paymentType, paymentAmount, paymentNotes, member);
@@ -4961,16 +5006,15 @@
             return;
         }
                 
-                // Update display immediately
-                console.log('Updating display after payment...');
-                displayMembers();
-                updateStats();
+                // Update display immediately with LOCAL DATA ONLY
+                console.log('Updating display after payment with LOCAL data...');
                 
-                // Force a refresh of all dashboard numbers to show payment impact
-                setTimeout(() => {
-                    console.log('🔄 Refreshing dashboard after payment...');
-                    updateStats();
-                }, 500);
+                // Use our clean functions with LOCAL data
+                updateDashboardStats();
+                displayMembersWithRoleVisibility();
+                
+                // NO MORE FORCED REFRESHES - This prevents data reversion!
+                console.log('✅ Payment display updated - NO data reloading to prevent reversion');
                 
                 // Show success message and close modal
                 alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})\n\n💾 Payment saved to GitHub - will persist for all users!`);
@@ -6146,6 +6190,59 @@
                 window.auditSystem.dailyBackup();
             }
         }, 24 * 60 * 60 * 1000); // 24 hours
+        
+        // DATA SOURCE PRIORITY SYSTEM - PREVENTS CONFLICTS
+        window.dataSourceManager = {
+            // Priority order: Local changes > Google Sheets > CSV > Sample
+            priority: ['local', 'googleSheets', 'csv', 'sample'],
+            
+            // Track local changes to prevent overwriting
+            localChanges: new Map(),
+            
+            // Record a local change
+            recordChange: function(memberId, changeType, data) {
+                const key = `${memberId}_${changeType}`;
+                this.localChanges.set(key, {
+                    timestamp: Date.now(),
+                    data: data,
+                    changeType: changeType
+                });
+                console.log(`📝 Local change recorded: ${key}`, data);
+            },
+            
+            // Check if data should be overwritten
+            shouldOverwrite: function(memberId, changeType, incomingData) {
+                const key = `${memberId}_${changeType}`;
+                const localChange = this.localChanges.get(key);
+                
+                if (localChange) {
+                    // If local change is recent (within 5 minutes), don't overwrite
+                    const isRecent = (Date.now() - localChange.timestamp) < 5 * 60 * 1000;
+                    if (isRecent) {
+                        console.log(`🛡️ Protecting local change: ${key} (${isRecent ? 'recent' : 'old'})`);
+                        return false;
+                    }
+                }
+                
+                return true;
+            },
+            
+            // Clear old changes (older than 1 hour)
+            cleanupOldChanges: function() {
+                const oneHourAgo = Date.now() - 60 * 60 * 1000;
+                for (const [key, change] of this.localChanges.entries()) {
+                    if (change.timestamp < oneHourAgo) {
+                        this.localChanges.delete(key);
+                        console.log(`🧹 Cleaned up old change: ${key}`);
+                    }
+                }
+            }
+        };
+        
+        // Clean up old changes every hour
+        setInterval(() => {
+            window.dataSourceManager.cleanupOldChanges();
+        }, 60 * 60 * 1000);
         
         // ENHANCED STORAGE INITIALIZATION WITH BETTER ERROR HANDLING
         window.enhancedStorageSetup = {
