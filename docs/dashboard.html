@@ -2237,6 +2237,7 @@
             <button class="btn btn-warning" onclick="window.auditSystem.checkDataIntegrity()">🔍 Data Integrity</button>
             <button class="btn btn-secondary" onclick="window.auditSystem.exportAuditLog()">📋 Export Audit Log</button>
                     <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
+            <button class="btn btn-info" onclick="window.enhancedStorageSetup.getStatus()">📊 Storage Status</button>
                 </div>
             </div>
 
@@ -4941,9 +4942,12 @@
                     }
                     
                     console.log('✅ Dashboard updated immediately after payment submission');
+                    
+                    // Try to save to persistent storage
+                    savePaymentToPersistentStorage(memberName, paymentType, paymentAmount, paymentNotes, member);
                 }
                 
-                        // SAVE TO GITHUB GIST for persistent storage
+                // SAVE TO GITHUB GIST for persistent storage
         try {
             savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member).then(() => {
                 console.log('✅ Payment saved to GitHub successfully');
@@ -4985,6 +4989,148 @@
 
         // Initialize GitHub Gist storage for persistent data
         let gitHubStorage = null;
+        
+        // ENHANCED PAYMENT SAVING WITH BETTER ERROR HANDLING
+        function savePaymentToPersistentStorage(memberName, paymentType, paymentAmount, paymentNotes, member) {
+            console.log('💾 Attempting to save payment to persistent storage...');
+            
+            // Check if storage is ready
+            if (!window.enhancedStorageSetup.isReady()) {
+                console.log('⚠️ Storage not ready, attempting to initialize...');
+                
+                // Try to initialize with saved token
+                window.enhancedStorageSetup.initializeWithSavedToken().then(() => {
+                    console.log('✅ Storage initialized, now saving payment...');
+                    savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member);
+                }).catch(error => {
+                    console.error('❌ Failed to initialize storage:', error);
+                    showStorageErrorModal(memberName, paymentType, paymentAmount, paymentNotes, member);
+                });
+            } else {
+                // Storage is ready, save directly
+                savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member);
+            }
+        }
+        
+        // Save payment to GitHub
+        function savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member) {
+            if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
+                console.error('❌ GitHub storage not available');
+                showStorageErrorModal(memberName, paymentType, paymentAmount, paymentNotes, member);
+                return;
+            }
+            
+            console.log('💾 Saving payment to GitHub...');
+            
+            const paymentData = {
+                memberId: member.id,
+                memberName: memberName,
+                amount: paymentAmount,
+                paymentType: paymentType,
+                notes: paymentNotes,
+                date: new Date().toISOString()
+            };
+            
+            window.gitHubStorage.addPayment(paymentData).then(() => {
+                console.log('✅ Payment saved to GitHub successfully');
+                
+                // Show success message
+                showSuccessMessage('Payment recorded and saved permanently!');
+                
+                // Log audit event
+                if (window.auditSystem) {
+                    window.auditSystem.logAuditEvent('PAYMENT_SAVED', 'Payment saved to persistent storage', paymentData);
+                }
+                
+            }).catch(error => {
+                console.error('❌ Failed to save payment to GitHub:', error);
+                showStorageErrorModal(memberName, paymentType, paymentAmount, paymentNotes, member);
+            });
+        }
+        
+        // Show storage error modal
+        function showStorageErrorModal(memberName, paymentType, paymentAmount, paymentNotes, member) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            `;
+            
+            modal.innerHTML = `
+                <div class="modal-content" style="
+                    background: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    max-width: 500px;
+                    text-align: center;
+                ">
+                    <h3 style="color: #e74c3c;">⚠️ Storage Error</h3>
+                    <p>Payment was recorded locally but failed to save permanently.</p>
+                    <p><strong>Error:</strong> Persistent storage not initialized</p>
+                    <div style="margin: 20px 0;">
+                        <button onclick="window.enhancedStorageSetup.initializeWithSavedToken()" 
+                                style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 5px;">
+                            🔧 Try to Initialize Storage
+                        </button>
+                        <button onclick="this.closest('.modal').remove()" 
+                                style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px; margin: 5px;">
+                            ❌ Close
+                        </button>
+                    </div>
+                    <p style="font-size: 12px; color: #7f8c8d;">
+                        <strong>Note:</strong> Your payment is saved locally and will be visible immediately. 
+                        Set up GitHub token to enable permanent storage.
+                    </p>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Log the error
+            if (window.auditSystem) {
+                window.auditSystem.logAuditEvent('STORAGE_ERROR', 'Payment storage failed', {
+                    memberId: member.id,
+                    memberName: memberName,
+                    amount: paymentAmount,
+                    error: 'Persistent storage not initialized'
+                });
+            }
+        }
+        
+        // Show success message
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #27ae60;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 1000;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            `;
+            successDiv.textContent = message;
+            
+            document.body.appendChild(successDiv);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                if (successDiv.parentNode) {
+                    successDiv.parentNode.removeChild(successDiv);
+                }
+            }, 3000);
+        }
 
         // Initialize persistent storage
         function initializePersistentStorage(githubToken) {
@@ -6000,6 +6146,81 @@
                 window.auditSystem.dailyBackup();
             }
         }, 24 * 60 * 60 * 1000); // 24 hours
+        
+        // ENHANCED STORAGE INITIALIZATION WITH BETTER ERROR HANDLING
+        window.enhancedStorageSetup = {
+            // Check if storage is ready
+            isReady: function() {
+                return window.gitHubStorage && window.gitHubStorage.isInitialized;
+            },
+            
+            // Initialize storage with saved token
+            initializeWithSavedToken: function() {
+                const savedToken = localStorage.getItem('aaacGistToken');
+                const savedGistId = localStorage.getItem('aaacGistId');
+                
+                if (savedToken && savedGistId) {
+                    console.log('🔄 Initializing storage with saved token...');
+                    return this.initializeStorage(savedToken, savedGistId);
+                } else {
+                    console.log('❌ No saved token found');
+                    return Promise.reject('No saved token found');
+                }
+            },
+            
+            // Initialize storage with new token
+            initializeStorage: function(token, gistId) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        console.log('🔄 Initializing GitHub storage...');
+                        
+                        // Create new storage instance
+                        window.gitHubStorage = new GitHubGistStorage(token, gistId);
+                        
+                        // Initialize it
+                        window.gitHubStorage.initialize().then(() => {
+                            console.log('✅ GitHub storage initialized successfully');
+                            
+                            // Test the connection
+                            return window.gitHubStorage.testConnection();
+                        }).then(() => {
+                            console.log('✅ GitHub storage connection tested successfully');
+                            resolve(true);
+                        }).catch(error => {
+                            console.error('❌ GitHub storage initialization failed:', error);
+                            reject(error);
+                        });
+                        
+                    } catch (error) {
+                        console.error('❌ Error creating GitHub storage:', error);
+                        reject(error);
+                    }
+                });
+            },
+            
+            // Test storage connection
+            testConnection: function() {
+                if (!this.isReady()) {
+                    return Promise.reject('Storage not initialized');
+                }
+                
+                return window.gitHubStorage.testConnection();
+            },
+            
+            // Get storage status
+            getStatus: function() {
+                const status = {
+                    isReady: this.isReady(),
+                    hasToken: !!localStorage.getItem('aaacGistToken'),
+                    hasGistId: !!localStorage.getItem('aaacGistId'),
+                    storageObject: !!window.gitHubStorage,
+                    isInitialized: window.gitHubStorage ? window.gitHubStorage.isInitialized : false
+                };
+                
+                console.log('📊 Storage Status:', status);
+                return status;
+            }
+        };
         
         // TEST FUNCTION - Run this in console to verify calculations
         window.testFinancialCalculations = function() {
