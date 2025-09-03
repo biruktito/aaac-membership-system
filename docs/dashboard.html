@@ -4677,42 +4677,125 @@
                 return;
             }
             
-            // Simple calculation: how many months this covers
-            const monthlyFee = 15;
-            const monthsCovered = Math.floor(paymentAmount / monthlyFee);
-            const remainingAmount = paymentAmount % monthlyFee;
+            // Find the member to calculate their current status
+            const dataToUse = window.membersData || membersData;
+            const member = dataToUse.find(m => m.name === memberName);
             
-            // Show simple preview
-            const preview = document.getElementById('distributionPreview');
-            let previewHTML = '';
-            
-            if (monthsCovered > 0) {
-                previewHTML = `
-                    <div class="distribution-summary">
-                        <strong>This payment will cover ${monthsCovered} month(s):</strong>
-                    </div>
-                    <div class="distribution-details">
-                        <div class="month-coverage">
-                            <span class="month-name">Monthly Dues</span>
-                            <span class="amount-applied">$${monthsCovered * monthlyFee}</span>
-                        </div>
-                `;
-                
-                if (remainingAmount > 0) {
-                    previewHTML += `
-                        <div class="remaining-amount">
-                            <span class="remaining-label">Remaining (Paid Ahead):</span>
-                            <span class="remaining-value">$${remainingAmount}</span>
-                        </div>
-                    `;
-                }
-                
-                previewHTML += '</div>';
-            } else {
-                previewHTML = '<div class="no-distribution">Payment amount must be at least $15.</div>';
+            if (!member) {
+                document.getElementById('paymentDistribution').style.display = 'none';
+                return;
             }
             
-            preview.innerHTML = previewHTML;
+            // Calculate member's current financial status
+            const financials = calculateMemberFinancials(member);
+            const monthlyFee = 15;
+            
+            // Smart payment distribution logic
+            let distributionHTML = '';
+            let totalDistributed = 0;
+            let remainingAmount = paymentAmount;
+            
+            // Step 1: Cover past due months first (most important!)
+            if (financials.monthsBehind > 0) {
+                const monthsToCover = Math.min(financials.monthsBehind, Math.floor(remainingAmount / monthlyFee));
+                const amountForPastDue = monthsToCover * monthlyFee;
+                
+                if (monthsToCover > 0) {
+                    distributionHTML += `
+                        <div class="distribution-section past-due">
+                            <h4>🚨 COVERING PAST DUE MONTHS (Priority 1)</h4>
+                            <div class="month-breakdown">
+                                <span class="months-covered">${monthsToCover} month(s) covered</span>
+                                <span class="amount-applied">$${amountForPastDue.toFixed(2)}</span>
+                            </div>
+                            <div class="impact">
+                                <strong>Impact:</strong> Will reduce months behind from ${financials.monthsBehind} to ${Math.max(0, financials.monthsBehind - monthsToCover)}
+                            </div>
+                        </div>
+                    `;
+                    remainingAmount -= amountForPastDue;
+                    totalDistributed += amountForPastDue;
+                }
+            }
+            
+            // Step 2: Cover current month if not already covered
+            if (remainingAmount >= monthlyFee) {
+                distributionHTML += `
+                    <div class="distribution-section current-month">
+                        <h4>✅ COVERING CURRENT MONTH (Priority 2)</h4>
+                        <div class="month-breakdown">
+                            <span class="months-covered">1 month covered</span>
+                            <span class="amount-applied">$${monthlyFee.toFixed(2)}</span>
+                        </div>
+                        <div class="impact">
+                            <strong>Impact:</strong> Will keep member current for this month
+                        </div>
+                    </div>
+                `;
+                remainingAmount -= monthlyFee;
+                totalDistributed += monthlyFee;
+            }
+            
+            // Step 3: Apply remaining to future months (paid ahead)
+            if (remainingAmount > 0) {
+                const futureMonths = Math.floor(remainingAmount / monthlyFee);
+                const futureAmount = futureMonths * monthlyFee;
+                const extraAmount = remainingAmount % monthlyFee;
+                
+                if (futureMonths > 0) {
+                    distributionHTML += `
+                        <div class="distribution-section future-months">
+                            <h4>🚀 PAID AHEAD (Priority 3)</h4>
+                            <div class="month-breakdown">
+                                <span class="months-covered">${futureMonths} future month(s) covered</span>
+                                <span class="amount-applied">$${futureAmount.toFixed(2)}</span>
+                            </div>
+                            <div class="impact">
+                                <strong>Impact:</strong> Member will be ${futureMonths} month(s) ahead on payments
+                            </div>
+                        </div>
+                    `;
+                    totalDistributed += futureAmount;
+                }
+                
+                if (extraAmount > 0) {
+                    distributionHTML += `
+                        <div class="distribution-section extra-amount">
+                            <h4>💰 EXTRA AMOUNT</h4>
+                            <div class="month-breakdown">
+                                <span class="months-covered">Remaining balance</span>
+                                <span class="amount-applied">$${extraAmount.toFixed(2)}</span>
+                            </div>
+                            <div class="impact">
+                                <strong>Impact:</strong> This amount will be applied to next month or saved as credit
+                            </div>
+                        </div>
+                    `;
+                    totalDistributed += extraAmount;
+                }
+            }
+            
+            // Show distribution summary
+            const preview = document.getElementById('distributionPreview');
+            const summaryHTML = `
+                <div class="distribution-header">
+                    <h3>💡 SMART PAYMENT DISTRIBUTION</h3>
+                    <div class="total-amount">
+                        <strong>Total Payment: $${paymentAmount.toFixed(2)}</strong>
+                    </div>
+                </div>
+                ${distributionHTML}
+                <div class="distribution-footer">
+                    <div class="summary">
+                        <strong>Summary:</strong> $${totalDistributed.toFixed(2)} of $${paymentAmount.toFixed(2)} will be distributed
+                    </div>
+                    <div class="benefit">
+                        <strong>Benefit:</strong> This payment will significantly improve the member's financial status
+                    </div>
+                </div>
+            `;
+            
+            preview.innerHTML = summaryHTML;
             document.getElementById('paymentDistribution').style.display = 'block';
         }
 
@@ -4757,20 +4840,105 @@
                     console.log(`Incidental fee recorded: ${memberName} - $${paymentAmount}`);
                     
                 } else if (paymentType === 'monthly') {
-                    // For monthly dues - simple approach: add to current month
-                    const currentYear = new Date().getFullYear();
-                    const currentMonth = new Date().getMonth();
-                    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                    const currentMonthName = monthNames[currentMonth];
+                    // SMART PAYMENT DISTRIBUTION - Distribute across months intelligently
+                    console.log(`Smart distribution for ${memberName} - $${paymentAmount}`);
                     
-                    // Initialize year data if it doesn't exist
-                    if (!member[currentYear]) {
-                        member[currentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                    // Get member's current financial status
+                    const financials = calculateMemberFinancials(member);
+                    let remainingAmount = paymentAmount;
+                    
+                    // Step 1: Cover past due months first (most important!)
+                    if (financials.monthsBehind > 0) {
+                        const monthsToCover = Math.min(financials.monthsBehind, Math.floor(remainingAmount / 15));
+                        if (monthsToCover > 0) {
+                            const amountForPastDue = monthsToCover * 15;
+                            console.log(`Covering ${monthsToCover} past due months with $${amountForPastDue}`);
+                            
+                            // Distribute across past due months (simplified - add to most recent past due month)
+                            const currentYear = new Date().getFullYear();
+                            const currentMonth = new Date().getMonth();
+                            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                            
+                            // Find the most recent past due month
+                            let monthToUpdate = currentMonth - Math.min(monthsToCover, currentMonth);
+                            let yearToUpdate = currentYear;
+                            
+                            if (monthToUpdate < 0) {
+                                yearToUpdate--;
+                                monthToUpdate = 12 + monthToUpdate;
+                            }
+                            
+                            // Initialize year data if needed
+                            if (!member[yearToUpdate]) {
+                                member[yearToUpdate] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                            }
+                            
+                            // Apply payment to the month
+                            const monthName = monthNames[monthToUpdate];
+                            member[yearToUpdate][monthName] = (member[yearToUpdate][monthName] || 0) + amountForPastDue;
+                            
+                            remainingAmount -= amountForPastDue;
+                            console.log(`Applied $${amountForPastDue} to ${monthName} ${yearToUpdate}`);
+                        }
                     }
                     
-                    // Add payment to current month
-                    member[currentYear][currentMonthName] = (member[currentYear][currentMonthName] || 0) + paymentAmount;
-                    console.log(`Monthly payment recorded: ${memberName} - $${paymentAmount} added to ${currentMonthName} ${currentYear}`);
+                    // Step 2: Cover current month
+                    if (remainingAmount >= 15) {
+                        const currentYear = new Date().getFullYear();
+                        const currentMonth = new Date().getMonth();
+                        const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                        const currentMonthName = monthNames[currentMonth];
+                        
+                        if (!member[currentYear]) {
+                            member[currentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                        }
+                        
+                        member[currentYear][currentMonthName] = (member[currentYear][currentMonthName] || 0) + 15;
+                        remainingAmount -= 15;
+                        console.log(`Applied $15 to current month ${currentMonthName} ${currentYear}`);
+                    }
+                    
+                    // Step 3: Apply remaining to future months (paid ahead)
+                    if (remainingAmount > 0) {
+                        const futureMonths = Math.floor(remainingAmount / 15);
+                        if (futureMonths > 0) {
+                            const futureAmount = futureMonths * 15;
+                            const currentYear = new Date().getFullYear();
+                            const currentMonth = new Date().getMonth();
+                            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                            
+                            // Apply to next month
+                            let nextMonth = currentMonth + 1;
+                            let nextYear = currentYear;
+                            if (nextMonth >= 12) {
+                                nextMonth = 0;
+                                nextYear++;
+                            }
+                            
+                            if (!member[nextYear]) {
+                                member[nextYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                            }
+                            
+                            const nextMonthName = monthNames[nextMonth];
+                            member[nextYear][nextMonthName] = (member[nextYear][nextMonthName] || 0) + futureAmount;
+                            
+                            remainingAmount -= futureAmount;
+                            console.log(`Applied $${futureAmount} to future month ${nextMonthName} ${nextYear} (paid ahead)`);
+                        }
+                        
+                        // Any remaining small amount gets added to current month
+                        if (remainingAmount > 0) {
+                            const currentYear = new Date().getFullYear();
+                            const currentMonth = new Date().getMonth();
+                            const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                            const currentMonthName = monthNames[currentMonth];
+                            
+                            member[currentYear][currentMonthName] = (member[currentYear][currentMonthName] || 0) + remainingAmount;
+                            console.log(`Applied remaining $${remainingAmount} to current month ${currentMonthName} ${currentYear}`);
+                        }
+                    }
+                    
+                    console.log(`Smart distribution complete for ${memberName} - Total distributed: $${paymentAmount - remainingAmount}`);
                 }
                 
                         // SAVE TO GITHUB GIST for persistent storage
