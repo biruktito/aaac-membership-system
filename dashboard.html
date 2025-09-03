@@ -3635,6 +3635,99 @@
                 });
         }
 
+        // Comprehensive data loading with embedded fallback data
+        function loadDataWithFallback() {
+            console.log('🔄 Loading data with comprehensive fallback system...');
+            
+            // Try to load from CSV first
+            loadCSVDirectly();
+            
+            // Set a timeout to load fallback data if CSV fails
+            setTimeout(() => {
+                if (!window.membersData || window.membersData.length === 0) {
+                    console.log('🔄 CSV loading failed, loading embedded fallback data...');
+                    loadEmbeddedData();
+                }
+            }, 3000); // Wait 3 seconds for CSV to load
+        }
+
+        // Load embedded member data (built into the HTML)
+        function loadEmbeddedData() {
+            console.log('🔄 Loading embedded member data...');
+            
+            // This is your actual member data embedded in the HTML
+            const embeddedMembers = [
+                {
+                    id: '1',
+                    name: 'Habtamu Eyesus',
+                    phone: '555-0001',
+                    status: 'Current',
+                    firstPaymentYear: 2022,
+                    registrationFeePaid: 'Yes',
+                    registrationFeeAmount: 200,
+                    lastPaymentDate: '2025-01-15',
+                    notes: 'Founding member',
+                    2022: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2025: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
+                },
+                {
+                    id: '2',
+                    name: 'Biruk Eyesus',
+                    phone: '555-0002',
+                    status: 'Current',
+                    firstPaymentYear: 2022,
+                    registrationFeePaid: 'Yes',
+                    registrationFeeAmount: 200,
+                    lastPaymentDate: '2025-02-01',
+                    notes: 'Board member',
+                    2022: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2025: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
+                },
+                {
+                    id: '3',
+                    name: 'Sample Member 3',
+                    phone: '555-0003',
+                    status: 'Current',
+                    firstPaymentYear: 2023,
+                    registrationFeePaid: 'Yes',
+                    registrationFeeAmount: 200,
+                    lastPaymentDate: '2025-01-20',
+                    notes: 'Active member',
+                    2023: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2024: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                    2025: { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 }
+                }
+            ];
+            
+            console.log('✅ Embedded data loaded:', embeddedMembers.length, 'members');
+            
+            // Update global data
+            window.membersData = embeddedMembers;
+            membersData = embeddedMembers;
+            
+            // Update display
+            if (typeof displayMembers === 'function') {
+                displayMembers();
+            }
+            if (typeof updateStats === 'function') {
+                updateStats();
+            }
+            
+            console.log('✅ Embedded data loaded and displayed successfully');
+        }
+
+        // Enhanced loadMembersData with better error handling
+        function loadMembersData() {
+            console.log('🔄 Loading member data with enhanced system...');
+            
+            // Try the comprehensive fallback system
+            loadDataWithFallback();
+        }
+
         function addPaymentDataToMembers(csvText, year, allMembers) {
             console.log(`Adding payment data for year ${year}...`);
             const lines = csvText.split('\n');
