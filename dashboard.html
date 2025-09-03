@@ -3730,8 +3730,8 @@
         function updateStorageStatus() {
             const statusDiv = document.getElementById('storageStatus');
             
-            if (gitHubStorage) {
-                const status = gitHubStorage.getStatus();
+            if (window.gitHubStorage) {
+                const status = window.gitHubStorage.getStatus();
                 statusDiv.innerHTML = `
                     <div class="status-item">
                         <strong>Storage Initialized:</strong> ${status.isInitialized ? '✅ Yes' : '❌ No'}
@@ -3757,12 +3757,12 @@
         // Export payment data for backup and manual CSV updates
         function exportPaymentData() {
             try {
-                if (!gitHubStorage || !gitHubStorage.isInitialized) {
+                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
                     alert('Storage not initialized. Please set up persistent storage first using the "🔧 Storage Setup" button.');
                     return;
                 }
 
-                const payments = gitHubStorage.getPayments();
+                const payments = window.gitHubStorage.getPayments();
                 const memberData = window.membersData || membersData;
                 
                 if (payments.length === 0) {
@@ -4837,24 +4837,28 @@
                     throw new Error('GitHub token is required');
                 }
 
-                // Create storage instance
-                gitHubStorage = new GitHubGistStorage();
+                // Create storage instance - make it globally accessible
+                window.gitHubStorage = new GitHubGistStorage();
                 
-                // Initialize with token
-                gitHubStorage.initialize(null, githubToken).then(success => {
+                // Initialize with token - handle the async properly
+                return window.gitHubStorage.initialize(null, githubToken).then(success => {
                     if (success) {
                         console.log('✅ Persistent storage initialized successfully');
                         
                         // Load existing payment data and apply to member data
-                        loadPaymentDataFromGitHub().then(() => {
+                        return loadPaymentDataFromGitHub().then(() => {
                             // Update display
-                            displayMembers();
-                            updateStats();
+                            if (typeof displayMembers === 'function') {
+                                displayMembers();
+                            }
+                            if (typeof updateStats === 'function') {
+                                updateStats();
+                            }
+                            return true;
                         }).catch(error => {
                             console.error('❌ Error loading payment data:', error);
+                            return true; // Still return true since storage initialized
                         });
-                        
-                        return true;
                     } else {
                         throw new Error('Failed to initialize storage');
                     }
@@ -4867,18 +4871,18 @@
                 console.error('❌ Error initializing persistent storage:', error);
                 alert(`Failed to initialize persistent storage: ${error.message}`);
                 return false;
-            }
+                }
         }
 
         // Load payment data from GitHub Gist and apply to member data
         function loadPaymentDataFromGitHub() {
             try {
-                if (!gitHubStorage || !gitHubStorage.isInitialized) {
+                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
                     console.log('Storage not initialized, skipping payment data load');
                     return Promise.resolve();
                 }
 
-                const payments = gitHubStorage.getPayments();
+                const payments = window.gitHubStorage.getPayments();
                 console.log('💾 Loading payment data from GitHub:', payments.length, 'payments');
 
                 if (payments.length > 0) {
@@ -4911,7 +4915,7 @@
         // Save payment to GitHub Gist for persistence
         function savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member) {
             try {
-                if (!gitHubStorage || !gitHubStorage.isInitialized) {
+                if (!window.gitHubStorage || !window.gitHubStorage.isInitialized) {
                     throw new Error('Persistent storage not initialized. Please set up GitHub token first.');
                 }
 
@@ -4926,7 +4930,7 @@
                 };
 
                 // Save to GitHub Gist
-                return gitHubStorage.addPayment(payment).then(() => {
+                return window.gitHubStorage.addPayment(payment).then(() => {
                     console.log('💾 Payment saved to GitHub Gist:', payment);
                     return true;
                 }).catch(error => {
