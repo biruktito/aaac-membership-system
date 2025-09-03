@@ -2555,13 +2555,13 @@
                 }).catch(error => {
                     console.error('❌ Failed to load member data:', error);
                     // Fall back to existing system
-                    loadMembersData();
+                    loadDataRobustly();
                 });
                 
             } catch (error) {
                 console.error('❌ Failed to initialize enhanced system:', error);
                 // Fall back to existing system
-                loadMembersData();
+                    loadDataRobustly();
             }
         });
 
@@ -3433,6 +3433,12 @@
                 console.log('⚠️ Google Sheets integration not available, using local CSV');
                 loadLocalCSVData();
             }
+        }
+        
+        // SIMPLE DATA LOADING FUNCTION - ENSURES DATA IS AVAILABLE
+        function loadMembersData() {
+            console.log('🔄 Loading member data...');
+            loadDataRobustly();
         }
         
         // BULLETPROOF LOCAL CHANGE PROTECTION - NO MORE DATA REVERSION
@@ -6144,6 +6150,13 @@
             console.log('=== DISPLAYING MEMBERS WITH ROLE VISIBILITY ===');
             console.log(`User Role: ${userRole}`);
             console.log(`Member ID: ${memberId}`);
+            
+            // Hide loading spinner when displaying members
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+                console.log('✅ Loading spinner hidden');
+            }
             
             const dataToUse = window.membersData || membersData || [];
             if (dataToUse.length === 0) {
