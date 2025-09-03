@@ -3183,29 +3183,8 @@
             }
         };
 
-        window.filterByStatus = function(status) {
-            // Remove active class from all tabs
-            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
-            // Add active class to clicked tab
-            event.target.classList.add('active');
-            
-            // Filter members based on status
-            let filteredMembers = membersData;
-            if (status !== 'all') {
-                filteredMembers = membersData.filter(member => {
-                    const balanceInfo = calculateDetailedBalance(member);
-                    switch(status) {
-                        case 'current': return balanceInfo.monthsBehind <= 5;
-                        case 'issue': return balanceInfo.monthsBehind >= 6 && balanceInfo.monthsBehind <= 11;
-                        case 'risk': return balanceInfo.monthsBehind >= 12 && balanceInfo.monthsBehind <= 23;
-                        case 'removed': return balanceInfo.monthsBehind >= 24;
-                        default: return true;
-                    }
-                });
-            }
-            
-            displayMembers(filteredMembers);
-        };
+        // REMOVED DUPLICATE: This function was conflicting with the main filterByStatus function
+        // The main filterByStatus function at line 4778 handles all filtering correctly
 
         // Add missing generateCSV function
         window.generateCSV = function() {
@@ -4418,7 +4397,12 @@
             };
         }
 
+        // SIMPLIFIED: This function now redirects to the working displayMembersWithRoleVisibility
         function displayMembers(data = window.membersData || membersData) {
+            console.log('🔄 Redirecting to displayMembersWithRoleVisibility...');
+            // Simply call the working function instead of duplicating logic
+            displayMembersWithRoleVisibility(data);
+            return; // Exit early, don't run the old logic
             console.log('=== DISPLAY MEMBERS DEBUG ===');
             console.log('Data parameter:', data);
             console.log('window.membersData:', window.membersData);
