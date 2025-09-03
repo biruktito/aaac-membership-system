@@ -5501,7 +5501,7 @@
                 if (userRole === 'member') {
                     // Members can only see their own information
                     shouldShow = member.id === memberId;
-                    showFinancialDetails = false; // Members don't see financial details
+                    showFinancialDetails = (member.id === memberId); // Members see THEIR OWN financial details
                 } else if (userRole === 'board') {
                     // Board can see all members and basic financial info
                     shouldShow = true;
@@ -5531,9 +5531,15 @@
                     
                     statusDisplay = financials.statusEmoji;
                 } else {
-                    // For members, show limited info
-                    balanceDisplay = '***';
-                    statusDisplay = '👤';
+                    // For members, show their own financial info
+                    if (financials.currentBalance > 0) {
+                        balanceDisplay = `$${financials.currentBalance.toFixed(2)}`;
+                    } else if (financials.currentBalance < 0) {
+                        balanceDisplay = `$${Math.abs(financials.currentBalance).toFixed(2)}`;
+                    } else {
+                        balanceDisplay = '$0.00';
+                    }
+                    statusDisplay = financials.statusEmoji;
                 }
                 
                 html += `
@@ -5561,8 +5567,12 @@
                             ` : ''}
                         ` : `
                             <div class="member-details">
-                                <div class="balance">Member Information</div>
-                                <div class="owed">Contact admin for details</div>
+                                <div class="balance">${balanceDisplay}</div>
+                                ${financials.currentBalance < 0 ? 
+                                    `<div class="owed">Owes $${Math.abs(financials.currentBalance).toFixed(2)} (${financials.monthsBehind} months behind)</div>` : 
+                                    `<div class="owed">Up to date</div>`
+                                }
+                                <div class="paid-up-to">Paid up to: ${financials.paidUpTo}</div>
                             </div>
                         `}
                     </div>
