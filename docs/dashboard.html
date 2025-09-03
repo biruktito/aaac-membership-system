@@ -2538,14 +2538,11 @@
                     // Note: Payment data will be loaded when persistent storage is initialized
                     console.log('🔄 Payment data will be loaded when persistent storage is initialized');
                     
-                    // Update dashboard with enhanced stats
-                    updateEnhancedStats();
-                    
-                    // Force fallback to run to ensure correct numbers
-                    setTimeout(() => {
-                        console.log('Forcing fallback to ensure correct numbers...');
-                        updateStatsFallback();
-                    }, 500);
+                                    // Update dashboard with clean financial system
+                updateDashboardStats();
+                
+                // Display members with role-based visibility
+                displayMembersWithRoleVisibility();
                 }).catch(error => {
                     console.error('❌ Failed to load member data:', error);
                     // Fall back to existing system
@@ -3131,8 +3128,8 @@
                     
                     if (success && window.membersData && window.membersData.length > 0) {
                         console.log('✅ Using Google Sheets data:', window.membersData.length, 'members');
-                        displayMembers();
-                        updateStats();
+                        updateDashboardStats();
+                        displayMembersWithRoleVisibility();
                     } else {
                         console.log('⚠️ Google Sheets failed or returned no data, using local CSV');
                         loadLocalCSVData();
@@ -3158,8 +3155,8 @@
                         if (members && members.length > 0) {
                             window.membersData = members;
                             console.log('✅ Data loaded via csv_data_loader:', window.membersData.length, 'members');
-                            displayMembers();
-                            updateStats();
+                            updateDashboardStats();
+                            displayMembersWithRoleVisibility();
                         } else {
                             throw new Error('No members loaded via csv_data_loader');
                         }
@@ -5250,6 +5247,330 @@
                     modal.style.display = 'none';
                 }
             });
+        }
+
+        // CLEAN FINANCIAL CALCULATION SYSTEM - SINGLE SOURCE OF TRUTH
+        function calculateMemberFinancials(member) {
+            console.log(`=== CALCULATING FINANCIALS FOR ${member.name} (ID: ${member.id}) ===`);
+            
+            // Current date: August 2025 (as per your system)
+            const currentDate = new Date(2025, 7, 1); // August 1, 2025
+            const currentYear = 2025;
+            const currentMonth = 7; // August = 7 (0-indexed)
+            
+            // Monthly fee
+            const MONTHLY_FEE = 15;
+            
+            // Calculate what member owes from 2023 to current month
+            let totalOwed = 0;
+            let totalPaid = 0;
+            let monthsBehind = 0;
+            let lastPaidMonth = null;
+            let lastPaidYear = null;
+            
+            // Calculate total owed (from 2023 to August 2025)
+            for (let year = 2023; year <= currentYear; year++) {
+                const monthsInYear = year === currentYear ? currentMonth + 1 : 12;
+                for (let month = 0; month < monthsInYear; month++) {
+                    totalOwed += MONTHLY_FEE;
+                }
+            }
+            
+            // Calculate total paid from member data
+            const years = ['2022', '2023', '2024', '2025', '2026'];
+            years.forEach(year => {
+                if (member[year]) {
+                    const yearData = member[year];
+                    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                    
+                    months.forEach((month, monthIndex) => {
+                        const payment = parseFloat(yearData[month]) || 0;
+                        if (payment > 0) {
+                            totalPaid += payment;
+                            lastPaidMonth = monthIndex;
+                            lastPaidYear = parseInt(year);
+                        }
+                    });
+                }
+            });
+            
+            // Calculate current balance and months behind
+            const currentBalance = totalPaid - totalOwed;
+            
+            if (lastPaidMonth !== null && lastPaidYear !== null) {
+                // Calculate months behind from last payment
+                if (lastPaidYear < currentYear) {
+                    monthsBehind = (currentYear - lastPaidYear - 1) * 12 + (12 - lastPaidMonth - 1) + (currentMonth + 1);
+                } else if (lastPaidYear === currentYear) {
+                    monthsBehind = Math.max(0, currentMonth - lastPaidMonth);
+                }
+            } else {
+                // No payments - count all months from 2023
+                monthsBehind = (currentYear - 2023) * 12 + currentMonth + 1;
+            }
+            
+            // Determine member status
+            let status = 'current';
+            let statusText = '✅ Current';
+            let statusEmoji = '✅';
+            
+            if (monthsBehind >= 24) {
+                status = 'risk-of-removal';
+                statusText = '🚨 Risk of Removal';
+                statusEmoji = '🚨';
+            } else if (monthsBehind >= 12) {
+                status = 'risk';
+                statusText = '❌ Risk';
+                statusEmoji = '❌';
+            } else if (monthsBehind >= 6) {
+                status = 'issue';
+                statusText = '⚠️ Issues';
+                statusEmoji = '⚠️';
+            } else if (monthsBehind > 0) {
+                status = 'behind';
+                statusText = '⚠️ Behind';
+                statusEmoji = '⚠️';
+            } else if (monthsBehind === 0) {
+                status = 'current';
+                statusText = '✅ Current';
+                statusEmoji = '✅';
+            } else {
+                status = 'ahead';
+                statusText = '✅ Paid Ahead';
+                statusEmoji = '✅';
+            }
+            
+            // Determine if member is active (has made any payments and not too far behind)
+            const isActiveMember = totalPaid > 0 && monthsBehind < 36;
+            
+            // Format paid up to
+            let paidUpTo = 'Not Started';
+            if (lastPaidMonth !== null && lastPaidYear !== null) {
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                   'July', 'August', 'September', 'October', 'November', 'December'];
+                paidUpTo = `${monthNames[lastPaidMonth]} ${lastPaidYear}`;
+            }
+            
+            // Debug logging for specific members
+            if (member.id === '1' || member.id === '2') {
+                console.log(`=== ${member.name} FINANCIAL SUMMARY ===`);
+                console.log(`Total Owed (2023-Aug 2025): $${totalOwed}`);
+                console.log(`Total Paid: $${totalPaid}`);
+                console.log(`Current Balance: $${currentBalance}`);
+                console.log(`Months Behind: ${monthsBehind}`);
+                console.log(`Paid Up To: ${paidUpTo}`);
+                console.log(`Status: ${statusText}`);
+                console.log(`Active Member: ${isActiveMember}`);
+                console.log('=== END FINANCIAL SUMMARY ===');
+            }
+            
+            return {
+                currentBalance: currentBalance,
+                totalOwed: totalOwed,
+                totalPaid: totalPaid,
+                monthsBehind: monthsBehind,
+                status: status,
+                statusText: statusText,
+                statusEmoji: statusEmoji,
+                paidUpTo: paidUpTo,
+                isActiveMember: isActiveMember
+            };
+        }
+        
+        // CLEAN STATS UPDATE FUNCTION - SINGLE SOURCE OF TRUTH
+        function updateDashboardStats() {
+            console.log('=== UPDATING DASHBOARD STATS ===');
+            
+            const dataToUse = window.membersData || membersData || [];
+            console.log(`Processing ${dataToUse.length} members`);
+            
+            if (dataToUse.length === 0) {
+                console.log('No member data available');
+                return;
+            }
+            
+            let currentCount = 0;
+            let behindCount = 0;
+            let issueCount = 0;
+            let riskCount = 0;
+            let riskOfRemovalCount = 0;
+            let inactiveCount = 0;
+            let totalOwedByActive = 0;
+            
+            dataToUse.forEach(member => {
+                const financials = calculateMemberFinancials(member);
+                
+                // Count by status
+                switch (financials.status) {
+                    case 'current':
+                        currentCount++;
+                        break;
+                    case 'behind':
+                        behindCount++;
+                        break;
+                    case 'issue':
+                        issueCount++;
+                        break;
+                    case 'risk':
+                        riskCount++;
+                        break;
+                    case 'risk-of-removal':
+                        riskOfRemovalCount++;
+                        break;
+                    default:
+                        currentCount++;
+                }
+                
+                // Count inactive members
+                if (!financials.isActiveMember) {
+                    inactiveCount++;
+                }
+                
+                // Calculate total owed by active members (for admin/board only)
+                if (financials.isActiveMember && financials.currentBalance < 0) {
+                    totalOwedByActive += Math.abs(financials.currentBalance);
+                }
+            });
+            
+            // Update dashboard numbers
+            const totalMembers = dataToUse.length;
+            
+            // Update stat cards
+            const elements = {
+                'total-members': totalMembers,
+                'current-members': currentCount + behindCount,
+                'issue-members': issueCount,
+                'risk-members': riskCount,
+                'risk-of-removal-members': riskOfRemovalCount,
+                'inactive-members': inactiveCount
+            };
+            
+            Object.keys(elements).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = elements[id];
+                }
+            });
+            
+            // Update collection focus (admin/board only)
+            const activeOwedElement = document.getElementById('active-owed-amount');
+            if (activeOwedElement && (userRole === 'admin' || userRole === 'board')) {
+                activeOwedElement.textContent = `$${totalOwedByActive.toFixed(2)}`;
+            } else if (activeOwedElement) {
+                activeOwedElement.textContent = '$0.00';
+            }
+            
+            console.log('=== DASHBOARD STATS UPDATED ===');
+            console.log(`Total Members: ${totalMembers}`);
+            console.log(`Current: ${currentCount + behindCount}`);
+            console.log(`Issues: ${issueCount}`);
+            console.log(`Risk: ${riskCount}`);
+            console.log(`Risk of Removal: ${riskOfRemovalCount}`);
+            console.log(`Inactive: ${inactiveCount}`);
+            console.log(`Total Owed by Active: $${totalOwedByActive.toFixed(2)}`);
+        }
+        
+        // CLEAN MEMBER DISPLAY FUNCTION - ENFORCES ROLE-BASED VISIBILITY
+        function displayMembersWithRoleVisibility() {
+            console.log('=== DISPLAYING MEMBERS WITH ROLE VISIBILITY ===');
+            console.log(`User Role: ${userRole}`);
+            console.log(`Member ID: ${memberId}`);
+            
+            const dataToUse = window.membersData || membersData || [];
+            if (dataToUse.length === 0) {
+                console.log('No member data to display');
+                return;
+            }
+            
+            const container = document.getElementById('members-container');
+            if (!container) {
+                console.error('Members container not found');
+                return;
+            }
+            
+            let html = '';
+            let memberCount = 0;
+            
+            dataToUse.forEach(member => {
+                const financials = calculateMemberFinancials(member);
+                
+                // Role-based visibility rules
+                let shouldShow = true;
+                let showFinancialDetails = false;
+                
+                if (userRole === 'member') {
+                    // Members can only see their own information
+                    shouldShow = member.id === memberId;
+                    showFinancialDetails = false; // Members don't see financial details
+                } else if (userRole === 'board') {
+                    // Board can see all members and basic financial info
+                    shouldShow = true;
+                    showFinancialDetails = true;
+                } else if (userRole === 'admin') {
+                    // Admin can see everything
+                    shouldShow = true;
+                    showFinancialDetails = true;
+                }
+                
+                if (!shouldShow) return;
+                
+                memberCount++;
+                
+                // Format balance display
+                let balanceDisplay = '';
+                let statusDisplay = '';
+                
+                if (showFinancialDetails) {
+                    if (financials.currentBalance > 0) {
+                        balanceDisplay = `$${financials.currentBalance.toFixed(2)}`;
+                    } else if (financials.currentBalance < 0) {
+                        balanceDisplay = `$${Math.abs(financials.currentBalance).toFixed(2)}`;
+                    } else {
+                        balanceDisplay = '$0.00';
+                    }
+                    
+                    statusDisplay = financials.statusEmoji;
+                } else {
+                    // For members, show limited info
+                    balanceDisplay = '***';
+                    statusDisplay = '👤';
+                }
+                
+                html += `
+                    <div class="member-card ${financials.status}">
+                        <div class="member-header">
+                            <span class="member-id">${member.id}</span>
+                            <span class="member-status">${statusDisplay} ${financials.statusText}</span>
+                        </div>
+                        <div class="member-name">${member.name}</div>
+                        ${showFinancialDetails ? `
+                            <div class="member-details">
+                                <div class="balance">${balanceDisplay}</div>
+                                ${financials.currentBalance < 0 ? 
+                                    `<div class="owed">Owes $${Math.abs(financials.currentBalance).toFixed(2)} (${financials.monthsBehind} months behind)</div>` : 
+                                    `<div class="owed">Up to date</div>`
+                                }
+                                <div class="paid-up-to">Paid up to: ${financials.paidUpTo}</div>
+                            </div>
+                            ${userRole === 'admin' ? `
+                                <div class="admin-actions">
+                                    <button onclick="recordPaymentForMember('${member.id}')" class="btn btn-primary">Record Payment</button>
+                                    <button onclick="copyToClipboard('${member.id}')" class="btn btn-secondary">Copy Message</button>
+                                    <button onclick="debugMemberData('${member.id}')" class="btn btn-warning">Debug</button>
+                                </div>
+                            ` : ''}
+                        ` : `
+                            <div class="member-details">
+                                <div class="balance">Member Information</div>
+                                <div class="owed">Contact admin for details</div>
+                            </div>
+                        `}
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            console.log(`Displayed ${memberCount} members`);
         }
     </script>
 </body>
