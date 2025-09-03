@@ -2233,6 +2233,9 @@
                     <button class="btn btn-primary" onclick="refreshDashboardNumbers()">🔄 Refresh Numbers</button>
                     <button class="btn btn-secondary" onclick="checkSystemStatus()">📊 System Status</button>
                     <button class="btn btn-success" onclick="exportPaymentData()">💾 Export Payment Data</button>
+            <button class="btn btn-info" onclick="window.auditSystem.dailyBackup()">🔄 Daily Backup</button>
+            <button class="btn btn-warning" onclick="window.auditSystem.checkDataIntegrity()">🔍 Data Integrity</button>
+            <button class="btn btn-secondary" onclick="window.auditSystem.exportAuditLog()">📋 Export Audit Log</button>
                     <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
                 </div>
             </div>
@@ -2543,6 +2546,12 @@
                 
                 // Display members with role-based visibility
                 displayMembersWithRoleVisibility();
+                
+                // Force refresh after a short delay to ensure data is loaded
+                setTimeout(() => {
+                    updateDashboardStats();
+                    displayMembersWithRoleVisibility();
+                }, 1000);
                 }).catch(error => {
                     console.error('❌ Failed to load member data:', error);
                     // Fall back to existing system
@@ -2557,122 +2566,97 @@
         });
 
         // Enhanced Financial System Stats Update
-        function updateEnhancedStats() {
-            console.log('=== UPDATE ENHANCED STATS CALLED ===');
-            console.log('enhancedLogic exists:', !!enhancedLogic);
-            console.log('membersData length:', membersData ? membersData.length : 'undefined');
+        // SINGLE STATS UPDATE FUNCTION - NO MORE DUPLICATES
+        function updateDashboardStats() {
+            console.log('=== UPDATING DASHBOARD STATS ===');
             
-            if (!enhancedLogic || !membersData || membersData.length === 0) {
-                console.log('Enhanced system not ready, using fallback');
-                updateStatsFallback();
+            const dataToUse = window.membersData || membersData || [];
+            console.log(`Processing ${dataToUse.length} members`);
+            
+            if (dataToUse.length === 0) {
+                console.log('No member data available');
                 return;
             }
             
-            try {
-                // Calculate enhanced stats
-                console.log('Calling enhancedLogic.updateEnhancedStats...');
-                const stats = enhancedLogic.updateEnhancedStats(membersData);
-                console.log('Enhanced stats calculated:', stats);
-                
-                // Check if stats is valid
-                if (!stats || typeof stats !== 'object') {
-                    console.log('Stats is invalid, using fallback');
-                    updateStatsFallback();
-                    return;
-                }
-                
-                // Update stat cards with correct counts
-                if (stats.totalMembers !== undefined) {
-                    document.getElementById('total-members').textContent = stats.totalMembers;
-                    document.getElementById('current-members').textContent = stats.current || 0;
-                    document.getElementById('issue-members').textContent = stats.issues || 0;
-                    document.getElementById('risk-members').textContent = stats.risk || 0;
-                    document.getElementById('risk-of-removal-members').textContent = stats.risk || 0;
-                    document.getElementById('inactive-members').textContent = stats.inactive || 0;
-                }
-                
-                // Update collection focus - total owed by active members
-                if (stats.totalOwedByActive !== undefined && !isNaN(stats.totalOwedByActive)) {
-                    document.getElementById('active-owed-amount').textContent = `$${stats.totalOwedByActive.toFixed(2)}`;
-                    document.getElementById('total-balance').textContent = `$${stats.totalOwedByActive.toFixed(2)}`;
-                    console.log(`💰 Total owed by active members: $${stats.totalOwedByActive.toFixed(2)}`);
-                } else {
-                    console.log('Enhanced stats missing or invalid totalOwedByActive, using fallback');
-                    updateStatsFallback();
-                }
-                
-            } catch (error) {
-                console.error('Error updating enhanced stats:', error);
-                // Fallback to simple calculation
-                updateStatsFallback();
-            }
-        }
-        
-        // Fallback stats calculation using existing member data
-        function updateStatsFallback() {
-            console.log('Using fallback stats calculation');
+            let currentCount = 0;
+            let behindCount = 0;
+            let issueCount = 0;
+            let riskCount = 0;
+            let riskOfRemovalCount = 0;
+            let inactiveCount = 0;
+            let totalOwedByActive = 0;
             
-            if (!membersData || membersData.length === 0) {
-                console.log('No member data available for fallback');
-                return;
-            }
-            
-            try {
-                // Set correct member counts based on your data
-                const totalMembers = 100;
-                const activeMembers = 61;
-                const inactiveMembers = 39;
+            dataToUse.forEach(member => {
+                const financials = calculateMemberFinancials(member);
                 
-                // Update member count displays
-                document.getElementById('total-members').textContent = totalMembers;
-                document.getElementById('inactive-members').textContent = inactiveMembers;
-                
-                // Calculate total owed by active members using existing logic
-                let totalOwedByActive = 0;
-                let activeCount = 0;
-                
-                membersData.forEach(member => {
-                    // Use the existing balance calculation
-                    const balanceInfo = calculateEnhancedBalanceForDisplay(member);
-                    
-                    if (balanceInfo.isActiveMember) {
-                        activeCount++;
-                        if (balanceInfo.currentBalance > 0) {
-                            totalOwedByActive += balanceInfo.currentBalance;
-                        }
-                    }
-                });
-                
-                console.log(`Fallback calculation: ${activeCount} active members owe $${totalOwedByActive.toFixed(2)}`);
-                
-                // If calculation fails, use the expected value
-                if (totalOwedByActive === 0) {
-                    totalOwedByActive = 9255.00;
-                    console.log('Using expected value: $9,255.00');
+                // Count by status
+                switch (financials.status) {
+                    case 'current':
+                        currentCount++;
+                        break;
+                    case 'behind':
+                        behindCount++;
+                        break;
+                    case 'issue':
+                        issueCount++;
+                        break;
+                    case 'risk':
+                        riskCount++;
+                        break;
+                    case 'risk-of-removal':
+                        riskOfRemovalCount++;
+                        break;
+                    default:
+                        currentCount++;
                 }
                 
-                // Update the collection focus
-                document.getElementById('active-owed-amount').textContent = `$${totalOwedByActive.toFixed(2)}`;
-                document.getElementById('total-balance').textContent = `$${totalOwedByActive.toFixed(2)}`;
+                // Count inactive members
+                if (!financials.isActiveMember) {
+                    inactiveCount++;
+                }
                 
-                // Update other stat cards with correct counts
-                document.getElementById('current-members').textContent = '26'; // From your data
-                document.getElementById('issue-members').textContent = '17'; // From your data
-                document.getElementById('risk-members').textContent = '10'; // From your data
-                document.getElementById('risk-of-removal-members').textContent = '8'; // From your data
-                
-            } catch (error) {
-                console.error('Error in fallback calculation:', error);
-                // Set the expected values based on your data
-                document.getElementById('total-members').textContent = '100';
-                document.getElementById('active-owed-amount').textContent = '$9,255.00';
-                document.getElementById('total-balance').textContent = '$9,255.00';
-                document.getElementById('inactive-members').textContent = '39';
-                document.getElementById('current-members').textContent = '26';
-                document.getElementById('issue-members').textContent = '17';
-                document.getElementById('risk-members').textContent = '10';
-                document.getElementById('risk-of-removal-members').textContent = '8';
+                // Calculate total owed by active members (for admin/board only)
+                if (financials.isActiveMember && financials.currentBalance < 0) {
+                    totalOwedByActive += Math.abs(financials.currentBalance);
+                }
+            });
+            
+            // Update dashboard numbers
+            const totalMembers = dataToUse.length;
+            
+            // Update stat cards
+            const elements = {
+                'total-members': totalMembers,
+                'current-members': currentCount + behindCount,
+                'issue-members': issueCount,
+                'risk-members': riskCount,
+                'risk-of-removal-members': riskOfRemovalCount,
+                'inactive-members': inactiveCount
+            };
+            
+            Object.keys(elements).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.textContent = elements[id];
+                }
+            });
+            
+            // Update collection focus (admin/board only)
+            const activeOwedElement = document.getElementById('active-owed-amount');
+            if (activeOwedElement && (userRole === 'admin' || userRole === 'board')) {
+                activeOwedElement.textContent = `$${totalOwedByActive.toFixed(2)}`;
+            } else if (activeOwedElement) {
+                activeOwedElement.textContent = '$0.00';
             }
+            
+            console.log('=== DASHBOARD STATS UPDATED ===');
+            console.log(`Total Members: ${totalMembers}`);
+            console.log(`Current: ${currentCount + behindCount}`);
+            console.log(`Issues: ${issueCount}`);
+            console.log(`Risk: ${riskCount}`);
+            console.log(`Risk of Removal: ${riskOfRemovalCount}`);
+            console.log(`Inactive: ${inactiveCount}`);
+            console.log(`Total Owed by Active: $${totalOwedByActive.toFixed(2)}`);
         }
 
         // Authentication check - FIXED
@@ -4939,6 +4923,24 @@
                     }
                     
                     console.log(`Smart distribution complete for ${memberName} - Total distributed: $${paymentAmount - remainingAmount}`);
+                    
+                    // IMMEDIATE DATA REFRESH - Update dashboard in real-time
+                    console.log('🔄 Refreshing dashboard data immediately after payment...');
+                    
+                    // Force immediate stats update
+                    updateDashboardStats();
+                    
+                    // Force immediate member display update
+                    displayMembersWithRoleVisibility();
+                    
+                    // Force refresh of all member data
+                    if (window.membersData) {
+                        window.membersData = window.membersData.map(m => 
+                            m.name === memberName ? member : m
+                        );
+                    }
+                    
+                    console.log('✅ Dashboard updated immediately after payment submission');
                 }
                 
                         // SAVE TO GITHUB GIST for persistent storage
@@ -5750,6 +5752,254 @@
             container.innerHTML = html;
             console.log(`Displayed ${memberCount} members`);
         }
+        
+        // COMPREHENSIVE AUDIT & BACKUP SYSTEM
+        window.auditSystem = {
+            // Daily automated backup
+            dailyBackup: function() {
+                console.log('🔄 Starting daily automated backup...');
+                
+                try {
+                    // Export member data
+                    const memberData = window.membersData || membersData || [];
+                    const memberCSV = this.generateMemberCSV(memberData);
+                    this.downloadCSV(memberCSV, `AAAC_Daily_Backup_Members_${new Date().toISOString().split('T')[0]}.csv`);
+                    
+                    // Export payment history
+                    this.exportPaymentHistory();
+                    
+                    // Log backup completion
+                    this.logAuditEvent('DAILY_BACKUP', 'Daily backup completed successfully', {
+                        members: memberData.length,
+                        timestamp: new Date().toISOString(),
+                        user: sessionStorage.getItem('aaacUserRole') || 'system'
+                    });
+                    
+                    console.log('✅ Daily backup completed successfully');
+                    return true;
+                } catch (error) {
+                    console.error('❌ Daily backup failed:', error);
+                    this.logAuditEvent('DAILY_BACKUP_ERROR', 'Daily backup failed', {
+                        error: error.message,
+                        timestamp: new Date().toISOString()
+                    });
+                    return false;
+                }
+            },
+            
+            // Generate comprehensive member CSV
+            generateMemberCSV: function(members) {
+                const headers = [
+                    'ID', 'Name', 'Phone', 'Status', 'Current Balance', 
+                    'Months Behind', 'Paid Up To', 'Total Paid', 'Total Owed',
+                    '2022_Payments', '2023_Payments', '2024_Payments', '2025_Payments',
+                    'Last Updated', 'Notes'
+                ];
+                
+                const rows = members.map(member => {
+                    const financials = calculateMemberFinancials(member);
+                    return [
+                        member.id,
+                        member.name,
+                        member.phone || '',
+                        financials.statusText,
+                        financials.currentBalance.toFixed(2),
+                        financials.monthsBehind,
+                        financials.paidUpTo,
+                        financials.totalPaid.toFixed(2),
+                        (financials.totalOwed || 0).toFixed(2),
+                        this.getYearPayments(member, '2022'),
+                        this.getYearPayments(member, '2023'),
+                        this.getYearPayments(member, '2024'),
+                        this.getYearPayments(member, '2025'),
+                        new Date().toISOString(),
+                        member.notes || ''
+                    ];
+                });
+                
+                return [headers, ...rows].map(row => row.join(',')).join('\n');
+            },
+            
+            // Get total payments for a specific year
+            getYearPayments: function(member, year) {
+                if (!member[year]) return '0';
+                const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                const total = months.reduce((sum, month) => sum + (parseFloat(member[year][month]) || 0), 0);
+                return total.toFixed(2);
+            },
+            
+            // Download CSV file
+            downloadCSV: function(csvContent, filename) {
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            },
+            
+            // Export payment history for audit
+            exportPaymentHistory: function() {
+                try {
+                    const payments = this.getAllPayments();
+                    if (payments.length === 0) {
+                        console.log('No payment history to export');
+                        return;
+                    }
+                    
+                    const headers = [
+                        'Member ID', 'Member Name', 'Payment Date', 'Payment Type', 
+                        'Amount', 'Applied To', 'Recorded By', 'Notes'
+                    ];
+                    
+                    const rows = payments.map(payment => [
+                        payment.memberId,
+                        payment.memberName,
+                        payment.date,
+                        payment.type,
+                        payment.amount.toFixed(2),
+                        payment.appliedTo || 'Current Month',
+                        payment.recordedBy || 'Admin',
+                        payment.notes || ''
+                    ]);
+                    
+                    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+                    this.downloadCSV(csvContent, `AAAC_Payment_History_${new Date().toISOString().split('T')[0]}.csv`);
+                    
+                    console.log(`✅ Payment history exported: ${payments.length} payments`);
+                } catch (error) {
+                    console.error('❌ Payment history export failed:', error);
+                }
+            },
+            
+            // Get all payments from the system
+            getAllPayments: function() {
+                const payments = [];
+                const dataToUse = window.membersData || membersData || [];
+                
+                dataToUse.forEach(member => {
+                    const years = ['2022', '2023', '2024', '2025', '2026'];
+                    years.forEach(year => {
+                        if (member[year]) {
+                            const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                            months.forEach(month => {
+                                const amount = parseFloat(member[year][month]) || 0;
+                                if (amount > 0) {
+                                    payments.push({
+                                        memberId: member.id,
+                                        memberName: member.name,
+                                        date: `${month} ${year}`,
+                                        type: 'Monthly Dues',
+                                        amount: amount,
+                                        appliedTo: `${month} ${year}`,
+                                        recordedBy: 'Admin',
+                                        notes: 'Monthly membership fee'
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                return payments;
+            },
+            
+            // Log audit events
+            logAuditEvent: function(eventType, description, details) {
+                const auditEvent = {
+                    timestamp: new Date().toISOString(),
+                    eventType: eventType,
+                    description: description,
+                    details: details,
+                    user: sessionStorage.getItem('aaacUserRole') || 'system',
+                    sessionId: sessionStorage.getItem('aaacLoginTime') || 'unknown'
+                };
+                
+                // Store in session storage for this session
+                const auditLog = JSON.parse(sessionStorage.getItem('aaacAuditLog') || '[]');
+                auditLog.push(auditEvent);
+                sessionStorage.setItem('aaacAuditLog', JSON.stringify(auditLog));
+                
+                // Also log to console for immediate visibility
+                console.log('📋 AUDIT EVENT:', auditEvent);
+                
+                return auditEvent;
+            },
+            
+            // Get audit log
+            getAuditLog: function() {
+                return JSON.parse(sessionStorage.getItem('aaacAuditLog') || '[]');
+            },
+            
+            // Export audit log
+            exportAuditLog: function() {
+                const auditLog = this.getAuditLog();
+                if (auditLog.length === 0) {
+                    console.log('No audit events to export');
+                    return;
+                }
+                
+                const headers = ['Timestamp', 'Event Type', 'Description', 'User', 'Details'];
+                const rows = auditLog.map(event => [
+                    event.timestamp,
+                    event.eventType,
+                    event.description,
+                    event.user,
+                    JSON.stringify(event.details)
+                ]);
+                
+                const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+                this.downloadCSV(csvContent, `AAAC_Audit_Log_${new Date().toISOString().split('T')[0]}.csv`);
+                
+                console.log(`✅ Audit log exported: ${auditLog.length} events`);
+            },
+            
+            // Data integrity check
+            checkDataIntegrity: function() {
+                console.log('🔍 Checking data integrity...');
+                
+                const dataToUse = window.membersData || membersData || [];
+                const issues = [];
+                
+                dataToUse.forEach(member => {
+                    // Check for missing required fields
+                    if (!member.id || !member.name) {
+                        issues.push(`Member missing ID or name: ${JSON.stringify(member)}`);
+                    }
+                    
+                    // Check for invalid financial data
+                    const financials = calculateMemberFinancials(member);
+                    if (isNaN(financials.currentBalance)) {
+                        issues.push(`Invalid balance for member ${member.id}: ${financials.currentBalance}`);
+                    }
+                });
+                
+                if (issues.length === 0) {
+                    console.log('✅ Data integrity check passed - no issues found');
+                    this.logAuditEvent('DATA_INTEGRITY_CHECK', 'Data integrity check passed', {
+                        membersChecked: dataToUse.length,
+                        issuesFound: 0
+                    });
+                } else {
+                    console.warn('⚠️ Data integrity check found issues:', issues);
+                    this.logAuditEvent('DATA_INTEGRITY_CHECK', 'Data integrity check found issues', {
+                        membersChecked: dataToUse.length,
+                        issuesFound: issues.length,
+                        issues: issues
+                    });
+                }
+                
+                return issues;
+            }
+        };
+        
+        // Auto-backup every 24 hours
+        setInterval(() => {
+            if (sessionStorage.getItem('aaacAuthenticated') === 'true') {
+                window.auditSystem.dailyBackup();
+            }
+        }, 24 * 60 * 60 * 1000); // 24 hours
         
         // TEST FUNCTION - Run this in console to verify calculations
         window.testFinancialCalculations = function() {
