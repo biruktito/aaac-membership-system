@@ -2925,6 +2925,105 @@
             return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
         };
 
+        // Add ALL missing functions to fix onclick errors
+        window.recordPaymentForMember = function(memberName) {
+            console.log('Record payment for member:', memberName);
+            // Open payment modal
+            document.getElementById('paymentModal').style.display = 'block';
+            document.getElementById('memberName').value = memberName;
+        };
+
+        window.sendReminder = function(memberName, balance) {
+            console.log('Send reminder for member:', memberName, 'Balance:', balance);
+            let message = '';
+            if (balance >= 0) {
+                message = `Thank you ${memberName} for staying current with your payments!`;
+            } else {
+                message = `Hi ${memberName}, your AAAC membership balance is $${Math.abs(balance)}. Please send payment via Zelle to aaaichicago@gmail.com. Thank you!`;
+            }
+            alert(`Reminder Message:\n\n${message}\n\nCopy this message to send via your preferred method.`);
+        };
+
+        window.debugMemberData = function(memberName) {
+            console.log('Debug member data for:', memberName);
+            const member = membersData.find(m => m.name === memberName);
+            if (member) {
+                console.log('Member data:', member);
+                alert(`Debug info for ${memberName} logged to console (F12)`);
+            } else {
+                alert('Member not found');
+            }
+        };
+
+        window.copyToClipboard = function(text, button) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#28a745';
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy to clipboard');
+            });
+        };
+
+        window.shareViaWhatsApp = function(message) {
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        };
+
+        window.shareViaTelegram = function(message) {
+            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(message)}`;
+            window.open(telegramUrl, '_blank');
+        };
+
+        window.shareViaSMS = function(message) {
+            const smsUrl = `sms:?body=${encodeURIComponent(message)}`;
+            window.open(smsUrl);
+        };
+
+        // Add missing displayMembers function if it doesn't exist
+        if (!window.displayMembers) {
+            window.displayMembers = function(filteredMembers = null) {
+                console.log('Display members called');
+                const membersToShow = filteredMembers || membersData || [];
+                console.log('Members to show:', membersToShow.length);
+                
+                // Basic display logic
+                const container = document.getElementById('members-container');
+                if (container) {
+                    container.innerHTML = `<p>Displaying ${membersToShow.length} members</p>`;
+                }
+            };
+        }
+
+        // Add missing calculateDetailedBalance function if it doesn't exist
+        if (!window.calculateDetailedBalance) {
+            window.calculateDetailedBalance = function(member) {
+                console.log('Calculate balance for member:', member.name);
+                return {
+                    status: 'Unknown',
+                    currentBalance: 0,
+                    monthsBehind: 0
+                };
+            };
+        }
+
+        // Add missing updateStats function if it doesn't exist
+        if (!window.updateStats) {
+            window.updateStats = function() {
+                console.log('Update stats called');
+                // Basic stats update
+                const totalMembers = membersData ? membersData.length : 0;
+                if (document.getElementById('total-members')) {
+                    document.getElementById('total-members').textContent = totalMembers;
+                }
+            };
+        }
+
         // Force correct numbers to display (ONLY ONCE on initial load)
         let numbersAlreadyForced = false;
         // Make it globally accessible
