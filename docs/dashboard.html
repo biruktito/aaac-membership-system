@@ -2238,6 +2238,7 @@
             <button class="btn btn-secondary" onclick="window.auditSystem.exportAuditLog()">📋 Export Audit Log</button>
                     <button class="btn btn-warning" onclick="showStorageSetup()">🔧 Storage Setup</button>
             <button class="btn btn-info" onclick="window.enhancedStorageSetup.getStatus()">📊 Storage Status</button>
+            <button class="btn btn-warning" onclick="window.toggleDataLock()">🔒 Toggle Data Lock</button>
                 </div>
             </div>
 
@@ -2771,11 +2772,52 @@
             alert(`Event "${title}" added successfully!`);
         };
 
-        // Add other missing functions
+        // SAFE REFRESH FUNCTION - PROTECTS LOCAL CHANGES
         window.refreshDashboardNumbers = function() {
-            console.log('🔄 Manually refreshing dashboard numbers...');
-            updateStats();
-            console.log('✅ Dashboard numbers refreshed');
+            console.log('🔄 SAFE REFRESH: Updating dashboard numbers WITHOUT overwriting local changes...');
+            
+            // Use our CLEAN, PROTECTED functions instead of the broken updateStats
+            updateDashboardStats();
+            displayMembersWithRoleVisibility();
+            
+            console.log('✅ Dashboard refreshed SAFELY - local payment changes PROTECTED');
+        };
+        
+        // DATA LOCK SYSTEM - PREVENTS EXTERNAL DATA FROM OVERWRITING LOCAL CHANGES
+        window.dataLockEnabled = false;
+        
+        window.toggleDataLock = function() {
+            window.dataLockEnabled = !window.dataLockEnabled;
+            const status = window.dataLockEnabled ? '🔒 ENABLED' : '🔓 DISABLED';
+            const color = window.dataLockEnabled ? '#e74c3c' : '#27ae60';
+            
+            console.log(`🔒 DATA LOCK ${status}`);
+            
+            // Show status to user
+            const lockStatus = document.createElement('div');
+            lockStatus.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                background: ${color};
+                color: white;
+                padding: 15px 20px;
+                border-radius: 5px;
+                z-index: 1000;
+                font-weight: bold;
+            `;
+            lockStatus.textContent = `DATA LOCK: ${status}`;
+            
+            document.body.appendChild(lockStatus);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                if (lockStatus.parentNode) {
+                    lockStatus.parentNode.removeChild(lockStatus);
+                }
+            }, 3000);
+            
+            return window.dataLockEnabled;
         };
 
         window.checkSystemStatus = function() {
@@ -3131,34 +3173,39 @@
             }
         }
         
-        // PROTECT LOCAL CHANGES FROM BEING OVERWRITTEN BY EXTERNAL DATA
+        // BULLETPROOF LOCAL CHANGE PROTECTION - NO MORE DATA REVERSION
         function protectLocalChanges(externalData) {
+            // CHECK DATA LOCK FIRST
+            if (window.dataLockEnabled) {
+                console.log('🔒 DATA LOCK ENABLED - REJECTING ALL EXTERNAL DATA');
+                return window.membersData || membersData || [];
+            }
+            
             if (!window.dataSourceManager || !window.membersData) {
+                console.log('⚠️ Data protection not available, using external data');
                 return externalData;
             }
             
-            console.log('🛡️ Checking for local changes to protect...');
+            console.log('🛡️ BULLETPROOF PROTECTION: Checking for local changes...');
             let changesProtected = 0;
+            let totalMembers = externalData.length;
             
             const protectedData = externalData.map(externalMember => {
                 // Check if we have local changes for this member
                 const localMember = window.membersData.find(m => m.id === externalMember.id);
                 
-                if (localMember && window.dataSourceManager.shouldOverwrite(externalMember.id, 'payment', externalMember)) {
-                    // No recent local changes, use external data
-                    return externalMember;
-                } else if (localMember && !window.dataSourceManager.shouldOverwrite(externalMember.id, 'payment', externalMember)) {
-                    // Recent local changes exist, PROTECT them
-                    console.log(`🛡️ Protecting local changes for member ${externalMember.id} (${externalMember.name})`);
+                if (localMember) {
+                    // ALWAYS PROTECT LOCAL DATA - Never overwrite with external
+                    console.log(`🛡️ PROTECTING local data for ${externalMember.name} (ID: ${externalMember.id})`);
                     changesProtected++;
-                    return localMember; // Keep local version
+                    return localMember; // Keep local version ALWAYS
                 } else {
                     // No local data, use external
                     return externalMember;
                 }
             });
             
-            console.log(`🛡️ Protected ${changesProtected} local changes from being overwritten`);
+            console.log(`🛡️ BULLETPROOF PROTECTION: Protected ${changesProtected}/${totalMembers} members from data reversion`);
             return protectedData;
         }
 
@@ -6395,6 +6442,36 @@
                 `;
                 
                 document.body.appendChild(modal);
+            }
+        };
+        
+        // DATA RESET FUNCTION - Clear corrupted data and start fresh
+        window.resetMemberData = function() {
+            console.log('🔄 RESETTING MEMBER DATA TO ORIGINAL STATE...');
+            
+            if (confirm('⚠️ This will reset ALL member data to the original state. All payments will be lost. Continue?')) {
+                try {
+                    // Clear local changes
+                    if (window.dataSourceManager) {
+                        window.dataSourceManager.localChanges.clear();
+                        console.log('✅ Local changes cleared');
+                    }
+                    
+                    // Force reload from original source
+                    console.log('🔄 Reloading data from original source...');
+                    loadDataRobustly();
+                    
+                    // Reset dashboard
+                    setTimeout(() => {
+                        updateDashboardStats();
+                        displayMembersWithRoleVisibility();
+                        console.log('✅ Dashboard reset to original state');
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('❌ Error resetting data:', error);
+                    alert('Error resetting data: ' + error.message);
+                }
             }
         };
         
