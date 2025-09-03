@@ -3441,6 +3441,64 @@
             loadDataRobustly();
         }
         
+        // MISSING FUNCTIONS - ADDING TO FIX ONCLICK ERRORS
+        function showStorageSetup() {
+            console.log('🔧 Storage Setup requested');
+            const modal = document.getElementById('storageSetupModal');
+            if (modal) {
+                modal.style.display = 'block';
+            } else {
+                alert('Storage setup modal not found');
+            }
+        }
+        
+        function closeStorageSetupModal() {
+            console.log('🔧 Closing Storage Setup Modal');
+            const modal = document.getElementById('storageSetupModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+        
+        function initializeStorage() {
+            console.log('🚀 Initialize Storage requested');
+            const token = document.getElementById('githubToken').value;
+            if (!token) {
+                alert('Please enter a GitHub token');
+                return;
+            }
+            
+            // Call the existing persistent storage initialization
+            if (typeof initializePersistentStorage === 'function') {
+                initializePersistentStorage(token);
+            } else {
+                alert('Persistent storage system not available');
+            }
+        }
+        
+        // GLOBAL ERROR HANDLER - CATCHES UNDEFINED FUNCTION CALLS
+        window.addEventListener('error', function(event) {
+            if (event.error && event.error.message && event.error.message.includes('is not defined')) {
+                console.error('❌ UNDEFINED FUNCTION CALLED:', event.error.message);
+                console.error('❌ This usually means a function is missing from the onclick attribute');
+                console.error('❌ Check the console for the specific function name');
+            }
+        });
+        
+        // OVERRIDE ONCLICK TO CATCH MISSING FUNCTIONS
+        const originalOnclick = HTMLElement.prototype.onclick;
+        HTMLElement.prototype.onclick = function(event) {
+            try {
+                if (originalOnclick) {
+                    return originalOnclick.call(this, event);
+                }
+            } catch (error) {
+                console.error('❌ ONCLICK ERROR:', error);
+                console.error('❌ Element:', this);
+                console.error('❌ This usually means a function is missing');
+            }
+        };
+        
         // BULLETPROOF LOCAL CHANGE PROTECTION - NO MORE DATA REVERSION
         function protectLocalChanges(externalData) {
             // CHECK DATA LOCK FIRST
@@ -6147,6 +6205,10 @@
         
         // CLEAN MEMBER DISPLAY FUNCTION - ENFORCES ROLE-BASED VISIBILITY
         function displayMembersWithRoleVisibility() {
+            // Get user role and member ID from session storage
+            const userRole = sessionStorage.getItem('aaacUserRole') || 'member';
+            const memberId = sessionStorage.getItem('aaacMemberId') || '';
+            
             console.log('=== DISPLAYING MEMBERS WITH ROLE VISIBILITY ===');
             console.log(`User Role: ${userRole}`);
             console.log(`Member ID: ${memberId}`);
