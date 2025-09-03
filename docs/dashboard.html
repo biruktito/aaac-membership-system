@@ -6315,7 +6315,113 @@
                 };
                 
                 console.log('📊 Storage Status:', status);
+                
+                // SHOW VISIBLE STATUS TO USER
+                this.showStatusModal(status);
+                
                 return status;
+            },
+            
+            // Show storage status modal
+            showStatusModal: function(status) {
+                const modal = document.createElement('div');
+                modal.className = 'modal';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0,0,0,0.5);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                `;
+                
+                const statusColor = status.isReady ? '#27ae60' : '#e74c3c';
+                const statusIcon = status.isReady ? '✅' : '❌';
+                const statusText = status.isReady ? 'READY' : 'NOT READY';
+                
+                modal.innerHTML = `
+                    <div class="modal-content" style="
+                        background: white;
+                        padding: 30px;
+                        border-radius: 10px;
+                        max-width: 600px;
+                        text-align: left;
+                    ">
+                        <h3 style="color: ${statusColor}; margin-bottom: 20px;">
+                            ${statusIcon} Storage Status: ${statusText}
+                        </h3>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4>📊 Current Status:</h4>
+                            <ul style="list-style: none; padding: 0;">
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>Storage Ready:</strong> 
+                                    <span style="color: ${status.isReady ? '#27ae60' : '#e74c3c'}">
+                                        ${status.isReady ? '✅ Yes' : '❌ No'}
+                                    </span>
+                                </li>
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>GitHub Token:</strong> 
+                                    <span style="color: ${status.hasToken ? '#27ae60' : '#e74c3c'}">
+                                        ${status.hasToken ? '✅ Found' : '❌ Missing'}
+                                    </span>
+                                </li>
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>Gist ID:</strong> 
+                                    <span style="color: ${status.hasGistId ? '#27ae60' : '#e74c3c'}">
+                                        ${status.hasGistId ? '✅ Found' : '❌ Missing'}
+                                    </span>
+                                </li>
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>Storage Object:</strong> 
+                                    <span style="color: ${status.storageObject ? '#27ae60' : '#e74c3c'}">
+                                        ${status.storageObject ? '✅ Created' : '❌ Missing'}
+                                    </span>
+                                </li>
+                                <li style="padding: 8px 0; border-bottom: 1px solid #eee;">
+                                    <strong>Initialized:</strong> 
+                                    <span style="color: ${status.isInitialized ? '#27ae60' : '#e74c3c'}">
+                                        ${status.isInitialized ? '✅ Yes' : '❌ No'}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <h4>🔧 Actions:</h4>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                ${!status.isReady ? `
+                                    <button onclick="window.enhancedStorageSetup.initializeWithSavedToken()" 
+                                            style="background: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                        🔧 Try to Initialize Storage
+                                    </button>
+                                ` : ''}
+                                <button onclick="window.enhancedStorageSetup.testConnection()" 
+                                        style="background: #f39c12; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                    🧪 Test Connection
+                                </button>
+                                <button onclick="this.closest('.modal').remove()" 
+                                        style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 5px;">
+                                    ❌ Close
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="font-size: 12px; color: #7f8c8d; border-top: 1px solid #eee; padding-top: 15px;">
+                            <strong>Note:</strong> 
+                            ${status.isReady ? 
+                                'Storage is ready and payments will be saved permanently!' : 
+                                'Storage needs to be initialized to save payments permanently. Click "Try to Initialize Storage" if you have a GitHub token.'
+                            }
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
             }
         };
         
