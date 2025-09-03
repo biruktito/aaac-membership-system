@@ -3424,6 +3424,24 @@
         function loadMembersData() {
             console.log('🔄 Loading member data...');
             
+            // First, let's test what files are actually accessible
+            console.log('🔍 Testing file accessibility...');
+            const testFiles = [
+                'AAAC_Accountant_Database_20250826.csv',
+                'complete_data_for_google_sheet.csv',
+                'AAAC_members_contact_list.xlsx - Sheet1.csv'
+            ];
+            
+            testFiles.forEach(file => {
+                fetch(file)
+                    .then(response => {
+                        console.log(`✅ ${file}: ${response.status} ${response.statusText}`);
+                    })
+                    .catch(error => {
+                        console.log(`❌ ${file}: ${error.message}`);
+                    });
+            });
+            
             // Try multiple data sources in order of preference
             const dataSources = [
                 // 1. Try enhanced CSV loader first
@@ -3441,10 +3459,9 @@
                 () => {
                     return new Promise((resolve, reject) => {
                         const csvSources = [
+                            'AAAC_Accountant_Database_20250826.csv',
                             'complete_data_for_google_sheet.csv',
-                            'member_data.csv',
-                            'aaac_members.csv',
-                            'data/members.csv'
+                            'AAAC_members_contact_list.xlsx - Sheet1.csv'
                         ];
                         
                         let currentSourceIndex = 0;
@@ -3572,6 +3589,50 @@
             
             console.log('✅ Sample data loaded:', sampleMembers.length, 'members');
             return sampleMembers;
+        }
+
+        // Direct CSV loading function for testing
+        function loadCSVDirectly() {
+            console.log('🔄 Loading CSV directly...');
+            
+            fetch('AAAC_Accountant_Database_20250826.csv')
+                .then(response => {
+                    console.log('CSV response:', response.status, response.statusText);
+                    if (response.ok) {
+                        return response.text();
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                })
+                .then(csvText => {
+                    console.log('✅ CSV loaded directly, length:', csvText.length);
+                    console.log('First 500 chars:', csvText.substring(0, 500));
+                    
+                    // Try to parse it
+                    try {
+                        const members = parseAccountantData(csvText);
+                        console.log('✅ Parsed successfully:', members.length, 'members');
+                        
+                        // Update global data
+                        window.membersData = members;
+                        membersData = members;
+                        
+                        // Update display
+                        if (typeof displayMembers === 'function') {
+                            displayMembers();
+                        }
+                        if (typeof updateStats === 'function') {
+                            updateStats();
+                        }
+                        
+                        console.log('✅ Direct CSV loading successful!');
+                    } catch (parseError) {
+                        console.error('❌ Parse error:', parseError);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Direct CSV loading failed:', error);
+                });
         }
 
         function addPaymentDataToMembers(csvText, year, allMembers) {
