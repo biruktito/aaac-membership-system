@@ -41,13 +41,31 @@ class CSVDataLoader {
     // Load contact list for member names and IDs
     async loadContactList() {
         try {
-            const response = await fetch('AAAC_members_contact_list.xlsx - Sheet1.csv');
-            if (!response.ok) {
-                throw new Error(`Failed to load contact list: ${response.status}`);
+            // Try multiple paths for the contact list
+            const possiblePaths = [
+                'data/AAAC_members_contact_list.xlsx - Sheet1.csv',
+                'AAAC_members_contact_list.xlsx - Sheet1.csv',
+                'AAAC_members_contact_list.csv'
+            ];
+            
+            for (const path of possiblePaths) {
+                try {
+                    console.log(`🔄 Trying to load contact list from: ${path}`);
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        console.log(`✅ Successfully loaded contact list from: ${path}`);
+                        const csvText = await response.text();
+                        return this.parseCSV(csvText);
+                    } else {
+                        console.log(`❌ Failed to load contact list from ${path}: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.log(`❌ Error loading contact list from ${path}:`, error.message);
+                }
             }
             
-            const csvText = await response.text();
-            return this.parseCSV(csvText);
+            console.warn('⚠️ Could not load contact list from any path, using accountant database only');
+            return [];
             
         } catch (error) {
             console.warn('⚠️ Could not load contact list, using accountant database only');
@@ -58,13 +76,35 @@ class CSVDataLoader {
     // Load accountant database (primary data source)
     async loadAccountantDatabase() {
         try {
-            const response = await fetch('AAAC_Accountant_Database_20250826.csv');
-            if (!response.ok) {
-                throw new Error(`Failed to load accountant database: ${response.status}`);
+            // Try multiple paths for the accountant database
+            const possiblePaths = [
+                'data/AAAC_Real_Data.csv',
+                'data/AAAC_Accountant_Database_20250826.csv',
+                'AAAC_Accountant_Database_20250826.csv',
+                'AAAC_Real_Data.csv'
+            ];
+            
+            let lastError = null;
+            
+            for (const path of possiblePaths) {
+                try {
+                    console.log(`🔄 Trying to load from: ${path}`);
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        console.log(`✅ Successfully loaded from: ${path}`);
+                        const csvText = await response.text();
+                        return this.parseCSV(csvText);
+                    } else {
+                        console.log(`❌ Failed to load from ${path}: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.log(`❌ Error loading from ${path}:`, error.message);
+                    lastError = error;
+                }
             }
             
-            const csvText = await response.text();
-            return this.parseCSV(csvText);
+            // If all paths failed, throw the last error
+            throw new Error(`Failed to load accountant database from all paths. Last error: ${lastError?.message}`);
             
         } catch (error) {
             console.error('❌ Failed to load accountant database:', error);
