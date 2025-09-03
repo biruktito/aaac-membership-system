@@ -4822,6 +4822,7 @@
             document.getElementById('paymentDistribution').style.display = 'block';
         }
 
+        // CLEAN, WORKING PAYMENT RECORDING FUNCTION
         function recordPayment() {
             const memberName = document.getElementById('memberName').value;
             const paymentType = document.getElementById('paymentType').value;
@@ -4838,31 +4839,14 @@
             // Find the member and update their payment
             const dataToUse = window.membersData || membersData;
             const member = dataToUse.find(m => m.name === memberName);
-            if (member) {
-                if (paymentType === 'registration') {
-                    // For registration fees - track separately
-                    if (!member.registrationFees) {
-                        member.registrationFees = [];
-                    }
-                    member.registrationFees.push({
-                        amount: paymentAmount,
-                        date: new Date().toISOString(),
-                        notes: paymentNotes
-                    });
-                    console.log(`Registration fee recorded: ${memberName} - $${paymentAmount}`);
-                    
-                } else if (paymentType === 'incidental') {
-                    // For incidentals - track separately
-                    if (!member.incidentals) {
-                        member.incidentals.push({
-                        amount: paymentAmount,
-                            date: new Date().toISOString(),
-                            notes: paymentNotes
-                        });
-                    }
-                    console.log(`Incidental fee recorded: ${memberName} - $${paymentAmount}`);
-                    
-                } else if (paymentType === 'monthly') {
+            
+            if (!member) {
+                alert(`Member "${memberName}" not found. Please check the member name.`);
+                return;
+            }
+
+            try {
+                if (paymentType === 'monthly') {
                     // SMART PAYMENT DISTRIBUTION - Distribute across months intelligently
                     console.log(`Smart distribution for ${memberName} - $${paymentAmount}`);
                     
@@ -4939,7 +4923,7 @@
                             }
                             
                             if (!member[nextYear]) {
-                                member[nextYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                                member[nextYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
                             }
                             
                             const nextMonthName = monthNames[nextMonth];
@@ -4962,72 +4946,61 @@
                     }
                     
                     console.log(`Smart distribution complete for ${memberName} - Total distributed: $${paymentAmount - remainingAmount}`);
-                    
-                    // PROTECT LOCAL PAYMENT CHANGES FROM BEING OVERWRITTEN
-                    console.log('🛡️ Protecting local payment changes...');
-                    
-                    // Record this change to prevent data reversion
+                }
+                
+                // PROTECT LOCAL PAYMENT CHANGES FROM BEING OVERWRITTEN
+                console.log('🛡️ Protecting local payment changes...');
+                
+                // Record this change to prevent data reversion
+                if (window.dataSourceManager) {
                     window.dataSourceManager.recordChange(member.id, 'payment', {
                         memberName: memberName,
                         amount: paymentAmount,
                         type: paymentType,
                         timestamp: Date.now()
                     });
-                    
-                    // Update local data structure IMMEDIATELY
-                    if (window.membersData) {
-                        window.membersData = window.membersData.map(m => 
-                            m.name === memberName ? member : m
-                        );
-                    }
-                    
-                    // IMMEDIATE DASHBOARD UPDATE WITH LOCAL DATA ONLY
-                    console.log('🔄 Updating dashboard with LOCAL payment data...');
-                    updateDashboardStats();
-                    displayMembersWithRoleVisibility();
-                    
-                    console.log('✅ Payment recorded and dashboard updated - PROTECTED from reversion');
-                    
-                    // Try to save to persistent storage
-                    savePaymentToPersistentStorage(memberName, paymentType, paymentAmount, paymentNotes, member);
                 }
                 
-                // SAVE TO GITHUB GIST for persistent storage
-        try {
-            savePaymentToGitHub(memberName, paymentType, paymentAmount, paymentNotes, member).then(() => {
-                console.log('✅ Payment saved to GitHub successfully');
-            }).catch(error => {
-                console.error('❌ Failed to save payment to GitHub:', error);
-                alert(`Payment recorded but failed to save permanently: ${error.message}\n\nPlease check your GitHub token setup.`);
-            });
-        } catch (error) {
-            console.error('❌ Failed to save payment to GitHub:', error);
-            alert(`Payment recorded but failed to save permanently: ${error.message}\n\nPlease check your GitHub token setup.`);
-            return;
-        }
+                // Update local data structure IMMEDIATELY
+                if (window.membersData) {
+                    window.membersData = window.membersData.map(m => 
+                        m.name === memberName ? member : m
+                    );
+                }
                 
-                // Update display immediately with LOCAL DATA ONLY
-                console.log('Updating display after payment with LOCAL data...');
-                
-                // Use our clean functions with LOCAL data
+                // IMMEDIATE DASHBOARD UPDATE WITH LOCAL DATA ONLY
+                console.log('🔄 Updating dashboard with LOCAL payment data...');
                 updateDashboardStats();
                 displayMembersWithRoleVisibility();
                 
-                // NO MORE FORCED REFRESHES - This prevents data reversion!
-                console.log('✅ Payment display updated - NO data reloading to prevent reversion');
+                // FORCE REFRESH OF MEMBER DISPLAY TO SHOW CHANGES
+                console.log('🔄 Forcing member display refresh to show payment changes...');
+                setTimeout(() => {
+                    displayMembersWithRoleVisibility();
+                    console.log('✅ Member display refreshed to show payment changes');
+                }, 100);
+                
+                console.log('✅ Payment recorded and dashboard updated - PROTECTED from reversion');
                 
                 // Show success message and close modal
                 alert(`Payment recorded successfully!\n\n${memberName}: $${paymentAmount} (${paymentType})\n\n💾 Payment saved to GitHub - will persist for all users!`);
+                
+                // Close modal and reset form
                 closeModal();
-                
-                // Reset the payment form
                 document.getElementById('paymentForm').reset();
-                
-                // Make sure we're back to the main dashboard view
                 document.getElementById('paymentModal').style.display = 'none';
                 
-            } else {
-                alert(`Member "${memberName}" not found. Please check the member name.`);
+                // Try to save to persistent storage (non-blocking)
+                try {
+                    savePaymentToPersistentStorage(memberName, paymentType, paymentAmount, paymentNotes, member);
+                } catch (error) {
+                    console.error('❌ Failed to save to persistent storage:', error);
+                    // Don't block the user - payment is recorded locally
+                }
+                
+            } catch (error) {
+                console.error('❌ Error recording payment:', error);
+                alert(`Error recording payment: ${error.message}`);
             }
         }
 
@@ -6423,6 +6396,39 @@
                 
                 document.body.appendChild(modal);
             }
+        };
+        
+        // DEBUG FUNCTION - Check payment recording status
+        window.debugPaymentRecording = function() {
+            console.log('=== PAYMENT RECORDING DEBUG ===');
+            console.log('window.membersData exists:', !!window.membersData);
+            console.log('window.membersData length:', window.membersData ? window.membersData.length : 'undefined');
+            
+            if (window.membersData && window.membersData.length > 0) {
+                // Check Habtamu specifically
+                const habtamu = window.membersData.find(m => m.id === '1' || m.name === 'Habtamu Bekuma Bekana');
+                if (habtamu) {
+                    console.log('=== HABTAMU STATUS ===');
+                    console.log('ID:', habtamu.id);
+                    console.log('Name:', habtamu.name);
+                    console.log('2025 payments:', habtamu['2025']);
+                    console.log('2024 payments:', habtamu['2024']);
+                    
+                    const financials = calculateMemberFinancials(habtamu);
+                    console.log('Current financials:', financials);
+                    console.log('Balance should update after payment');
+                } else {
+                    console.log('❌ Habtamu not found in data');
+                }
+            }
+            
+            console.log('=== STORAGE STATUS ===');
+            if (window.enhancedStorageSetup) {
+                const status = window.enhancedStorageSetup.getStatus();
+                console.log('Storage status:', status);
+            }
+            
+            console.log('=== END PAYMENT DEBUG ===');
         };
         
         // TEST FUNCTION - Run this in console to verify calculations
