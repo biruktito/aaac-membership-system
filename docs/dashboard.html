@@ -3940,9 +3940,9 @@
                 }
             });
             
-            // Calculate what they owe based on their membership start date
+            // FIXED: Calculate what they owe based on their membership start date (June 2025)
             const currentYear = 2025;
-            const currentMonth = 7; // August (0-indexed, so 7 = August)
+            const currentMonth = 5; // June (0-indexed, so 5 = June)
             const monthlyFee = 15;
             
             const startYear = member.firstPaymentYear ? parseInt(member.firstPaymentYear) : 2022;
@@ -6017,10 +6017,10 @@
         function calculateMemberFinancials(member) {
             console.log(`=== CALCULATING FINANCIALS FOR ${member.name} (ID: ${member.id}) ===`);
             
-            // Current date: August 2025 (as per your system)
-            const currentDate = new Date(2025, 7, 1); // August 1, 2025
+            // FIXED: Current date: June 2025 (to match your actual data)
+            const currentDate = new Date(2025, 5, 1); // June 1, 2025
             const currentYear = 2025;
-            const currentMonth = 7; // August = 7 (0-indexed)
+            const currentMonth = 5; // June = 5 (0-indexed)
             
             // Monthly fee
             const MONTHLY_FEE = 15;
@@ -6032,7 +6032,7 @@
             let lastPaidMonth = null;
             let lastPaidYear = null;
             
-            // Calculate total owed (from 2023 to August 2025)
+            // FIXED: Calculate total owed (from 2023 to June 2025)
             for (let year = 2023; year <= currentYear; year++) {
                 const monthsInYear = year === currentYear ? currentMonth + 1 : 12;
                 for (let month = 0; month < monthsInYear; month++) {
@@ -6069,7 +6069,7 @@
                     monthsBehind = Math.max(0, currentMonth - lastPaidMonth);
                 }
             } else {
-                // No payments - count all months from 2023
+                // FIXED: No payments - count all months from 2023 to June 2025
                 monthsBehind = (currentYear - 2023) * 12 + currentMonth + 1;
             }
             

@@ -22,9 +22,9 @@ class EnhancedFinancialLogic {
         let lastPaymentMonth = null;
         let paidUpToMonth = null;
         
-        // Current date: September 2025
+        // FIXED: Current date: June 2025 (consistent with other functions)
         const currentYear = 2025;
-        const currentMonth = 8; // September (0-indexed)
+        const currentMonth = 5; // June (0-indexed)
         
         // Process payment records to find actual payment history
         if (member.paymentRecords && Array.isArray(member.paymentRecords)) {
