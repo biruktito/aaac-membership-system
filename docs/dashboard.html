@@ -3188,9 +3188,27 @@
             return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
         };
 
-        // Add ALL missing functions to fix onclick errors
-        window.recordPaymentForMember = function(memberName) {
-            console.log('Record payment for member:', memberName);
+        // FIXED: Add ALL missing functions to fix onclick errors
+        window.recordPaymentForMember = function(memberIdentifier) {
+            console.log('Record payment for member:', memberIdentifier);
+            
+            // FIXED: Handle both member ID and member name
+            let memberName = memberIdentifier;
+            
+            // If it's a numeric ID, find the member by ID
+            if (!isNaN(memberIdentifier)) {
+                const dataToUse = window.membersData || membersData;
+                const member = dataToUse.find(m => m.id === memberIdentifier.toString());
+                if (member) {
+                    memberName = member.name;
+                    console.log(`Found member by ID ${memberIdentifier}: ${memberName}`);
+                } else {
+                    console.error(`Member with ID ${memberIdentifier} not found`);
+                    alert(`Member with ID ${memberIdentifier} not found. Please check the member ID.`);
+                    return;
+                }
+            }
+            
             // Open payment modal
             document.getElementById('paymentModal').style.display = 'block';
             document.getElementById('memberName').value = memberName;
@@ -3518,7 +3536,7 @@
         function loadLocalCSVData() {
             console.log('🔄 Loading local CSV data...');
             
-            // Try to load from the csv_data_loader first
+            // FIXED: Try to load from the csv_data_loader first
             if (window.csvLoader) {
                 console.log('🔄 Using csv_data_loader to load data...');
                 window.csvLoader.loadAllData()
@@ -3531,8 +3549,11 @@
                             console.log('✅ Data loaded via csv_data_loader:', window.membersData.length, 'members');
                             console.log('🛡️ Local changes protected during CSV load');
                             
-                            updateDashboardStats();
-                            displayMembersWithRoleVisibility();
+                            // FIXED: Only update display if data is actually loaded
+                            if (window.membersData && window.membersData.length > 0) {
+                                updateDashboardStats();
+                                displayMembersWithRoleVisibility();
+                            }
                         } else {
                             throw new Error('No members loaded via csv_data_loader');
                         }

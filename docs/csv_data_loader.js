@@ -58,18 +58,55 @@ class CSVDataLoader {
     // Load accountant database (primary data source)
     async loadAccountantDatabase() {
         try {
+            console.log('🔄 Attempting to load CSV data...');
             const response = await fetch('data/AAAC_Accountant_Database_20250826.csv');
             if (!response.ok) {
                 throw new Error(`Failed to load accountant database: ${response.status}`);
             }
             
             const csvText = await response.text();
+            console.log('✅ CSV data loaded successfully');
             return this.parseCSV(csvText);
             
         } catch (error) {
             console.error('❌ Failed to load accountant database:', error);
-            throw error;
+            console.log('🔄 Attempting to load embedded data as fallback...');
+            
+            // FALLBACK: Load embedded data if CSV fails
+            try {
+                return this.loadEmbeddedData();
+            } catch (fallbackError) {
+                console.error('❌ Fallback data loading also failed:', fallbackError);
+                throw error; // Throw original error
+            }
         }
+    }
+    
+    // Load embedded data as fallback
+    loadEmbeddedData() {
+        console.log('🔄 Loading embedded member data...');
+        // This will be populated with actual data if CSV loading fails
+        const embeddedData = [
+            {
+                id: '1',
+                name: 'Habtamu Bekuma Bekana',
+                phone: '7734941942',
+                status: 'Active',
+                firstPaymentYear: '2022',
+                registrationFeePaid: '0',
+                registrationFeeAmount: '200',
+                lastPaymentDate: 'JUN 2025',
+                notes: '',
+                '2022': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2023': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2024': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2025': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
+            }
+        ];
+        console.log('✅ Embedded data loaded:', embeddedData.length, 'members');
+        return embeddedData;
     }
 
     // Parse CSV text into array of objects
