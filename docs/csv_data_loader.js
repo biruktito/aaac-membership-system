@@ -12,20 +12,18 @@ class CSVDataLoader {
         try {
             console.log('🔄 Loading member data from CSV files...');
             
-            // Load contact list first (for member names and IDs)
-            const contactList = await this.loadContactList();
-            console.log(`✅ Loaded contact list: ${contactList.length} members`);
-            
-            // Load accountant database (for payment data and last payment dates)
+            // FORCE SINGLE SOURCE: Use accountant database only (avoid shrinking counts)
             const accountantData = await this.loadAccountantDatabase();
             console.log(`✅ Loaded accountant database: ${accountantData.length} records`);
             
-            // Merge the data
+            // Merge with empty contact list (keeps all accountant rows)
+            const contactList = [];
             this.members = this.mergeMemberData(contactList, accountantData);
-            console.log(`✅ Merged data: ${this.members.length} members`);
+            console.log(`📈 Member count after merge (contacts disabled): ${this.members.length}`);
             
             // Initialize payment records for existing members
             this.initializePaymentRecords();
+            console.log(`🧾 Payment records initialized for ${this.members.length} members`);
             
             this.loaded = true;
             console.log('🎉 All member data loaded successfully!');
