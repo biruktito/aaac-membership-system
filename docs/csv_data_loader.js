@@ -59,7 +59,18 @@ class CSVDataLoader {
     async loadAccountantDatabase() {
         try {
             console.log('🔄 Attempting to load CSV data...');
-            const response = await fetch('data/AAAC_Accountant_Database_20250826.csv');
+            // Cache-busting query param to avoid stale caches on GitHub Pages
+            const cacheBust = `v=${Date.now()}`;
+            const url = `data/AAAC_Accountant_Database_20250826.csv?${cacheBust}`;
+            const response = await fetch(url, {
+                // Try to bypass caches where possible
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    Pragma: 'no-cache',
+                    Expires: '0'
+                }
+            });
             if (!response.ok) {
                 throw new Error(`Failed to load accountant database: ${response.status}`);
             }
