@@ -13,8 +13,30 @@ class CSVDataLoader {
             console.log('🔄 Loading member data from CSV files...');
             
             // FORCE SINGLE SOURCE: Use accountant database only (avoid shrinking counts)
-            const accountantData = await this.loadAccountantDatabase();
+            let accountantData = await this.loadAccountantDatabase();
             console.log(`✅ Loaded accountant database: ${accountantData.length} records`);
+            
+            // Retry without cache-bust if empty
+            if (!accountantData || accountantData.length === 0) {
+                console.warn('⚠️ 0 records from CSV. Retrying without cache-bust...');
+                accountantData = await this.loadAccountantDatabase(true);
+                console.log(`↩️ Retry got ${accountantData.length} records`);
+            }
+            
+            // If still empty, restore from cache
+            if (!accountantData || accountantData.length === 0) {
+                const cached = localStorage.getItem('aaacMembersCache');
+                if (cached) {
+                    console.warn('⚠️ Using cached members dataset');
+                    this.members = JSON.parse(cached);
+                    this.loaded = true;
+                    return this.members;
+                }
+                console.warn('⚠️ No cache found; using embedded sample');
+                this.members = this.loadEmbeddedData();
+                this.loaded = true;
+                return this.members;
+            }
             
             // Merge with empty contact list (keeps all accountant rows)
             const contactList = [];
@@ -25,6 +47,14 @@ class CSVDataLoader {
             this.initializePaymentRecords();
             console.log(`🧾 Payment records initialized for ${this.members.length} members`);
             
+            // Cache the successful dataset
+            try {
+                localStorage.setItem('aaacMembersCache', JSON.stringify(this.members));
+                console.log('💾 Cached members dataset');
+            } catch (e) {
+                console.warn('⚠️ Could not cache dataset:', e);
+            }
+            
             this.loaded = true;
             console.log('🎉 All member data loaded successfully!');
             
@@ -32,7 +62,18 @@ class CSVDataLoader {
             
         } catch (error) {
             console.error('❌ Error loading member data:', error);
-            throw error;
+            // Fallback to cache or embedded
+            const cached = localStorage.getItem('aaacMembersCache');
+            if (cached) {
+                console.warn('⚠️ Falling back to cached members dataset');
+                this.members = JSON.parse(cached);
+                this.loaded = true;
+                return this.members;
+            }
+            console.warn('⚠️ No cache available; loading embedded sample');
+            this.members = this.loadEmbeddedData();
+            this.loaded = true;
+            return this.members;
         }
     }
 
@@ -54,14 +95,13 @@ class CSVDataLoader {
     }
 
     // Load accountant database (primary data source)
-    async loadAccountantDatabase() {
+    async loadAccountantDatabase(retryWithoutBust = false) {
         try {
             console.log('🔄 Attempting to load CSV data...');
-            // Cache-busting query param to avoid stale caches on GitHub Pages
             const cacheBust = `v=${Date.now()}`;
-            const url = `data/AAAC_Accountant_Database_20250826.csv?${cacheBust}`;
+            const base = 'data/AAAC_Accountant_Database_20250826.csv';
+            const url = retryWithoutBust ? base : `${base}?${cacheBust}`;
             const response = await fetch(url, {
-                // Try to bypass caches where possible
                 cache: 'no-store',
                 headers: {
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -72,22 +112,13 @@ class CSVDataLoader {
             if (!response.ok) {
                 throw new Error(`Failed to load accountant database: ${response.status}`);
             }
-            
             const csvText = await response.text();
             console.log('✅ CSV data loaded successfully');
             return this.parseCSV(csvText);
-            
         } catch (error) {
             console.error('❌ Failed to load accountant database:', error);
-            console.log('🔄 Attempting to load embedded data as fallback...');
-            
-            // FALLBACK: Load embedded data if CSV fails
-            try {
-                return this.loadEmbeddedData();
-            } catch (fallbackError) {
-                console.error('❌ Fallback data loading also failed:', fallbackError);
-                throw error; // Throw original error
-            }
+            // Let caller decide fallback path
+            return [];
         }
     }
     

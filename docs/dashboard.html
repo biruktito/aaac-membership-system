@@ -3454,7 +3454,7 @@
                 loadLocalCSVData();
             }
         }
-        
+
         // SIMPLE DATA LOADING FUNCTION - ENSURES DATA IS AVAILABLE
         function loadMembersData() {
             console.log('🔄 Loading member data...');
@@ -3491,7 +3491,7 @@
             // Call the existing persistent storage initialization
             if (typeof initializePersistentStorage === 'function') {
                 initializePersistentStorage(token);
-            } else {
+                    } else {
                 alert('Persistent storage system not available');
             }
         }
@@ -3578,13 +3578,13 @@
                             }
                         } else {
                             throw new Error('No members loaded via csv_data_loader');
-                        }
-                    })
-                    .catch(error => {
+                    }
+                })
+                .catch(error => {
                         console.error('❌ csv_data_loader failed:', error);
-                        console.log('🔄 Loading sample data as fallback...');
-                        loadSampleData();
-                    });
+                    console.log('🔄 Loading sample data as fallback...');
+                    loadSampleData();
+                });
             } else {
                 console.log('🔄 csv_data_loader not available, loading sample data...');
                 loadSampleData();
@@ -4554,7 +4554,7 @@
                             <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
                         </div>
                         <div class="member-actions">
-                            <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
+                            <button onclick="recordPaymentForMember('${member.id}')" class="btn-record">Record Payment</button>
                             <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
                             <button onclick="debugMemberData('${member.name}')" class="btn-debug" style="background: #6c757d; color: white; padding: 5px 10px; font-size: 12px; margin-top: 5px;">Debug</button>
                 <button onclick="checkSystemStatus()" class="btn-debug" style="background: #17a2b8; color: white; padding: 5px 10px; font-size: 12px; margin-top: 5px;">System Status</button>
@@ -4693,7 +4693,7 @@
                                     <div class="paid-up-to">Paid up to: ${balanceInfo.paidUpTo}</div>
                                 </div>
                                 <div class="member-actions">
-                                    <button onclick="recordPaymentForMember('${member.name}')" class="btn-record">Record Payment</button>
+                                    <button onclick="recordPaymentForMember('${member.id}')" class="btn-record">Record Payment</button>
                                     <button onclick="sendReminder('${member.name}', ${balanceInfo.currentBalance})" class="btn-reminder" title="Copy message for Telegram/Viber/WhatsApp">Copy Message</button>
                                 </div>
                             </div>
@@ -5170,12 +5170,12 @@
                             <div class="month-breakdown">
                                 <span class="months-covered">${monthsToCover} month(s) covered</span>
                                 <span class="amount-applied">$${amountForPastDue.toFixed(2)}</span>
-                            </div>
+                    </div>
                             <div class="impact">
                                 <strong>Impact:</strong> Will reduce months behind from ${financials.monthsBehind} to ${Math.max(0, financials.monthsBehind - monthsToCover)}
                             </div>
                         </div>
-                    `;
+                `;
                     remainingAmount -= amountForPastDue;
                     totalDistributed += amountForPastDue;
                 }
@@ -5200,7 +5200,7 @@
             }
             
             // Step 3: Apply remaining to future months (paid ahead)
-            if (remainingAmount > 0) {
+                if (remainingAmount > 0) {
                 const futureMonths = Math.floor(remainingAmount / monthlyFee);
                 const futureAmount = futureMonths * monthlyFee;
                 const extraAmount = remainingAmount % monthlyFee;
@@ -5348,15 +5348,15 @@
                     
                     // Step 2: Cover current month
                     if (remainingAmount >= 15) {
-                        const currentYear = new Date().getFullYear();
-                        const currentMonth = new Date().getMonth();
-                        const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-                        const currentMonthName = monthNames[currentMonth];
-                        
-                        if (!member[currentYear]) {
-                            member[currentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
-                        }
-                        
+                    const currentYear = new Date().getFullYear();
+                    const currentMonth = new Date().getMonth();
+                    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+                    const currentMonthName = monthNames[currentMonth];
+                    
+                    if (!member[currentYear]) {
+                        member[currentYear] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                    }
+                    
                         member[currentYear][currentMonthName] = (member[currentYear][currentMonthName] || 0) + 15;
                         remainingAmount -= 15;
                         console.log(`Applied $15 to current month ${currentMonthName} ${currentYear}`);
@@ -6979,6 +6979,51 @@
             console.log('=== TESTING OVERALL SYSTEM ===');
             updateDashboardStats();
             console.log('✅ Financial calculations test complete');
+        };
+
+        // Single loader lock to prevent overwrite
+        window.dataLoaded = false;
+        function markDataLoadedOnce() {
+            if (!window.dataLoaded && window.membersData && window.membersData.length > 0) {
+                window.dataLoaded = true;
+                console.log('🔒 Data locked (dataLoaded=true). Final members:', window.membersData.length);
+            }
+        }
+        // Call markDataLoadedOnce() right after successful initial render
+        const _updateStatsOrig = updateDashboardStats;
+        updateDashboardStats = function() {
+            _updateStatsOrig.apply(this, arguments);
+            markDataLoadedOnce();
+        };
+        const _displayMembersOrig = displayMembersWithRoleVisibility;
+        displayMembersWithRoleVisibility = function() {
+            _displayMembersOrig.apply(this, arguments);
+            markDataLoadedOnce();
+        };
+
+        // Dataset Snapshot panel
+        function renderDatasetSnapshot() {
+            try {
+                const container = document.getElementById('datasetSnapshot');
+                if (!container) return;
+                const data = window.membersData || [];
+                const source = 'Accountant CSV + Gist Deltas';
+                const cached = !!localStorage.getItem('aaacMembersCache');
+                const usedCache = data.length === 0 && cached;
+                container.innerHTML = `
+                    <div style="background:#f9f9f9;border:1px solid #e5e7eb;border-radius:8px;padding:10px;margin:10px 0;font-size:12px;">
+                        <strong>Dataset Snapshot</strong>
+                        <div>Members loaded: <strong>${data.length}</strong></div>
+                        <div>Base source: <strong>${source}</strong></div>
+                        <div>Cache available: ${cached ? 'Yes' : 'No'}</div>
+                        <div>Fallback used: ${usedCache ? 'Yes (cache)' : 'No'}</div>
+                    </div>`;
+            } catch(e) { console.warn('Snapshot render failed', e); }
+        }
+        const _updateStatsForSnapshot = updateDashboardStats;
+        updateDashboardStats = function() {
+            _updateStatsForSnapshot.apply(this, arguments);
+            renderDatasetSnapshot();
         };
     </script>
 </body>
