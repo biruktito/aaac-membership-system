@@ -2540,28 +2540,43 @@
                     
                     // Update membersData with enhanced data
                     membersData = members;
+                    window.membersData = members; // FIXED: Also update window.membersData
                     
                     // Note: Payment data will be loaded when persistent storage is initialized
                     console.log('🔄 Payment data will be loaded when persistent storage is initialized');
                     
-                                    // Update dashboard with clean financial system
-                updateDashboardStats();
-                
-                // Display members with role-based visibility
-                displayMembersWithRoleVisibility();
-                
-                // NO MORE FORCED REFRESHES - This was causing data reversion!
-                console.log('✅ Dashboard updated - NO forced refresh to prevent data reversion');
+                    // Update dashboard with clean financial system
+                    updateDashboardStats();
+                    
+                    // Display members with role-based visibility
+                    displayMembersWithRoleVisibility();
+                    
+                    // NO MORE FORCED REFRESHES - This was causing data reversion!
+                    console.log('✅ Dashboard updated - NO forced refresh to prevent data reversion');
+                    
+                    // FIXED: Set a flag to prevent fallback from overwriting good data
+                    window.enhancedDataLoaded = true;
+                    
                 }).catch(error => {
                     console.error('❌ Failed to load member data:', error);
-                    // Fall back to existing system
-                    loadDataRobustly();
+                    // FIXED: Only fall back if enhanced system completely fails
+                    if (!window.enhancedDataLoaded) {
+                        console.log('🔄 Enhanced system failed, falling back to robust loader');
+                        loadDataRobustly();
+                    } else {
+                        console.log('✅ Enhanced data already loaded, skipping fallback');
+                    }
                 });
                 
             } catch (error) {
                 console.error('❌ Failed to initialize enhanced system:', error);
-                // Fall back to existing system
+                // FIXED: Only fall back if enhanced system completely fails
+                if (!window.enhancedDataLoaded) {
+                    console.log('🔄 Enhanced system initialization failed, falling back to robust loader');
                     loadDataRobustly();
+                } else {
+                    console.log('✅ Enhanced data already loaded, skipping fallback');
+                }
             }
         });
 
@@ -3399,6 +3414,13 @@
         // Simplified, robust data loading system WITH LOCAL CHANGE PROTECTION
         function loadDataRobustly() {
             console.log('=== ROBUST DATA LOADING SYSTEM WITH LOCAL CHANGE PROTECTION ===');
+            
+            // FIXED: Don't overwrite good data if enhanced system already loaded it
+            if (window.enhancedDataLoaded && window.membersData && window.membersData.length > 0) {
+                console.log('✅ Enhanced data already loaded, skipping robust loader to prevent overwrite');
+                return;
+            }
+            
             console.log('GoogleSheetsIntegration available:', !!window.GoogleSheetsIntegration);
             console.log('GoogleSheetsIntegration.initialize available:', !!(window.GoogleSheetsIntegration && typeof window.GoogleSheetsIntegration.initialize === 'function'));
             
