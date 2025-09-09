@@ -2520,8 +2520,8 @@
         const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
         // Set the current date to August 2025 for testing
-        // In production, this would be the actual current date
-        const CURRENT_DATE = new Date(2025, 7, 1); // August 1, 2025
+        // FIXED: Current date is September 2025
+        const CURRENT_DATE = new Date(2025, 8, 1); // September 1, 2025
         const CURRENT_YEAR = CURRENT_DATE.getFullYear();
         const CURRENT_MONTH = CURRENT_DATE.getMonth();
 
@@ -2533,7 +2533,7 @@
             const embeddedData = [
                 {
                     id: '1', name: 'Habtamu Bekuma Bekana', phone: '7734941942', status: 'Active',
-                    firstPaymentYear: '2022', registrationFeePaid: '0', registrationFeeAmount: '200', lastPaymentDate: 'JUN 2025',
+                    firstPaymentYear: '2022', registrationFeePaid: '0', registrationFeeAmount: '200', lastPaymentDate: 'MAY 2025',
                     '2022': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     '2023': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
                     '2024': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
@@ -4483,6 +4483,11 @@
                 balanceDetails = 'Up to date';
             }
             
+            // FIXED: Show months behind in status text
+            if (monthsBehind > 0) {
+                statusText = `⚠️ Behind (${monthsBehind} months)`;
+            }
+            
             if (totalIncidentals > 0) {
                 balanceDetails += ` | Incidentals: $${totalIncidentals}`;
             }
@@ -6156,10 +6161,10 @@
         function calculateMemberFinancials(member) {
             console.log(`=== CALCULATING FINANCIALS FOR ${member.name} (ID: ${member.id}) ===`);
             
-            // FIXED: Current date: June 2025 (to match your actual data)
-            const currentDate = new Date(2025, 5, 1); // June 1, 2025
+            // FIXED: Current date: September 2025 (actual current date)
+            const currentDate = new Date(2025, 8, 1); // September 1, 2025
             const currentYear = 2025;
-            const currentMonth = 5; // June = 5 (0-indexed)
+            const currentMonth = 8; // September = 8 (0-indexed)
             
             // Monthly fee
             const MONTHLY_FEE = 15;
@@ -6171,7 +6176,7 @@
             let lastPaidMonth = null;
             let lastPaidYear = null;
             
-            // FIXED: Calculate total owed (from 2023 to June 2025)
+            // FIXED: Calculate total owed (from 2023 to September 2025)
             for (let year = 2023; year <= currentYear; year++) {
                 const monthsInYear = year === currentYear ? currentMonth + 1 : 12;
                 for (let month = 0; month < monthsInYear; month++) {
@@ -6209,7 +6214,7 @@
                 }
             } else {
                 // FIXED: No payments - count all months from 2023 to June 2025
-                monthsBehind = (currentYear - 2023) * 12 + currentMonth + 1;
+                monthsBehind = (currentYear - 2023) * 12 + currentMonth + 1; // FIXED: September 2025
             }
             
             // Determine member status
