@@ -199,9 +199,11 @@
     function getFilteredMembers(allMembers) {
       const { auth } = window.firebaseServices || {};
       const role = window.__role || 'guest';
-      if (role === 'member' && auth && auth.currentUser) {
-        const link = window.localStorage.getItem('linkedMemberId');
-        if (link) return allMembers.filter(m => String(m.memberId || m.id) === String(link));
+      const link = window.localStorage.getItem('linkedMemberId');
+      const isPrivileged = role === 'admin' || role === 'board';
+      // If admin/board: see all; otherwise, if a link is set and user is signed in, filter to self
+      if (!isPrivileged && auth && auth.currentUser && link) {
+        return allMembers.filter(m => String(m.memberId || m.id) === String(link));
       }
       return allMembers;
     }
