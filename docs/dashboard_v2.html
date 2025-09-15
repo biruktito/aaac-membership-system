@@ -200,7 +200,8 @@
     function getFilteredMembers(allMembers) {
       const { auth } = window.firebaseServices || {};
       const role = window.__role || 'guest';
-      const link = window.localStorage.getItem('linkedMemberId');
+      const roleLink = window.__linkedMemberIdFromRole || null;
+      const link = roleLink || window.localStorage.getItem('linkedMemberId');
       const isPrivileged = role === 'admin' || role === 'board';
       // If admin/board: see all; otherwise, if a link is set and user is signed in, filter to self
       if (!isPrivileged && auth && auth.currentUser && link) {
@@ -228,8 +229,11 @@
       const uid = (auth && auth.currentUser) ? auth.currentUser.uid : null;
       if (uid) {
         db.collection('roles').doc(uid).get().then(doc => {
-          const role = (doc.exists && (doc.data().role || 'member')) || 'member';
+          const data = doc.exists ? (doc.data() || {}) : {};
+          const role = data.role || 'member';
+          const roleLinkedMemberId = data.memberId ? String(data.memberId) : null;
           window.__role = role;
+          window.__linkedMemberIdFromRole = roleLinkedMemberId;
           setRoleBadge(role);
           // Toggle admin UI
           const adminBtns = ['btnAddMember','btnRecordPaymentGlobal'];
@@ -254,7 +258,8 @@
 
       function subscribeMembersStream() {
         const role = window.__role || 'guest';
-        const link = window.localStorage.getItem('linkedMemberId');
+        const roleLink = window.__linkedMemberIdFromRole || null;
+        const link = roleLink || window.localStorage.getItem('linkedMemberId');
         const isPrivileged = role === 'admin' || role === 'board';
         if (!isPrivileged && link) {
           // Subscribe to a single member doc to satisfy restrictive rules
