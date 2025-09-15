@@ -172,6 +172,9 @@
     }
 
     function renderStats(members) {
+      const role = window.__role || 'guest';
+      const isPrivileged = role === 'admin' || role === 'board';
+
       let total = members.length;
       let current = 0; let behind = 0; let owed = 0;
       members.forEach(m => {
@@ -181,10 +184,32 @@
           if (f.balance >= 0) current += 1; else behind += 1;
         }
       });
-      document.getElementById('statTotal').textContent = total;
-      document.getElementById('statCurrent').textContent = current;
-      document.getElementById('statBehind').textContent = behind;
-      document.getElementById('statOwed').textContent = `$${owed.toFixed(2)}`;
+
+      const statTotalEl = document.getElementById('statTotal');
+      const statCurrentEl = document.getElementById('statCurrent');
+      const statBehindEl = document.getElementById('statBehind');
+      const statOwedEl = document.getElementById('statOwed');
+
+      if (isPrivileged) {
+        // Admin/Board: show all stats as-is
+        statTotalEl.textContent = total;
+        statCurrentEl.textContent = current;
+        statBehindEl.textContent = behind;
+        statOwedEl.textContent = `$${owed.toFixed(2)}`;
+
+        // Ensure cards are visible
+        [statCurrentEl, statBehindEl, statOwedEl].forEach(el => {
+          const card = el && el.closest && el.closest('.card');
+          if (card) card.style.display = '';
+        });
+      } else {
+        // Member/Guest: show only active member count; hide other cards
+        statTotalEl.textContent = current; // repurpose as Active Members
+        [statCurrentEl, statBehindEl, statOwedEl].forEach(el => {
+          const card = el && el.closest && el.closest('.card');
+          if (card) card.style.display = 'none';
+        });
+      }
     }
 
     function formatPaidUpTo(date) {
