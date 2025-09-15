@@ -70,6 +70,15 @@
 
     <div class="row" style="gap:8px;">
       <input id="search" placeholder="Search by name or member ID..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
+      <select id="statusFilter" style="padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        <option value="">All Status</option>
+        <option value="ahead">Ahead</option>
+        <option value="current">Current</option>
+        <option value="behind">Behind</option>
+        <option value="issue">Issue (3-5 months)</option>
+        <option value="risk">Risk (6+ months)</option>
+        <option value="inactive">Inactive</option>
+      </select>
       <button id="refresh">Recalculate</button>
     </div>
 
@@ -78,6 +87,7 @@
       <div class="row" style="gap:8px; flex-wrap: wrap;">
         <button id="btnAddMember" class="secondary" style="display:none;">Add Member</button>
         <button id="btnRecordPaymentGlobal" class="secondary" style="display:none;">Record Payment (by Member ID)</button>
+        <button id="btnGenerateReminders" class="secondary" style="display:none;">Generate Reminders</button>
         <button id="btnLinkAccount" class="secondary">Link My Account to Member ID</button>
         <span id="roleBadge" class="muted" style="margin-left:auto;">Role: guest</span>
       </div>
@@ -172,10 +182,24 @@
 
     function renderList(members) {
       const q = document.getElementById('search').value.trim().toLowerCase();
+      const statusFilter = document.getElementById('statusFilter').value;
       const container = document.getElementById('list');
       container.innerHTML = '';
       members
-        .filter(m => !q || (m.fullName || '').toLowerCase().includes(q) || String(m.memberId || m.id || '').includes(q))
+        .filter(m => {
+          // Text search
+          if (q && !(m.fullName || '').toLowerCase().includes(q) && !String(m.memberId || m.id || '').includes(q)) {
+            return false;
+          }
+          // Status filter
+          if (statusFilter) {
+            const f = calculateMemberFinancials(m);
+            if (statusFilter === 'inactive' && m.isActive) return false;
+            if (statusFilter !== 'inactive' && !m.isActive) return false;
+            if (statusFilter !== 'inactive' && f.status !== statusFilter) return false;
+          }
+          return true;
+        })
         .slice(0, 250)
         .forEach(m => {
           const f = calculateMemberFinancials(m);
@@ -246,7 +270,7 @@
           window.__linkedMemberIdFromRole = roleLinkedMemberId;
           setRoleBadge(role);
           // Toggle admin UI
-          const adminBtns = ['btnAddMember','btnRecordPaymentGlobal'];
+          const adminBtns = ['btnAddMember','btnRecordPaymentGlobal','btnGenerateReminders'];
           adminBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = (role === 'admin' || role === 'board') ? '' : 'none';});
           // After role resolved, (re)subscribe appropriately
           if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
@@ -441,6 +465,64 @@
       refreshFilter();
     }
 
+    function generateReminders() {
+      const members = window.__members || [];
+      const behindMembers = members.filter(m => {
+        const f = calculateMemberFinancials(m);
+        return m.isActive && f.balance < 0;
+      });
+
+      if (behindMembers.length === 0) {
+        alert('No members are behind on payments.');
+        return;
+      }
+
+      let reminders = '=== AAAC Payment Reminders ===\n\n';
+      
+      behindMembers.forEach(m => {
+        const f = calculateMemberFinancials(m);
+        const balance = Math.abs(f.balance);
+        const monthsBehind = f.monthsBehind;
+        
+        // Amharic reminder message
+        const amharicMessage = `ሰላም ${m.fullName || 'ዋይ'},\n\n` +
+          `AAAC አባልነት ክፍያዎችዎ በማስታወሻ እንደሚታወቅ እናሳውቅዎታለን።\n\n` +
+          `የሚያስፈልጉት ክፍያ: $${balance.toFixed(2)}\n` +
+          `የተቀሩ ወራት: ${monthsBehind}\n` +
+          `አባል መለያ: ${m.memberId || 'N/A'}\n\n` +
+          `እባክዎ በቅርብ ጊዜ ክፍያዎትን ያስገቡ።\n` +
+          `ለተጨማሪ መረጃ እኛን ያግኙ።\n\n` +
+          `አመሰግናለሁ።\n` +
+          `AAAC አስተዳደር\n\n`;
+        
+        reminders += `--- ${m.fullName || 'Unnamed'} (ID: ${m.memberId || 'N/A'}) ---\n`;
+        reminders += `Balance: $${balance.toFixed(2)} | Months behind: ${monthsBehind}\n`;
+        reminders += `Amharic Message:\n${amharicMessage}\n`;
+        reminders += `English Message:\n`;
+        reminders += `Hello ${m.fullName || 'there'},\n\n`;
+        reminders += `This is a friendly reminder about your AAAC membership dues.\n\n`;
+        reminders += `Amount owed: $${balance.toFixed(2)}\n`;
+        reminders += `Months behind: ${monthsBehind}\n`;
+        reminders += `Member ID: ${m.memberId || 'N/A'}\n\n`;
+        reminders += `Please make your payment soon. Contact us for more information.\n\n`;
+        reminders += `Thank you,\nAAAC Administration\n\n`;
+        reminders += '='.repeat(50) + '\n\n';
+      });
+
+      // Show in a popup for easy copying
+      const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
+      popup.document.write(`
+        <html>
+          <head><title>AAAC Payment Reminders</title></head>
+          <body style="font-family: monospace; white-space: pre-wrap; padding: 20px;">
+            ${reminders}
+          </body>
+        </html>
+      `);
+      
+      alert(`Generated reminders for ${behindMembers.length} members. Check the popup window to copy the messages.`);
+    }
+
     let unsubscribe = null;
     window.addEventListener('DOMContentLoaded', () => {
       setupAuth();
@@ -456,7 +538,11 @@
       });
       document.getElementById('btnAddMember').onclick = addMemberFlow;
       document.getElementById('btnRecordPaymentGlobal').onclick = recordPaymentGlobalFlow;
+      document.getElementById('btnGenerateReminders').onclick = generateReminders;
       document.getElementById('btnLinkAccount').onclick = linkAccountFlow;
+      document.getElementById('statusFilter').addEventListener('change', () => {
+        if (window.__members) renderList(window.__members);
+      });
     });
 
     window.addEventListener('unload', () => { if (typeof unsubscribe === 'function') unsubscribe(); });
