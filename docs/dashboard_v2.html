@@ -484,16 +484,19 @@
         const balance = Math.abs(f.balance);
         const monthsBehind = f.monthsBehind;
         
-        // Amharic reminder message
-        const amharicMessage = `ሰላም ${m.fullName || 'ዋይ'},\n\n` +
-          `AAAC አባልነት ክፍያዎችዎ በማስታወሻ እንደሚታወቅ እናሳውቅዎታለን።\n\n` +
-          `የሚያስፈልጉት ክፍያ: $${balance.toFixed(2)}\n` +
-          `የተቀሩ ወራት: ${monthsBehind}\n` +
-          `አባል መለያ: ${m.memberId || 'N/A'}\n\n` +
-          `እባክዎ በቅርብ ጊዜ ክፍያዎትን ያስገቡ።\n` +
-          `ለተጨማሪ መረጃ እኛን ያግኙ።\n\n` +
-          `አመሰግናለሁ።\n` +
-          `AAAC አስተዳደር\n\n`;
+        // Amharic reminder message (using established text from previous builds)
+        const amharicMessage = `የአዲስ አበባ ማሕበር በቺካጎ ክፍያ ማስታወሻ
+
+ውድ ${m.fullName || 'አባል'}
+
+የአዲስ አበባ ማሕበር በቺካጎ አባልነትዎ ቀሪ ሂሳብ $${balance.toFixed(2)} ነው።
+የተቀሩ ወራት: ${monthsBehind}
+አባል መለያ: ${m.memberId || 'N/A'}
+
+ክፍያውን በ Zelle ለመላክ: aaaichicago@gmail.com ይጠቀሙና ሒሳቦትን ይከፍሉ ዘንድ በትሕትና እንጠይቃለን።
+
+ከምስጋና ጋር
+የአዲስ አበባ ማሕበር በቺካጎ ቦርድ`;
         
         reminders += `--- ${m.fullName || 'Unnamed'} (ID: ${m.memberId || 'N/A'}) ---\n`;
         reminders += `Balance: $${balance.toFixed(2)} | Months behind: ${monthsBehind}\n`;
