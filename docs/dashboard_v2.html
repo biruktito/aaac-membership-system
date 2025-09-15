@@ -72,6 +72,14 @@
       <button id="refresh">Recalculate</button>
     </div>
 
+    <div class="card" style="margin-top:12px;">
+      <div style="font-weight:600; margin-bottom:8px;">Admin Actions</div>
+      <div class="row" style="gap:8px; flex-wrap: wrap;">
+        <button id="btnAddMember" class="secondary">Add Member</button>
+        <button id="btnRecordPaymentGlobal" class="secondary">Record Payment (by Member ID)</button>
+      </div>
+    </div>
+
     <div id="list" class="list"></div>
   </main>
 
@@ -161,6 +169,13 @@
             </div>
             <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
           `;
+          const btn = document.createElement('button');
+          btn.textContent = 'Record Payment';
+          btn.className = 'secondary';
+          btn.style.marginTop = '8px';
+          btn.onclick = () => recordPaymentForMember(m.memberId || m.id);
+          div.appendChild(btn);
+
           container.appendChild(div);
         });
     }
@@ -197,6 +212,55 @@
       });
     }
 
+    // --- Firestore write helpers ---
+    async function addMemberFlow() {
+      const { db } = window.firebaseServices || {};
+      if (!db) return alert('Firebase not initialized');
+      const memberId = prompt('Member ID (required):');
+      if (!memberId) return;
+      const fullName = prompt('Full name (required):');
+      if (!fullName) return;
+      const start = prompt('Start date (YYYY-MM or YYYY-MM-DD). Default 2025-01-01:', '2025-01-01') || '2025-01-01';
+      try {
+        await db.collection('members').doc(String(memberId)).set({
+          memberId: String(memberId),
+          fullName,
+          isActive: true,
+          startDate: start,
+          payments: {},
+        }, { merge: true });
+        alert('Member added.');
+      } catch (e) {
+        console.error(e); alert('Failed to add member: ' + (e.message || e));
+      }
+    }
+
+    async function recordPaymentForMember(memberId) {
+      const { db } = window.firebaseServices || {};
+      if (!db) return alert('Firebase not initialized');
+      const month = prompt('Payment month (YYYY-MM):');
+      if (!month || !/^\d{4}-\d{2}$/.test(month)) return alert('Invalid month format.');
+      const amountStr = prompt('Amount (e.g., 15):', '15');
+      const amount = Number(amountStr);
+      if (!isFinite(amount) || amount <= 0) return alert('Invalid amount.');
+      try {
+        const inc = firebase.firestore.FieldValue.increment(amount);
+        await db.collection('members').doc(String(memberId)).set({
+          payments: { [month]: inc },
+          isActive: true,
+        }, { merge: true });
+        alert('Payment recorded.');
+      } catch (e) {
+        console.error(e); alert('Failed to record payment: ' + (e.message || e));
+      }
+    }
+
+    async function recordPaymentGlobalFlow() {
+      const id = prompt('Member ID to credit:');
+      if (!id) return;
+      await recordPaymentForMember(id);
+    }
+
     let unsubscribe = null;
     window.addEventListener('DOMContentLoaded', () => {
       setupAuth();
@@ -210,6 +274,8 @@
       document.getElementById('search').addEventListener('input', () => {
         if (window.__members) renderList(window.__members);
       });
+      document.getElementById('btnAddMember').onclick = addMemberFlow;
+      document.getElementById('btnRecordPaymentGlobal').onclick = recordPaymentGlobalFlow;
     });
 
     window.addEventListener('unload', () => { if (typeof unsubscribe === 'function') unsubscribe(); });
