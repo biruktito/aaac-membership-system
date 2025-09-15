@@ -38,6 +38,7 @@
         <div class="muted">Set user roles and member linkage. Use with admin account.</div>
       </div>
       <div>
+        <button id="btnEmail">Sign in with Email</button>
         <button id="btnAnon">Sign in Anonymously</button>
         <button id="btnOut">Sign out</button>
       </div>
@@ -72,6 +73,21 @@
 
   <script>
     const { auth, db } = window.firebaseServices || {};
+    
+    // Email/Password sign-in
+    document.getElementById('btnEmail').onclick = async () => {
+      const email = prompt('Enter email:');
+      if (!email) return;
+      const password = prompt('Enter password:');
+      if (!password) return;
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        alert('Signed in successfully!');
+      } catch(e) {
+        alert('Sign in failed: ' + e.message);
+      }
+    };
+    
     document.getElementById('btnAnon').onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
     document.getElementById('btnOut').onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
 
