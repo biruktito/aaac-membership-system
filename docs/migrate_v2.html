@@ -39,6 +39,13 @@
     function parse() {
       try { return JSON.parse(document.getElementById('json').value); } catch(e) { alert('Invalid JSON'); throw e; }
     }
+    async function ensureAuth() {
+      const { auth } = window.firebaseServices || {};
+      if (!auth) { alert('Firebase not initialized'); throw new Error('No auth'); }
+      if (!auth.currentUser) {
+        try { await auth.signInAnonymously(); } catch (e) { alert('Anonymous sign-in failed'); throw e; }
+      }
+    }
     document.getElementById('btnSample').onclick = () => {
       document.getElementById('json').value = JSON.stringify([
         { memberId: '1', fullName: 'Habtamu Bekuma Bekana', isActive: true, startDate: '2020-01-01', payments: { '2025-01':15, '2025-02':15, '2025-03':15, '2025-04':15, '2025-05':15 } },
@@ -48,6 +55,7 @@
     document.getElementById('btnImport').onclick = async () => {
       const { db } = window.firebaseServices || {};
       if (!db) return alert('Firebase not initialized');
+      try { await ensureAuth(); } catch (_) { return; }
       const arr = parse();
       const statusEl = document.getElementById('status');
       statusEl.textContent = 'Importing...';
@@ -64,11 +72,16 @@
           ok++;
         } catch (e) {
           console.error('Import error for', m, e); fail++;
+          statusEl.textContent = `Error: ${e.code || ''} ${e.message || e}`;
         }
       }
       statusEl.textContent = `Done. Imported ${ok}, failed ${fail}.`;
       alert(`Done. Imported ${ok}, failed ${fail}.`);
     };
+    // Try to auth on load for convenience
+    window.addEventListener('DOMContentLoaded', async () => {
+      try { await ensureAuth(); document.getElementById('status').textContent = 'Signed in (anonymous)'; } catch(_){}
+    });
   </script>
 </body>
 </html>
