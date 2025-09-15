@@ -113,6 +113,18 @@
       // }
       // Backwards-compat: fall back to legacy `payments` if `paymentsDues` is absent
       const payments = member.paymentsDues || member.payments || {};
+      
+      // Debug logging for problematic members
+      if (member.memberId === '19' || member.fullName?.includes('Biruk')) {
+        console.log('Debug for member 19:', {
+          memberId: member.memberId,
+          fullName: member.fullName,
+          paymentsDues: member.paymentsDues,
+          payments: member.payments,
+          startDate: member.startDate,
+          isActive: member.isActive
+        });
+      }
       const start = new Date(member.startDate || '2020-01-01T00:00:00Z');
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
