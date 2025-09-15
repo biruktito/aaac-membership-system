@@ -239,9 +239,17 @@
           window.__unsubscribe = subscribeMembersStream();
         }).catch(()=> setRoleBadge('guest'));
       } else {
+        // Signed out: set guest, clear any active subscriptions and UI
         setRoleBadge('guest');
-        if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
-        window.__unsubscribe = subscribeMembersStream();
+        if (typeof window.__unsubscribe === 'function') {
+          window.__unsubscribe();
+          window.__unsubscribe = null;
+        }
+        window.__role = 'guest';
+        window.__allMembers = [];
+        renderStats([]);
+        renderList([]);
+        // Do NOT subscribe when signed out (rules likely block reads when unauthenticated)
       }
 
       function subscribeMembersStream() {
@@ -256,7 +264,11 @@
             refreshFilter();
           }, (err) => {
             console.error('onSnapshot(doc) error', err);
-            alert('Realtime subscription failed (doc). Link a valid Member ID or relax rules.');
+            // Suppress noisy alerts if signed out; otherwise show helpful message
+            const currentUser = (auth && auth.currentUser) ? auth.currentUser : null;
+            if (currentUser) {
+              alert('Realtime subscription failed (doc). Link a valid Member ID or relax rules.');
+            }
           });
         }
         // Admin/board (or no link): subscribe to full collection
@@ -267,7 +279,10 @@
           refreshFilter();
         }, (err) => {
           console.error('onSnapshot(col) error', err);
-          alert('Realtime subscription failed. Check Firestore rules and network.');
+          const currentUser = (auth && auth.currentUser) ? auth.currentUser : null;
+          if (currentUser) {
+            alert('Realtime subscription failed. Check Firestore rules and network.');
+          }
         });
       }
 
@@ -296,7 +311,16 @@
       };
       
       signInBtn.onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
-      signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
+      signOutBtn.onclick = async () => {
+        try {
+          // Proactively tear down subscription before signing out to avoid transient errors
+          if (typeof window.__unsubscribe === 'function') {
+            window.__unsubscribe();
+            window.__unsubscribe = null;
+          }
+          await auth.signOut();
+        } catch(e){ alert('Signout failed'); }
+      };
       auth.onAuthStateChanged(user => {
         signInEmailBtn.style.display = user ? 'none' : '';
         signInBtn.style.display = user ? 'none' : '';
@@ -305,6 +329,20 @@
           // Re-attach realtime to load role and filter
           if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
           window.__unsubscribe = attachRealtime();
+        } else {
+          // Ensure no subscriptions remain and UI reflects signed-out state
+          if (typeof window.__unsubscribe === 'function') {
+            window.__unsubscribe();
+            window.__unsubscribe = null;
+          }
+          const roleBadge = document.getElementById('roleBadge');
+          if (roleBadge) roleBadge.textContent = 'Role: guest';
+          const adminBtns = ['btnAddMember','btnRecordPaymentGlobal'];
+          adminBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none';});
+          window.__role = 'guest';
+          window.__allMembers = [];
+          renderStats([]);
+          renderList([]);
         }
       });
     }
