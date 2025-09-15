@@ -196,6 +196,24 @@
         });
     }
 
+    function getFilteredMembers(allMembers) {
+      const { auth } = window.firebaseServices || {};
+      const role = window.__role || 'guest';
+      if (role === 'member' && auth && auth.currentUser) {
+        const link = window.localStorage.getItem('linkedMemberId');
+        if (link) return allMembers.filter(m => String(m.memberId || m.id) === String(link));
+      }
+      return allMembers;
+    }
+
+    function refreshFilter() {
+      const all = window.__allMembers || [];
+      const filtered = getFilteredMembers(all);
+      window.__members = filtered;
+      renderStats(all);
+      renderList(filtered);
+    }
+
     function attachRealtime() {
       const { db, auth } = window.firebaseServices || {};
       if (!db) {
@@ -221,16 +239,8 @@
       return db.collection('members').onSnapshot((snap) => {
         const members = [];
         snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
-        // Member role: show only own memberId if linked
-        const role = window.__role || 'guest';
-        let filtered = members;
-        if (role === 'member' && auth && auth.currentUser) {
-          const link = window.localStorage.getItem('linkedMemberId');
-          if (link) filtered = members.filter(m => String(m.memberId || m.id) === link);
-        }
-        window.__members = filtered;
-        renderStats(members);
-        renderList(filtered);
+        window.__allMembers = members;
+        refreshFilter();
       }, (err) => {
         console.error('onSnapshot error', err);
         alert('Realtime subscription failed. Check Firestore rules and network.');
@@ -305,11 +315,15 @@
     }
 
     function linkAccountFlow() {
+      const { auth } = window.firebaseServices || {};
+      if (!auth || !auth.currentUser) {
+        alert('Please sign in first (Anonymous is fine).');
+        return;
+      }
       const id = prompt('Enter your Member ID to link this login:');
       if (!id) return;
       window.localStorage.setItem('linkedMemberId', String(id));
-      alert('Linked. Reloading list.');
-      if (window.__members) renderList(window.__members);
+      refreshFilter();
     }
 
     let unsubscribe = null;
