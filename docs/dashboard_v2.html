@@ -466,20 +466,17 @@
     }
 
     function generateReminders() {
+      // Use currently displayed/filtered members instead of all behind members
       const members = window.__members || [];
-      const behindMembers = members.filter(m => {
-        const f = calculateMemberFinancials(m);
-        return m.isActive && f.balance < 0;
-      });
-
-      if (behindMembers.length === 0) {
-        alert('No members are behind on payments.');
+      
+      if (members.length === 0) {
+        alert('No members to generate reminders for. Try adjusting your filters.');
         return;
       }
 
       let reminders = '=== AAAC Payment Reminders ===\n\n';
       
-      behindMembers.forEach(m => {
+      members.forEach(m => {
         const f = calculateMemberFinancials(m);
         const balance = Math.abs(f.balance);
         const monthsBehind = f.monthsBehind;
@@ -523,7 +520,7 @@
         </html>
       `);
       
-      alert(`Generated reminders for ${behindMembers.length} members. Check the popup window to copy the messages.`);
+      alert(`Generated reminders for ${members.length} members. Check the popup window to copy the messages.`);
     }
 
     let unsubscribe = null;
