@@ -114,9 +114,25 @@
       // Backwards-compat: fall back to legacy `payments` if `paymentsDues` is absent
       const payments = member.paymentsDues || member.payments || {};
       
-      // Use September 2025 as the baseline start date
-      const start = new Date(member.startDate || '2025-09-01T00:00:00Z');
-      const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+      // Find the earliest payment date to determine start date
+      let earliestPaymentDate = null;
+      Object.keys(payments).forEach(key => {
+        if (payments[key] > 0) {
+          const [year, month] = key.split('-').map(Number);
+          const paymentDate = new Date(Date.UTC(year, month - 1, 1));
+          if (!earliestPaymentDate || paymentDate < earliestPaymentDate) {
+            earliestPaymentDate = paymentDate;
+          }
+        }
+      });
+      
+      // Use earliest payment date or member start date, but not before 2019
+      const minStartDate = new Date('2019-01-01T00:00:00Z');
+      const memberStartDate = new Date(member.startDate || '2019-01-01T00:00:00Z');
+      const start = earliestPaymentDate || memberStartDate;
+      const actualStart = start > minStartDate ? start : minStartDate;
+      
+      const iter = new Date(Date.UTC(actualStart.getUTCFullYear(), actualStart.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
       
       let totalOwed = 0;
@@ -125,7 +141,7 @@
       let paidUpTo = null;
       let currentMonth = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
 
-      // Calculate from start date to current month
+      // Calculate from actual start date to current month
       while (iter <= end) {
         const key = monthKey(iter);
         const paid = Number(payments[key] || 0);
