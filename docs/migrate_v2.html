@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AAAC Data Import to Firestore</title>
+  <style> body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding:16px;} textarea{width:100%; height:200px;} </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="firebase-init.js"></script>
+</head>
+<body>
+  <h2>Import Members JSON into Firestore</h2>
+  <ol>
+    <li>Prepare a JSON array of members: [{ memberId, fullName, isActive, startDate, payments: {"YYYY-MM": amount} }]</li>
+    <li>Paste it below and click Import.</li>
+  </ol>
+  <textarea id="json"></textarea>
+  <div style="margin-top:10px; display:flex; gap:8px;">
+    <button id="btnImport">Import</button>
+    <button id="btnSample">Fill Sample</button>
+    <div id="status" style="margin-left:auto;">Idle</div>
+  </div>
+
+  <script>
+    function parse() {
+      try { return JSON.parse(document.getElementById('json').value); } catch(e) { alert('Invalid JSON'); throw e; }
+    }
+    document.getElementById('btnSample').onclick = () => {
+      document.getElementById('json').value = JSON.stringify([
+        { memberId: '1', fullName: 'Habtamu Bekuma Bekana', isActive: true, startDate: '2020-01-01', payments: { '2025-01':15, '2025-02':15, '2025-03':15, '2025-04':15, '2025-05':15 } },
+        { memberId: '2', fullName: 'Biruk Eyesus', isActive: true, startDate: '2020-01-01', payments: { '2025-01':15, '2025-02':15, '2025-03':15, '2025-04':15, '2025-05':15, '2025-06':15, '2025-07':15, '2025-08':15, '2025-09':15 } }
+      ], null, 2);
+    };
+    document.getElementById('btnImport').onclick = async () => {
+      const { db } = window.firebaseServices || {};
+      if (!db) return alert('Firebase not initialized');
+      const arr = parse();
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = 'Importing...';
+      let ok = 0, fail = 0;
+      for (const m of arr) {
+        try {
+          const docId = m.memberId ? String(m.memberId) : undefined;
+          const ref = docId ? db.collection('members').doc(docId) : db.collection('members').doc();
+          const { payments, ...rest } = m;
+          await ref.set(rest, { merge: true });
+          if (payments && typeof payments === 'object') {
+            await ref.set({ payments }, { merge: true });
+          }
+          ok++;
+        } catch (e) {
+          console.error('Import error for', m, e); fail++;
+        }
+      }
+      statusEl.textContent = `Done. Imported ${ok}, failed ${fail}.`;
+      alert(`Done. Imported ${ok}, failed ${fail}.`);
+    };
+  </script>
+</body>
+</html>
+
+

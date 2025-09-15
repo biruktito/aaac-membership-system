@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AAAC Dashboard v2 (Firestore)</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#f8fafc; color:#0f172a; }
+    header { padding: 16px; background:#0ea5e9; color:white; }
+    main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
+    .card { background:white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 14px; }
+    .row { display:flex; gap: 10px; align-items:center; }
+    .list { display:grid; gap:8px; margin-top: 16px; }
+    .member { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size: 12px; }
+    .badge.current{ background:#dcfce7; color:#166534; }
+    .badge.behind{ background:#fee2e2; color:#991b1b; }
+    .muted { color:#475569; font-size: 13px; }
+    button { background:#0ea5e9; color:white; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    button.secondary { background:#e2e8f0; color:#0f172a; }
+    .warn { color:#b91c1c; }
+    .green { color:#166534; }
+  </style>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <!-- Your config (copy example to firebase-config.js and fill keys) -->
+  <script src="firebase-config.js"></script>
+  <script src="firebase-init.js"></script>
+</head>
+<body>
+  <header>
+    <div class="row" style="justify-content: space-between;">
+      <div>
+        <div style="font-weight:700; font-size:18px;">AAAC Membership System — v2 (Firestore)</div>
+        <div class="muted">Real-time, single source of truth. September 2025 calculations.</div>
+      </div>
+      <div class="row">
+        <button id="btnSignIn" class="secondary">Sign in Anonymously</button>
+        <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="cards">
+      <div class="card"><div>Total Members</div><div id="statTotal" style="font-size:24px; font-weight:700;">—</div></div>
+      <div class="card"><div>Current</div><div id="statCurrent" style="font-size:24px; font-weight:700;">—</div></div>
+      <div class="card"><div>Behind</div><div id="statBehind" style="font-size:24px; font-weight:700;">—</div></div>
+      <div class="card"><div>Owed by Active</div><div id="statOwed" style="font-size:24px; font-weight:700;">—</div></div>
+    </div>
+
+    <div class="row" style="gap:8px;">
+      <input id="search" placeholder="Search members by name..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
+      <button id="refresh">Recalculate</button>
+    </div>
+
+    <div id="list" class="list"></div>
+  </main>
+
+  <script>
+    const CURRENT_DATE = new Date('2025-09-01T00:00:00Z');
+    const DUE_PER_MONTH = 15; // USD
+
+    function monthKey(date) { return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}`; }
+
+    function calculateMemberFinancials(member) {
+      // Expected member schema (Firestore):
+      // members/{memberId}: { fullName, isActive, payments: { [YYYY-MM]: number } }
+      const payments = member.payments || {};
+      const start = new Date(member.startDate || '2020-01-01T00:00:00Z');
+      const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
+      let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
+
+      while (iter <= end) {
+        const key = monthKey(iter);
+        const paid = Number(payments[key] || 0);
+        totalPaid += paid;
+        totalOwed += DUE_PER_MONTH;
+        if (paid >= DUE_PER_MONTH) {
+          paidUpTo = new Date(iter);
+        } else {
+          monthsBehind += 1;
+        }
+        iter.setUTCMonth(iter.getUTCMonth() + 1);
+      }
+
+      const balance = totalPaid - totalOwed; // negative means owes
+      let status = 'current';
+      if (!member.isActive) status = 'inactive';
+      else if (balance < 0) {
+        if (monthsBehind >= 6) status = 'risk';
+        else if (monthsBehind >= 3) status = 'issue';
+        else status = 'behind';
+      } else if (balance > 0) {
+        status = 'ahead';
+      }
+
+      return { balance, monthsBehind, paidUpTo, status, totalOwed, totalPaid };
+    }
+
+    function renderStats(members) {
+      let total = members.length;
+      let current = 0; let behind = 0; let owed = 0;
+      members.forEach(m => {
+        const f = calculateMemberFinancials(m);
+        if (m.isActive) {
+          if (f.balance < 0) owed += Math.abs(f.balance);
+          if (f.balance >= 0) current += 1; else behind += 1;
+        }
+      });
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statCurrent').textContent = current;
+      document.getElementById('statBehind').textContent = behind;
+      document.getElementById('statOwed').textContent = `$${owed.toFixed(2)}`;
+    }
+
+    function formatPaidUpTo(date) {
+      if (!date) return 'Not Started';
+      return date.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    }
+
+    function renderList(members) {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const container = document.getElementById('list');
+      container.innerHTML = '';
+      members
+        .filter(m => !q || (m.fullName || '').toLowerCase().includes(q))
+        .slice(0, 250)
+        .forEach(m => {
+          const f = calculateMemberFinancials(m);
+          const div = document.createElement('div');
+          div.className = 'member';
+          const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
+          const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
+          div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:600;">${m.fullName || 'Unnamed'}</div>
+                <div class="muted">Member ID: ${m.memberId || '—'}</div>
+              </div>
+              <span class="badge ${statusClass}">${f.status}</span>
+            </div>
+            <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+          `;
+          container.appendChild(div);
+        });
+    }
+
+    function attachRealtime() {
+      const { db } = window.firebaseServices || {};
+      if (!db) {
+        alert('Firebase not initialized. Create docs/firebase-config.js from the example and reload.');
+        return () => {};
+      }
+
+      return db.collection('members').onSnapshot((snap) => {
+        const members = [];
+        snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
+        window.__members = members;
+        renderStats(members);
+        renderList(members);
+      }, (err) => {
+        console.error('onSnapshot error', err);
+        alert('Realtime subscription failed. Check Firestore rules and network.');
+      });
+    }
+
+    function setupAuth() {
+      const { auth } = window.firebaseServices || {};
+      if (!auth) return;
+      const signInBtn = document.getElementById('btnSignIn');
+      const signOutBtn = document.getElementById('btnSignOut');
+      signInBtn.onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
+      signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
+      auth.onAuthStateChanged(user => {
+        signInBtn.style.display = user ? 'none' : '';
+        signOutBtn.style.display = user ? '' : 'none';
+      });
+    }
+
+    let unsubscribe = null;
+    window.addEventListener('DOMContentLoaded', () => {
+      setupAuth();
+      unsubscribe = attachRealtime();
+      document.getElementById('refresh').onclick = () => {
+        if (window.__members) {
+          renderStats(window.__members);
+          renderList(window.__members);
+        }
+      };
+      document.getElementById('search').addEventListener('input', () => {
+        if (window.__members) renderList(window.__members);
+      });
+    });
+
+    window.addEventListener('unload', () => { if (typeof unsubscribe === 'function') unsubscribe(); });
+  </script>
+</body>
+</html>
+
+
