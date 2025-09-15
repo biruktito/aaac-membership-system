@@ -94,8 +94,15 @@
 
     function calculateMemberFinancials(member) {
       // Expected member schema (Firestore):
-      // members/{memberId}: { fullName, isActive, payments: { [YYYY-MM]: number } }
-      const payments = member.payments || {};
+      // members/{memberId}: {
+      //   fullName,
+      //   isActive,
+      //   paymentsDues: { [YYYY-MM]: number }, // dues-only map
+      //   joiningFeeAmount?: number,            // one-time $200 joining fee (not counted toward dues)
+      //   joiningFeeDate?: string               // ISO date when fee was paid
+      // }
+      // Backwards-compat: fall back to legacy `payments` if `paymentsDues` is absent
+      const payments = member.paymentsDues || member.payments || {};
       const start = new Date(member.startDate || '2020-01-01T00:00:00Z');
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
@@ -176,6 +183,8 @@
           div.className = 'member';
           const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
           const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
+          const joiningFeePaid = Number(m.joiningFeeAmount || 0) >= 200;
+          const joiningFeeLine = `<div class="muted" style="margin-top:4px;">Joining fee: ${joiningFeePaid ? 'Paid' : 'Not paid'}${joiningFeePaid && m.joiningFeeDate ? ` on ${new Date(m.joiningFeeDate).toLocaleDateString()}` : ''}</div>`;
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -185,6 +194,7 @@
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
             <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+            ${joiningFeeLine}
           `;
           const btn = document.createElement('button');
           btn.textContent = 'Record Payment';
@@ -367,7 +377,9 @@
           fullName,
           isActive: true,
           startDate: start,
-          payments: {},
+          paymentsDues: {},
+          joiningFeeAmount: 0,
+          joiningFeeDate: null,
         }, { merge: true });
         alert('Member added.');
       } catch (e) {
@@ -378,20 +390,36 @@
     async function recordPaymentForMember(memberId) {
       const { db } = window.firebaseServices || {};
       if (!db) return alert('Firebase not initialized');
+      const type = prompt('Payment type: dues or joining (enter "dues" or "joining"):', 'dues');
+      if (!type) return;
+      if (type === 'joining') {
+        // Record one-time $200 joining fee
+        try {
+          await db.collection('members').doc(String(memberId)).set({
+            joiningFeeAmount: 200,
+            joiningFeeDate: new Date().toISOString(),
+          }, { merge: true });
+          alert('Joining fee recorded.');
+        } catch (e) {
+          console.error(e); alert('Failed to record joining fee: ' + (e.message || e));
+        }
+        return;
+      }
+      // Otherwise record dues payment
       const month = prompt('Payment month (YYYY-MM):');
       if (!month || !/^\d{4}-\d{2}$/.test(month)) return alert('Invalid month format.');
-      const amountStr = prompt('Amount (e.g., 15):', '15');
+      const amountStr = prompt('Dues amount (e.g., 15):', '15');
       const amount = Number(amountStr);
       if (!isFinite(amount) || amount <= 0) return alert('Invalid amount.');
       try {
         const inc = firebase.firestore.FieldValue.increment(amount);
         await db.collection('members').doc(String(memberId)).set({
-          payments: { [month]: inc },
+          paymentsDues: { [month]: inc },
           isActive: true,
         }, { merge: true });
-        alert('Payment recorded.');
+        alert('Dues payment recorded.');
       } catch (e) {
-        console.error(e); alert('Failed to record payment: ' + (e.message || e));
+        console.error(e); alert('Failed to record dues: ' + (e.message || e));
       }
     }
 
