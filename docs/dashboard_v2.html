@@ -233,20 +233,44 @@
           // Toggle admin UI
           const adminBtns = ['btnAddMember','btnRecordPaymentGlobal'];
           adminBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = (role === 'admin' || role === 'board') ? '' : 'none';});
+          // After role resolved, (re)subscribe appropriately
+          if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
+          window.__unsubscribe = subscribeMembersStream();
         }).catch(()=> setRoleBadge('guest'));
       } else {
         setRoleBadge('guest');
+        if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
+        window.__unsubscribe = subscribeMembersStream();
       }
 
-      return db.collection('members').onSnapshot((snap) => {
-        const members = [];
-        snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
-        window.__allMembers = members;
-        refreshFilter();
-      }, (err) => {
-        console.error('onSnapshot error', err);
-        alert('Realtime subscription failed. Check Firestore rules and network.');
-      });
+      function subscribeMembersStream() {
+        const role = window.__role || 'guest';
+        const link = window.localStorage.getItem('linkedMemberId');
+        const isPrivileged = role === 'admin' || role === 'board';
+        if (!isPrivileged && link) {
+          // Subscribe to a single member doc to satisfy restrictive rules
+          return db.collection('members').doc(String(link)).onSnapshot((doc) => {
+            const members = doc.exists ? [{ id: doc.id, ...doc.data() }] : [];
+            window.__allMembers = members;
+            refreshFilter();
+          }, (err) => {
+            console.error('onSnapshot(doc) error', err);
+            alert('Realtime subscription failed (doc). Link a valid Member ID or relax rules.');
+          });
+        }
+        // Admin/board (or no link): subscribe to full collection
+        return db.collection('members').onSnapshot((snap) => {
+          const members = [];
+          snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
+          window.__allMembers = members;
+          refreshFilter();
+        }, (err) => {
+          console.error('onSnapshot(col) error', err);
+          alert('Realtime subscription failed. Check Firestore rules and network.');
+        });
+      }
+
+      return subscribeMembersStream();
     }
 
     function setupAuth() {
