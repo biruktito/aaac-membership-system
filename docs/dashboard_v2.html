@@ -114,7 +114,7 @@
       // Backwards-compat: fall back to legacy `payments` if `paymentsDues` is absent
       const payments = member.paymentsDues || member.payments || {};
       
-      // Find the earliest payment date to determine start date
+      // Find the earliest payment date to determine membership start
       let earliestPaymentDate = null;
       Object.keys(payments).forEach(key => {
         if (payments[key] > 0) {
@@ -126,11 +126,9 @@
         }
       });
       
-      // Use earliest payment date or member start date, but not before 2019
-      const minStartDate = new Date('2019-01-01T00:00:00Z');
-      const memberStartDate = new Date(member.startDate || '2019-01-01T00:00:00Z');
-      const start = earliestPaymentDate || memberStartDate;
-      const actualStart = start > minStartDate ? start : minStartDate;
+      // Use the actual first payment date as membership start
+      // This ensures we only charge from when they actually joined
+      const actualStart = earliestPaymentDate || new Date('2019-01-01T00:00:00Z');
       
       const iter = new Date(Date.UTC(actualStart.getUTCFullYear(), actualStart.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
