@@ -207,7 +207,9 @@
           div.className = 'member';
           const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
           const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
-          const joiningFeePaid = Number(m.joiningFeeAmount || 0) >= 200;
+          // Assume all existing members have paid joining fee unless explicitly marked as not paid
+          // Only show "Not paid" if explicitly set to 0 or if it's a very new member (created after this update)
+          const joiningFeePaid = m.joiningFeeAmount !== 0; // undefined/null means paid, only 0 means not paid
           const joiningFeeLine = `<div class="muted" style="margin-top:4px;">Joining fee: ${joiningFeePaid ? 'Paid' : 'Not paid'}${joiningFeePaid && m.joiningFeeDate ? ` on ${new Date(m.joiningFeeDate).toLocaleDateString()}` : ''}</div>`;
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -402,7 +404,7 @@
           isActive: true,
           startDate: start,
           paymentsDues: {},
-          joiningFeeAmount: 0,
+          joiningFeeAmount: 0, // New members start with joining fee not paid
           joiningFeeDate: null,
         }, { merge: true });
         alert('Member added.');
