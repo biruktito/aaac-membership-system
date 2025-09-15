@@ -114,27 +114,24 @@
       // Backwards-compat: fall back to legacy `payments` if `paymentsDues` is absent
       const payments = member.paymentsDues || member.payments || {};
       
-      // Debug logging for problematic members
-      if (member.memberId === '19' || member.fullName?.includes('Biruk')) {
-        console.log('Debug for member 19:', {
-          memberId: member.memberId,
-          fullName: member.fullName,
-          paymentsDues: member.paymentsDues,
-          payments: member.payments,
-          startDate: member.startDate,
-          isActive: member.isActive
-        });
-      }
-      const start = new Date(member.startDate || '2020-01-01T00:00:00Z');
+      // Use September 2025 as the baseline start date
+      const start = new Date(member.startDate || '2025-09-01T00:00:00Z');
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
-      let totalOwed = 0; let totalPaidThroughCurrent = 0; let totalPaidAll = 0; let monthsBehind = 0; let paidUpTo = null;
+      
+      let totalOwed = 0;
+      let totalPaid = 0;
+      let monthsBehind = 0;
+      let paidUpTo = null;
+      let currentMonth = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
 
+      // Calculate from start date to current month
       while (iter <= end) {
         const key = monthKey(iter);
         const paid = Number(payments[key] || 0);
-        totalPaidThroughCurrent += paid;
+        totalPaid += paid;
         totalOwed += DUE_PER_MONTH;
+        
         if (paid >= DUE_PER_MONTH) {
           paidUpTo = new Date(iter);
         } else {
@@ -143,12 +140,8 @@
         iter.setUTCMonth(iter.getUTCMonth() + 1);
       }
 
-      // Sum all payments including future months
-      Object.entries(payments).forEach(([k, v]) => { totalPaidAll += Number(v || 0); });
-      const balance = totalPaidAll - totalOwed; // negative means owes; positive means ahead
-
-      // Extend paidUpTo if future months fully paid
-      const currentKey = monthKey(end);
+      // Check future payments to extend paidUpTo
+      const currentKey = monthKey(currentMonth);
       const futureKeys = Object.keys(payments).filter(k => k > currentKey).sort();
       for (const k of futureKeys) {
         if (Number(payments[k] || 0) >= DUE_PER_MONTH) {
@@ -158,9 +151,15 @@
           break;
         }
       }
+
+      // Calculate balance: positive = ahead, negative = owes
+      const balance = totalPaid - totalOwed;
+
+      // Determine status
       let status = 'current';
-      if (!member.isActive) status = 'inactive';
-      else if (balance < 0) {
+      if (!member.isActive) {
+        status = 'inactive';
+      } else if (balance < 0) {
         if (monthsBehind >= 6) status = 'risk';
         else if (monthsBehind >= 3) status = 'issue';
         else status = 'behind';
@@ -168,7 +167,14 @@
         status = 'ahead';
       }
 
-      return { balance, monthsBehind, paidUpTo, status, totalOwed, totalPaid: totalPaidThroughCurrent };
+      return { 
+        balance, 
+        monthsBehind, 
+        paidUpTo, 
+        status, 
+        totalOwed, 
+        totalPaid 
+      };
     }
 
     function renderStats(members) {
@@ -176,12 +182,23 @@
       const isPrivileged = role === 'admin' || role === 'board';
 
       let total = members.length;
-      let current = 0; let behind = 0; let owed = 0;
+      let current = 0; 
+      let behind = 0; 
+      let totalOwed = 0;
+      let totalAhead = 0;
+      
       members.forEach(m => {
         const f = calculateMemberFinancials(m);
         if (m.isActive) {
-          if (f.balance < 0) owed += Math.abs(f.balance);
-          if (f.balance >= 0) current += 1; else behind += 1;
+          if (f.balance < 0) {
+            behind += 1;
+            totalOwed += Math.abs(f.balance);
+          } else if (f.balance > 0) {
+            current += 1;
+            totalAhead += f.balance;
+          } else {
+            current += 1; // balance = 0 means current
+          }
         }
       });
 
@@ -195,7 +212,7 @@
         statTotalEl.textContent = total;
         statCurrentEl.textContent = current;
         statBehindEl.textContent = behind;
-        statOwedEl.textContent = `$${owed.toFixed(2)}`;
+        statOwedEl.textContent = `$${totalOwed.toFixed(2)}`;
 
         // Ensure cards are visible
         [statCurrentEl, statBehindEl, statOwedEl].forEach(el => {
