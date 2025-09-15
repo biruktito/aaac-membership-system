@@ -77,6 +77,8 @@
       <div class="row" style="gap:8px; flex-wrap: wrap;">
         <button id="btnAddMember" class="secondary">Add Member</button>
         <button id="btnRecordPaymentGlobal" class="secondary">Record Payment (by Member ID)</button>
+        <button id="btnLinkAccount" class="secondary">Link My Account to Member ID</button>
+        <span id="roleBadge" class="muted" style="margin-left:auto;">Role: guest</span>
       </div>
     </div>
 
@@ -195,18 +197,40 @@
     }
 
     function attachRealtime() {
-      const { db } = window.firebaseServices || {};
+      const { db, auth } = window.firebaseServices || {};
       if (!db) {
         alert('Firebase not initialized. Create docs/firebase-config.js from the example and reload.');
         return () => {};
+      }
+      // Load role mapping from roles/{uid} if signed in
+      const setRoleBadge = (role) => { document.getElementById('roleBadge').textContent = `Role: ${role || 'guest'}`; };
+      const uid = (auth && auth.currentUser) ? auth.currentUser.uid : null;
+      if (uid) {
+        db.collection('roles').doc(uid).get().then(doc => {
+          const role = (doc.exists && (doc.data().role || 'member')) || 'member';
+          window.__role = role;
+          setRoleBadge(role);
+          // Toggle admin UI
+          const adminBtns = ['btnAddMember','btnRecordPaymentGlobal'];
+          adminBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = (role === 'admin' || role === 'board') ? '' : 'none';});
+        }).catch(()=> setRoleBadge('guest'));
+      } else {
+        setRoleBadge('guest');
       }
 
       return db.collection('members').onSnapshot((snap) => {
         const members = [];
         snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
-        window.__members = members;
+        // Member role: show only own memberId if linked
+        const role = window.__role || 'guest';
+        let filtered = members;
+        if (role === 'member' && auth && auth.currentUser) {
+          const link = window.localStorage.getItem('linkedMemberId');
+          if (link) filtered = members.filter(m => String(m.memberId || m.id) === link);
+        }
+        window.__members = filtered;
         renderStats(members);
-        renderList(members);
+        renderList(filtered);
       }, (err) => {
         console.error('onSnapshot error', err);
         alert('Realtime subscription failed. Check Firestore rules and network.');
@@ -223,6 +247,11 @@
       auth.onAuthStateChanged(user => {
         signInBtn.style.display = user ? 'none' : '';
         signOutBtn.style.display = user ? '' : 'none';
+        if (user) {
+          // Re-attach realtime to load role and filter
+          if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
+          window.__unsubscribe = attachRealtime();
+        }
       });
     }
 
@@ -275,6 +304,14 @@
       await recordPaymentForMember(id);
     }
 
+    function linkAccountFlow() {
+      const id = prompt('Enter your Member ID to link this login:');
+      if (!id) return;
+      window.localStorage.setItem('linkedMemberId', String(id));
+      alert('Linked. Reloading list.');
+      if (window.__members) renderList(window.__members);
+    }
+
     let unsubscribe = null;
     window.addEventListener('DOMContentLoaded', () => {
       setupAuth();
@@ -290,6 +327,7 @@
       });
       document.getElementById('btnAddMember').onclick = addMemberFlow;
       document.getElementById('btnRecordPaymentGlobal').onclick = recordPaymentGlobalFlow;
+      document.getElementById('btnLinkAccount').onclick = linkAccountFlow;
     });
 
     window.addEventListener('unload', () => { if (typeof unsubscribe === 'function') unsubscribe(); });
