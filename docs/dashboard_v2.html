@@ -53,6 +53,7 @@
         <div class="muted">Real-time, single source of truth. September 2025 calculations.</div>
       </div>
       <div class="row">
+        <button id="btnSignInEmail" class="secondary">Sign in with Email</button>
         <button id="btnSignIn" class="secondary">Sign in Anonymously</button>
         <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
       </div>
@@ -276,11 +277,28 @@
     function setupAuth() {
       const { auth } = window.firebaseServices || {};
       if (!auth) return;
+      const signInEmailBtn = document.getElementById('btnSignInEmail');
       const signInBtn = document.getElementById('btnSignIn');
       const signOutBtn = document.getElementById('btnSignOut');
+      
+      // Email/Password sign-in
+      signInEmailBtn.onclick = async () => {
+        const email = prompt('Enter email:');
+        if (!email) return;
+        const password = prompt('Enter password:');
+        if (!password) return;
+        try {
+          await auth.signInWithEmailAndPassword(email, password);
+          alert('Signed in successfully!');
+        } catch(e) {
+          alert('Sign in failed: ' + e.message);
+        }
+      };
+      
       signInBtn.onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
       signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
       auth.onAuthStateChanged(user => {
+        signInEmailBtn.style.display = user ? 'none' : '';
         signInBtn.style.display = user ? 'none' : '';
         signOutBtn.style.display = user ? '' : 'none';
         if (user) {
