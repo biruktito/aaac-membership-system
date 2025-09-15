@@ -1,3 +1,4 @@
+docs/firebase-config.js
 # Security and Configuration Files
 .env
 .env.local
