@@ -223,6 +223,12 @@
           // Only show "Not paid" if explicitly set to 0 or if it's a very new member (created after this update)
           const joiningFeePaid = m.joiningFeeAmount !== 0; // undefined/null means paid, only 0 means not paid
           const joiningFeeLine = `<div class="muted" style="margin-top:4px;">Joining fee: ${joiningFeePaid ? 'Paid' : 'Not paid'}${joiningFeePaid && m.joiningFeeDate ? ` on ${new Date(m.joiningFeeDate).toLocaleDateString()}` : ''}</div>`;
+          
+          // Show phone number only to admin/board
+          const role = window.__role || 'guest';
+          const isPrivileged = role === 'admin' || role === 'board';
+          const phoneLine = (isPrivileged && m.phone) ? `<div class="muted" style="margin-top:4px;">Phone: ${m.phone}</div>` : '';
+          
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -233,6 +239,7 @@
             </div>
             <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
             ${joiningFeeLine}
+            ${phoneLine}
           `;
           const btn = document.createElement('button');
           btn.textContent = 'Record Payment';
@@ -509,7 +516,8 @@
 ከምስጋና ጋር
 የአዲስ አበባ ማሕበር በቺካጎ ቦርድ`;
         
-        reminders += `--- ${m.fullName || 'Unnamed'} (ID: ${m.memberId || 'N/A'}) ---\n`;
+        const phoneInfo = m.phone ? ` | Phone: ${m.phone}` : '';
+        reminders += `--- ${m.fullName || 'Unnamed'} (ID: ${m.memberId || 'N/A'})${phoneInfo} ---\n`;
         reminders += `Balance: $${balance.toFixed(2)} | Months behind: ${monthsBehind}\n`;
         reminders += `Amharic Message:\n${amharicMessage}\n`;
         reminders += `English Message:\n`;
@@ -517,8 +525,11 @@
         reminders += `This is a friendly reminder about your AAAC membership dues.\n\n`;
         reminders += `Amount owed: $${balance.toFixed(2)}\n`;
         reminders += `Months behind: ${monthsBehind}\n`;
-        reminders += `Member ID: ${m.memberId || 'N/A'}\n\n`;
-        reminders += `Please make your payment soon. Contact us for more information.\n\n`;
+        reminders += `Member ID: ${m.memberId || 'N/A'}\n`;
+        if (m.phone) {
+          reminders += `Phone: ${m.phone}\n`;
+        }
+        reminders += `\nPlease make your payment soon. Contact us for more information.\n\n`;
         reminders += `Thank you,\nAAAC Administration\n\n`;
         reminders += '='.repeat(50) + '\n\n';
       });
