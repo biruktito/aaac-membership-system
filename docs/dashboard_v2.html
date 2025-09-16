@@ -108,13 +108,13 @@
   <script>
     const CURRENT_DATE = new Date('2025-09-01T00:00:00Z');
     const DUE_PER_MONTH = 15; // USD
+    const USE_LOCAL_ONLY = true; // Verification mode: use local JSON as single source of truth
 
     function monthKey(date) { return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}`; }
 
     function calculateMemberFinancials(member) {
-      // Expected member schema (Firestore):
-      // members/{memberId}: { fullName, isActive, payments: { [YYYY-MM]: number } }
-      const payments = member.payments || {};
+      // Accept both Firestore map and local JSON paymentsDues
+      const payments = member.payments || member.paymentsDues || {};
       // Baseline cutoff: ALWAYS start at Jan 2022
       const start = new Date('2022-01-01T00:00:00Z');
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
@@ -154,7 +154,7 @@
 
       // Active definition: any payment in the last 36 months
       const isActiveDerived = (m) => {
-        const payments = m.payments || {};
+        const payments = m.payments || m.paymentsDues || {};
         const keys = Object.keys(payments);
         if (!keys.length) return false;
         const threshold = new Date('2022-10-01T00:00:00Z'); // 36 months before 2025-09 is 2022-10
@@ -228,6 +228,20 @@
       container.querySelectorAll('button[data-action="remind"]').forEach(btn => {
         btn.onclick = () => generateReminder(btn.getAttribute('data-id'));
       });
+    }
+
+    async function loadLocalJsonMembers() {
+      const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to load local JSON');
+      const raw = await res.json();
+      return raw.map(m => ({
+        id: String(m.memberId || m.id || ''),
+        memberId: m.memberId,
+        fullName: m.fullName || m.name,
+        isActive: m.isActive,
+        startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
+        payments: m.payments || m.paymentsDues || {}
+      }));
     }
 
     function attachRealtime() {
@@ -338,35 +352,31 @@
     let unsubscribe = null;
     window.addEventListener('DOMContentLoaded', async () => {
       setupAuth();
+      if (USE_LOCAL_ONLY) {
+        try {
+          const members = await loadLocalJsonMembers();
+          window.__members = members;
+          renderStats(members);
+          renderList(members);
+        } catch (e) { console.error(e); }
+        return;
+      }
+
       const { auth } = window.firebaseServices || {};
       if (auth) {
-        // Ensure we are signed in (anon) before attaching snapshot (rules require auth)
         try { if (!auth.currentUser) await auth.signInAnonymously(); } catch(_){}
         if (unsubscribe) try { unsubscribe(); } catch(_){}
         unsubscribe = attachRealtime();
-        auth.onAuthStateChanged(async (user) => {
-          // Re-attach listener on auth change to avoid rule-triggered errors
+        auth.onAuthStateChanged(async () => {
           if (unsubscribe) try { unsubscribe(); } catch(_){}
           unsubscribe = attachRealtime();
         });
       } else {
-        // As a last resort, load local JSON
         try {
-          const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
-          if (res.ok) {
-            const raw = await res.json();
-            const members = raw.map(m => ({
-              id: String(m.memberId || m.id || ''),
-              memberId: m.memberId,
-              fullName: m.fullName || m.name,
-              isActive: m.isActive,
-              startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
-              payments: m.payments || m.paymentsDues || {}
-            }));
-            window.__members = members;
-            renderStats(members);
-            renderList(members);
-          }
+          const members = await loadLocalJsonMembers();
+          window.__members = members;
+          renderStats(members);
+          renderList(members);
         } catch(_){}
       }
       document.getElementById('refresh').onclick = () => {
