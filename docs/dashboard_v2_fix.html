@@ -99,55 +99,65 @@
       if (!firstPaymentDate) {
         return { totalOwed: 0, totalPaid: 0, balance: 0, monthsBehind: 0, paidUpTo: null, status: 'inactive', startAt: null };
       }
-      const start = new Date(firstPaymentDate);
-      const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+      // Baseline = max(startDate, firstPaymentDate)
+      const startDateStr = (member.startDate || '').slice(0,10);
+      const startDate = startDateStr ? new Date(startDateStr + (startDateStr.length===7?'-01':'') ) : null;
+      const base = (!startDate || isNaN(startDate)) ? new Date(firstPaymentDate) : (new Date(firstPaymentDate) > startDate ? new Date(firstPaymentDate) : startDate);
+      const start = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
-      let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
-      let inConsecutiveCoverage = true;
+
+      // Owed months and totals
+      let owedMonths = 0;
+      let totalPaidTowardOwed = 0;
+      let iter = new Date(start);
       while (iter <= end) {
         const key = monthKey(iter);
-        const paid = Number(payments[key] || 0);
-        totalPaid += paid;
-        totalOwed += DUE_PER_MONTH;
-        const isCovered = paid >= DUE_PER_MONTH;
-        if (inConsecutiveCoverage && isCovered) {
-          paidUpTo = new Date(iter);
-        } else if (!isCovered) {
-          monthsBehind += 1;
-          inConsecutiveCoverage = false;
-        }
+        totalPaidTowardOwed += Number(payments[key] || 0);
+        owedMonths += 1;
         iter.setUTCMonth(iter.getUTCMonth() + 1);
       }
+      const totalOwed = owedMonths * DUE_PER_MONTH;
+
+      // Future credit (payments after current period)
       let futureCredit = 0;
-      try {
-        Object.keys(payments).forEach(k => {
+      Object.keys(payments).forEach(k => {
+        const [yy, mm] = k.split('-');
+        const d = new Date(`${yy}-${mm}-01T00:00:00Z`);
+        if (d > end) futureCredit += Number(payments[k] || 0);
+      });
+
+      // Dollar-based coverage
+      const monthsCovered = Math.floor((totalPaidTowardOwed) / DUE_PER_MONTH);
+      const monthsBehind = Math.max(0, owedMonths - monthsCovered);
+      const balance = (totalPaidTowardOwed + futureCredit) - totalOwed;
+
+      // Paid up to (latest posted month with >= $15)
+      let paidUpToAny = null; let maxD = null;
+      Object.keys(payments).forEach(k => {
+        const amount = Number(payments[k] || 0);
+        if (amount >= DUE_PER_MONTH) {
           const [yy, mm] = k.split('-');
           const d = new Date(`${yy}-${mm}-01T00:00:00Z`);
-          if (d > end) futureCredit += Number(payments[k] || 0);
-        });
-      } catch(_) {}
-      const balance = (totalPaid + futureCredit) - totalOwed;
-      let paidUpToAny = paidUpTo;
-      try {
-        let maxD = null;
-        Object.keys(payments).forEach(k => {
-          const amount = Number(payments[k] || 0);
-          if (amount >= DUE_PER_MONTH) {
-            const [yy, mm] = k.split('-');
-            const d = new Date(`${yy}-${mm}-01T00:00:00Z`);
-            if (!maxD || d > maxD) maxD = d;
-          }
-        });
-        if (maxD) paidUpToAny = maxD;
-      } catch(_) {}
+          if (!maxD || d > maxD) maxD = d;
+        }
+      });
+      if (maxD) paidUpToAny = maxD;
+
+      // Status
       let status = 'current';
-      if (!member.isActive) status = 'inactive';
-      else if (balance < 0) {
-        if (monthsBehind >= 6) status = 'risk';
-        else if (monthsBehind >= 3) status = 'issue';
-        else status = 'behind';
-      } else if (balance > 0) status = 'ahead';
-      return { balance, monthsBehind, paidUpTo: paidUpToAny, status, totalOwed, totalPaid, startAt: new Date(firstPaymentDate) };
+      const isActive = (() => {
+        const threshold = new Date('2022-10-01T00:00:00Z');
+        return Object.keys(payments).some(k => {
+          const [y, m] = k.split('-');
+          const d = new Date(`${y}-${m}-01T00:00:00Z`);
+          return payments[k] > 0 && d >= threshold;
+        });
+      })();
+      if (!isActive || member.isActive === false) status = 'inactive';
+      else if (balance < 0) status = monthsBehind >= 6 ? 'risk' : (monthsBehind >= 3 ? 'issue' : 'behind');
+      else if (balance > 0) status = 'ahead';
+
+      return { balance, monthsBehind, paidUpTo: paidUpToAny, status, totalOwed, totalPaid: totalPaidTowardOwed + futureCredit, startAt: start };
     }
 
     function findFirstPaymentDate(payments) {
