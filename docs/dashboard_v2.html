@@ -56,6 +56,7 @@
         <button id="btnSignInEmail" class="secondary">Sign in (Email)</button>
         <button id="btnSignIn" class="secondary">Sign in Anonymously</button>
         <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
+        <span id="roleBadge" class="muted" style="margin-left:12px; font-weight:600;"></span>
       </div>
     </div>
   </header>
@@ -216,7 +217,12 @@
       const container = document.getElementById('list');
       container.innerHTML = '';
       members
-        .filter(m => !q || (m.fullName || '').toLowerCase().includes(q))
+        .filter(m => {
+          if (!q) return true;
+          const name = (m.fullName || '').toLowerCase();
+          const id = String(m.memberId || m.id || '').toLowerCase();
+          return name.includes(q) || id.includes(q);
+        })
         .slice(0, 250)
         .forEach(m => {
           const f = calculateMemberFinancials(m);
@@ -372,7 +378,9 @@
               window.__role = snap.data().role;
             }
           }
-        } catch(_) { window.__role = 'member'; }
+          const badge = document.getElementById('roleBadge');
+          if (badge) badge.textContent = user ? `Role: ${window.__role}` : '';
+        } catch(_) { window.__role = 'member'; const badge = document.getElementById('roleBadge'); if (badge) badge.textContent = ''; }
         if (window.__members) renderList(window.__members);
         // When logged out, hide list for security
         if (!user) {
@@ -473,6 +481,17 @@
           remaining -= apply;
         }
         iter.setUTCMonth(iter.getUTCMonth() + 1);
+      }
+      // If still remaining, allocate into future months sequentially
+      let future = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth()+1, 1));
+      while (remaining >= DUE_PER_MONTH) {
+        const key = monthKey(future);
+        const paid = Number(map[key] || 0);
+        const need = Math.max(0, DUE_PER_MONTH - paid);
+        const apply = Math.min(need || DUE_PER_MONTH, remaining);
+        map[key] = paid + apply;
+        remaining -= apply;
+        future.setUTCMonth(future.getUTCMonth() + 1);
       }
       return { map, remaining };
     }
