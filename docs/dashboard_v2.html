@@ -226,7 +226,11 @@
         .slice(0, 250)
         .forEach(m => {
           const f = calculateMemberFinancials(m);
-          if (document.getElementById('filterStatus').value !== 'all' && f.status !== document.getElementById('filterStatus').value) return;
+          const sel = document.getElementById('filterStatus').value;
+          if (sel !== 'all') {
+            const effective = (f.status === 'ahead') ? 'current' : f.status;
+            if (effective !== sel) return;
+          }
           const div = document.createElement('div');
           div.className = 'member';
           const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
