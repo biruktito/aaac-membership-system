@@ -216,7 +216,13 @@
       const f = document.getElementById('filterStatus').value;
       const container = document.getElementById('list');
       container.innerHTML = '';
-      members
+      // Sort by numeric memberId ascending for stable display
+      const sorted = [...members].sort((a,b) => {
+        const ai = parseInt(String(a.memberId || a.id || 0), 10) || 0;
+        const bi = parseInt(String(b.memberId || b.id || 0), 10) || 0;
+        return ai - bi;
+      });
+      sorted
         .filter(m => {
           if (!q) return true;
           const name = (m.fullName || '').toLowerCase();
