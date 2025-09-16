@@ -268,9 +268,32 @@
         window.__members = members;
         renderStats(members);
         renderList(members);
-      }, (err) => {
-        console.error('onSnapshot error', err);
-        alert('Realtime subscription failed. Check Firestore rules and network.');
+      }, async (err) => {
+        console.warn('onSnapshot error; falling back to local JSON', err);
+        try {
+          const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
+          if (res.ok) {
+            const raw = await res.json();
+            const members = raw.map(m => {
+              const payments = m.payments || m.paymentsDues || {};
+              return {
+                id: String(m.memberId || m.id || ''),
+                memberId: m.memberId,
+                fullName: m.fullName || m.name,
+                isActive: m.isActive,
+                startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
+                payments
+              };
+            });
+            window.__members = members;
+            renderStats(members);
+            renderList(members);
+          } else {
+            console.error('Fallback JSON load failed', res.status);
+          }
+        } catch (e) {
+          console.error('Fallback JSON exception', e);
+        }
       });
     }
 
@@ -301,9 +324,39 @@
     }
 
     let unsubscribe = null;
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
       setupAuth();
-      unsubscribe = attachRealtime();
+      const { auth } = window.firebaseServices || {};
+      if (auth) {
+        // Ensure we are signed in (anon) before attaching snapshot (rules require auth)
+        try { if (!auth.currentUser) await auth.signInAnonymously(); } catch(_){}
+        if (unsubscribe) try { unsubscribe(); } catch(_){}
+        unsubscribe = attachRealtime();
+        auth.onAuthStateChanged(async (user) => {
+          // Re-attach listener on auth change to avoid rule-triggered errors
+          if (unsubscribe) try { unsubscribe(); } catch(_){}
+          unsubscribe = attachRealtime();
+        });
+      } else {
+        // As a last resort, load local JSON
+        try {
+          const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
+          if (res.ok) {
+            const raw = await res.json();
+            const members = raw.map(m => ({
+              id: String(m.memberId || m.id || ''),
+              memberId: m.memberId,
+              fullName: m.fullName || m.name,
+              isActive: m.isActive,
+              startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
+              payments: m.payments || m.paymentsDues || {}
+            }));
+            window.__members = members;
+            renderStats(members);
+            renderList(members);
+          }
+        } catch(_){}
+      }
       document.getElementById('refresh').onclick = () => {
         if (window.__members) {
           renderStats(window.__members);
