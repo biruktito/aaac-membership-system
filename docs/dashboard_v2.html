@@ -204,7 +204,11 @@
               <button data-action="record" data-id="${m.id}">Record Payment</button>
               <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
             </div>
-          ` : '';
+          ` : `
+            <div class="row" style="gap:8px; margin-top:8px;">
+              <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
+            </div>
+          `;
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -235,9 +239,32 @@
         return () => {};
       }
 
-      return db.collection('members').onSnapshot((snap) => {
-        const members = [];
+      return db.collection('members').onSnapshot(async (snap) => {
+        let members = [];
         snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
+
+        // Fallback: if no data in Firestore, load from local JSON (for verification)
+        if (!members.length) {
+          try {
+            const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
+            if (res.ok) {
+              const raw = await res.json();
+              // Transform JSON schema -> v2 schema
+              members = raw.map(m => {
+                const payments = m.payments || m.paymentsDues || {};
+                return {
+                  id: String(m.memberId || m.id || ''),
+                  memberId: m.memberId,
+                  fullName: m.fullName || m.name,
+                  isActive: m.isActive,
+                  startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
+                  payments: payments
+                };
+              });
+            }
+          } catch (e) { console.warn('JSON fallback load failed', e); }
+        }
+
         window.__members = members;
         renderStats(members);
         renderList(members);
@@ -374,7 +401,7 @@
       if (!m) return alert('Member not found');
       const f = calculateMemberFinancials(m);
       const owed = f.balance < 0 ? Math.abs(f.balance).toFixed(2) : '0.00';
-      const msg = `Hello ${m.fullName},\n\nOur records show an outstanding balance of $${owed} for your monthly dues. Please make your payment at your earliest convenience.\n\nThank you!`;
+      const msg = `ሰላም ${m.fullName},\n\nበአሁኑ ጊዜ የወርሃዊ ክፍያ ቀሪ ዕለት $${owed} አለ። እባክዎ ክፍያውን በተመጣጣኝ ጊዜ ይፈፅሙ።\n\nእናመሰግናለን!`;
       try { await navigator.clipboard.writeText(msg); alert('Reminder copied to clipboard'); } catch(_) { alert('Could not copy to clipboard'); }
     }
   </script>
