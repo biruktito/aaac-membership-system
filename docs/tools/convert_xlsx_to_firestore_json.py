@@ -93,6 +93,29 @@ def normalize_member_id(row, id_col, name_col):
     member_id = name  # fallback
   return member_id, name
 
+def is_valid_member(member_id, full_name):
+  """Filter out non-member entries like 'Total', 'Expected amount', etc."""
+  if not member_id or not full_name:
+    return False
+  
+  # Skip common non-member entries
+  invalid_entries = {
+    'total', 'expected amount', 'not collected membership', 
+    'expected', 'amount', 'membership', 'collected'
+  }
+  
+  member_id_lower = str(member_id).lower().strip()
+  name_lower = str(full_name).lower().strip()
+  
+  if member_id_lower in invalid_entries or name_lower in invalid_entries:
+    return False
+    
+  # Skip if both ID and name are the same (likely a header)
+  if member_id_lower == name_lower:
+    return False
+    
+  return True
+
 
 def month_col_map(df):
   mapping = {}
@@ -120,6 +143,11 @@ def parse_year_sheet(year: int, df: pd.DataFrame, members):
     member_id, full_name = normalize_member_id(row, id_col, name_col)
     if not member_id and not full_name:
       continue
+    
+    # Filter out non-member entries
+    if not is_valid_member(member_id, full_name):
+      continue
+      
     key = member_id
     if key not in members:
       members[key] = {

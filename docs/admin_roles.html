@@ -36,6 +36,7 @@
       <div>
         <div style="font-weight:700; font-size:18px;">AAAC Admin — Roles Manager</div>
         <div class="muted">Set user roles and member linkage. Use with admin account.</div>
+        <div id="whoami" class="muted" style="margin-top:4px;"></div>
       </div>
       <div>
         <button id="btnEmail">Sign in with Email</button>
@@ -73,6 +74,7 @@
 
   <script>
     const { auth, db } = window.firebaseServices || {};
+    const whoEl = document.getElementById('whoami');
     
     // Email/Password sign-in
     document.getElementById('btnEmail').onclick = async () => {
@@ -91,16 +93,47 @@
     document.getElementById('btnAnon').onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
     document.getElementById('btnOut').onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
 
+    // Show current user and role badge
+    async function refreshWhoAmI() {
+      const user = auth.currentUser;
+      if (!user) { whoEl.textContent = 'Not signed in'; return; }
+      let roleText = '(unknown role)';
+      try {
+        const snap = await db.collection('roles').doc(user.uid).get();
+        if (snap.exists) {
+          const data = snap.data() || {};
+          roleText = `${data.role || 'unknown'}${data.memberId ? `, memberId ${data.memberId}` : ''}`;
+        } else {
+          roleText = '(no role doc)';
+        }
+      } catch (_) { /* ignore */ }
+      whoEl.textContent = `Signed in as ${user.email || 'anonymous'} (uid: ${user.uid}) — Role: ${roleText}`;
+    }
+    auth.onAuthStateChanged(() => { refreshWhoAmI(); });
+    refreshWhoAmI();
+
     document.getElementById('btnSave').onclick = async () => {
       const uid = document.getElementById('uid').value.trim();
       const role = document.getElementById('role').value;
       const memberId = document.getElementById('memberId').value.trim();
       if (!uid) { alert('UID required'); return; }
       if (role === 'member' && !memberId) { alert('memberId required for member role'); return; }
+      // Gate by admin per Firestore rules
+      try {
+        const me = auth.currentUser;
+        if (!me) { alert('Sign in first'); return; }
+        const myRoleDoc = await db.collection('roles').doc(me.uid).get();
+        const canAdmin = myRoleDoc.exists && (myRoleDoc.data() || {}).role === 'admin';
+        if (!canAdmin) {
+          alert('You must be signed in as an admin to save roles. Ask an existing admin to grant you admin, or bootstrap via Firebase Console by creating roles/{yourUid} = { role: "admin" } temporarily.');
+          return;
+        }
+      } catch (_) { /* fallthrough, Firestore rules will still enforce */ }
       try {
         await db.collection('roles').doc(uid).set({ role, ...(memberId ? { memberId } : {}) }, { merge: true });
         document.getElementById('status').textContent = 'Saved.';
         alert('Role saved.');
+        refreshWhoAmI();
       } catch (e) {
         console.error(e);
         document.getElementById('status').textContent = 'Error: ' + (e.message || e);

@@ -53,3 +53,5 @@ async function updateAllJoiningFees() {
 
 // Run the migration
 updateAllJoiningFees();
+
+

@@ -116,7 +116,7 @@
     function calculateMemberFinancials(member) {
       // Accept both Firestore map and local JSON paymentsDues
       const payments = member.payments || member.paymentsDues || {};
-      // Find the member's first payment date (their actual start date)
+      // Find the member'sl first payment date (their actual start date)
       const firstPaymentDate = findFirstPaymentDate(payments);
       if (!firstPaymentDate) {
         return { totalOwed: 0, totalPaid: 0, balance: 0, monthsBehind: 0, paidUpTo: null, status: 'inactive' };
@@ -124,6 +124,9 @@
       
       // Calculate from first payment through current period (2025-09)
       const start = new Date(firstPaymentDate);
+      if (member && (member.memberId || member.id)) {
+        try { console.log('Calc start for member', member.fullName || member.id, 'id:', member.memberId || member.id, 'firstPaymentDate:', firstPaymentDate); } catch(_){}
+      }
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
       let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
