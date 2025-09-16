@@ -53,6 +53,7 @@
         <div class="muted">Real-time, single source of truth. September 2025 calculations.</div>
       </div>
       <div class="row">
+        <button id="btnSignInEmail" class="secondary">Sign in (Email)</button>
         <button id="btnSignIn" class="secondary">Sign in Anonymously</button>
         <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
       </div>
@@ -250,11 +251,22 @@
       const { auth } = window.firebaseServices || {};
       if (!auth) return;
       const signInBtn = document.getElementById('btnSignIn');
+      const signInEmailBtn = document.getElementById('btnSignInEmail');
       const signOutBtn = document.getElementById('btnSignOut');
       signInBtn.onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
+      signInEmailBtn.onclick = async () => {
+        const email = prompt('Enter email:');
+        if (!email) return;
+        const password = prompt('Enter password:');
+        if (!password) return;
+        try { await auth.signInWithEmailAndPassword(email, password); }
+        catch(e){ alert('Email sign-in failed: ' + (e && e.message ? e.message : e)); }
+      };
       signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
       auth.onAuthStateChanged(user => {
-        signInBtn.style.display = user ? 'none' : '';
+        const showSignedOut = user ? 'none' : '';
+        signInBtn.style.display = showSignedOut;
+        signInEmailBtn.style.display = showSignedOut;
         signOutBtn.style.display = user ? '' : 'none';
         // Re-render to show/hide admin buttons
         if (window.__members) renderList(window.__members);
