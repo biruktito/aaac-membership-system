@@ -403,7 +403,6 @@
       if (!auth) return;
       const signInBtn = null;
       const signInEmailBtn = document.getElementById('btnSignInEmail');
-      const signInPhoneBtn = null;
       const claimPhoneIdBtn = document.getElementById('btnClaimPhoneId');
       const signOutBtn = document.getElementById('btnSignOut');
       // Anonymous sign-in disabled
@@ -458,26 +457,11 @@
           alert('Claim failed: ' + (e && e.message ? e.message : e));
         }
       };
-      signInPhoneBtn.onclick = async () => {
-        try {
-          const phone = prompt('Enter phone in E.164 format, e.g. +17738653829:');
-          if (!phone) return;
-          // use invisible reCAPTCHA verifier attached to body
-          const appVerifier = new firebase.auth.RecaptchaVerifier('roleBadge', { size: 'invisible' });
-          const confirmation = await auth.signInWithPhoneNumber(phone, appVerifier);
-          const code = prompt('Enter the SMS code:');
-          if (!code) return;
-          await confirmation.confirm(code);
-          alert('Phone sign-in successful');
-        } catch (e) {
-          alert('Phone sign-in failed: ' + (e && e.message ? e.message : e));
-        }
-      };
       signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
       auth.onAuthStateChanged(async user => {
         const showSignedOut = user ? 'none' : '';
-        signInBtn.style.display = showSignedOut;
-        signInEmailBtn.style.display = showSignedOut;
+        if (signInEmailBtn) signInEmailBtn.style.display = showSignedOut;
+        if (claimPhoneIdBtn) claimPhoneIdBtn.style.display = showSignedOut;
         signOutBtn.style.display = user ? '' : 'none';
         // Load role document if signed in
         try {
