@@ -117,35 +117,52 @@
     function calculateMemberFinancials(member) {
       // Accept both Firestore map and local JSON paymentsDues
       const payments = member.payments || member.paymentsDues || {};
-      // Find the member's first payment date (their actual start date)
-      const firstPaymentDate = findFirstPaymentDate(payments);
-      if (!firstPaymentDate) {
-        return { totalOwed: 0, totalPaid: 0, balance: 0, monthsBehind: 0, paidUpTo: null, status: 'inactive' };
+      
+      // Find first payment month from actual payments
+      const firstPaymentMonth = findFirstPaymentDate(payments);
+      if (!firstPaymentMonth) {
+        return { 
+          totalOwed: 0, 
+          totalPaid: 0, 
+          balance: 0, 
+          monthsBehind: 0, 
+          paidUpTo: null, 
+          status: 'inactive',
+          startAt: null
+        };
       }
       
-      // Calculate from first payment through current period (2025-09)
-      const start = new Date(firstPaymentDate);
-      const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+      // Baseline = max(member.startDate, firstPaymentMonth) as per memory
+      const memberStartDate = member.startDate ? new Date(member.startDate + 'T00:00:00Z') : null;
+      const firstPaymentDate = new Date(firstPaymentMonth + 'T00:00:00Z');
+      const baseline = memberStartDate && memberStartDate > firstPaymentDate ? memberStartDate : firstPaymentDate;
+      
+      // Calculate owed months from baseline to current (inclusive)
+      const start = new Date(Date.UTC(baseline.getUTCFullYear(), baseline.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
-      let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
-      let inConsecutiveCoverage = true; // stops updating paidUpTo after first unpaid gap
-
+      
+      let totalOwed = 0;
+      let totalPaidTowardOwed = 0;
+      let monthsCovered = 0;
+      let paidUpTo = null;
+      
+      // Calculate owed months and payments within the owed window
+      const iter = new Date(start);
       while (iter <= end) {
         const key = monthKey(iter);
         const paid = Number(payments[key] || 0);
-        totalPaid += paid;
         totalOwed += DUE_PER_MONTH;
-        const isCovered = paid >= DUE_PER_MONTH;
-        if (inConsecutiveCoverage && isCovered) {
+        totalPaidTowardOwed += paid;
+        
+        if (paid >= DUE_PER_MONTH) {
+          monthsCovered += 1;
           paidUpTo = new Date(iter);
-        } else if (!isCovered) {
-          monthsBehind += 1;
-          inConsecutiveCoverage = false;
         }
+        
         iter.setUTCMonth(iter.getUTCMonth() + 1);
       }
-
-      // Count payments after end date as credit (do NOT change monthsBehind/paidUpTo)
+      
+      // Calculate future credit (payments beyond current month)
       let futureCredit = 0;
       try {
         Object.keys(payments).forEach(k => {
@@ -154,10 +171,13 @@
           if (d > end) futureCredit += Number(payments[k] || 0);
         });
       } catch(_) {}
-
-      const balance = (totalPaid + futureCredit) - totalOwed; // negative means owes
-
-      // Show paidUpTo as the latest month with a posted payment (even if future)
+      
+      // Calculate months behind and balance
+      const owedMonths = Math.floor((end - start) / (1000 * 60 * 60 * 24 * 30.44)) + 1; // Approximate months
+      const monthsBehind = Math.max(0, owedMonths - monthsCovered);
+      const balance = (totalPaidTowardOwed + futureCredit) - totalOwed;
+      
+      // Find latest month with payment >= $15 (even if future)
       let paidUpToAny = paidUpTo;
       try {
         let maxD = null;
@@ -171,17 +191,42 @@
         });
         if (maxD) paidUpToAny = maxD;
       } catch(_) {}
+      
+      // Determine status based on our memory rules
       let status = 'current';
-      if (!member.isActive) status = 'inactive';
+      
+      // Check for inactive (manual flag)
+      if (!member.isActive) {
+        status = 'inactive';
+      }
+      // Check for inactive (lapsed - no payment in last 36 months)
+      else if (paidUpToAny) {
+        const lastPaymentDate = new Date(paidUpToAny);
+        const thirtySixMonthsAgo = new Date(CURRENT_DATE);
+        thirtySixMonthsAgo.setUTCMonth(thirtySixMonthsAgo.getUTCMonth() - 36);
+        if (lastPaymentDate < thirtySixMonthsAgo) {
+          status = 'inactive';
+        }
+      }
+      // Check for arrears status
       else if (balance < 0) {
         if (monthsBehind >= 6) status = 'risk';
         else if (monthsBehind >= 3) status = 'issue';
-        else status = 'behind';
+        else if (monthsBehind >= 1) status = 'behind';
+        else status = 'current';
       } else if (balance > 0) {
         status = 'ahead';
       }
 
-      return { balance, monthsBehind, paidUpTo: paidUpToAny, status, totalOwed, totalPaid };
+      return { 
+        balance, 
+        monthsBehind, 
+        paidUpTo: paidUpToAny, 
+        status, 
+        totalOwed, 
+        totalPaid: totalPaidTowardOwed + futureCredit,
+        startAt: baseline
+      };
     }
     
     function findFirstPaymentDate(payments) {
@@ -265,6 +310,9 @@
               <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
             </div>
           ` : '';
+          const startChip = f.startAt ? 
+            `Start: ${f.startAt.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
+            'Start: —';
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -273,7 +321,7 @@
               </div>
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
-            <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+            <div class="muted" style="margin-top:6px;">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
             ${actions}
           `;
           container.appendChild(div);
@@ -394,6 +442,9 @@
         const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
         const div = document.createElement('div');
         div.className = 'member';
+        const startChip = f.startAt ? 
+          `Start: ${f.startAt.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
+          'Start: —';
         div.innerHTML = `
           <div style=\"display:flex; justify-content:space-between; align-items:center;\">\n\
             <div>\n\
@@ -402,7 +453,7 @@
             </div>\n\
             <span class=\"badge ${statusClass}\">${f.status}</span>\n\
           </div>\n\
-          <div class=\"muted\" style=\"margin-top:6px;\">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>\n\
+          <div class=\"muted\" style=\"margin-top:6px;\">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>\n\
         `;
         container.appendChild(div);
         // Hide global stats for member-only view
