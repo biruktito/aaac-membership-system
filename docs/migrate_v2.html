@@ -128,7 +128,14 @@
       const { db } = window.firebaseServices || {};
       if (!db) return alert('Firebase not initialized');
       try { await ensureAuth(); } catch (_) { return; }
-      const arr = parse();
+      let arr = parse();
+      // Auto-convert paymentsDues -> payments for compatibility
+      arr = arr.map(m => {
+        if (m && !m.payments && m.paymentsDues) {
+          return { ...m, payments: m.paymentsDues };
+        }
+        return m;
+      });
       const statusEl = document.getElementById('status');
       statusEl.textContent = 'Importing...';
       let ok = 0, fail = 0;

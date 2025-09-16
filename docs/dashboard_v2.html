@@ -108,7 +108,7 @@
   <script>
     const CURRENT_DATE = new Date('2025-09-01T00:00:00Z');
     const DUE_PER_MONTH = 15; // USD
-    const USE_LOCAL_ONLY = true; // Verification mode: use local JSON as single source of truth
+    const USE_LOCAL_ONLY = false; // Firestore is the single source of truth for v2
 
     function monthKey(date) { return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}`; }
 
