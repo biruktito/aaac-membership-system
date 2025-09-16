@@ -120,16 +120,19 @@
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
       let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
+      let inConsecutiveCoverage = true; // stops updating paidUpTo after first unpaid gap
 
       while (iter <= end) {
         const key = monthKey(iter);
         const paid = Number(payments[key] || 0);
         totalPaid += paid;
         totalOwed += DUE_PER_MONTH;
-        if (paid >= DUE_PER_MONTH) {
+        const isCovered = paid >= DUE_PER_MONTH;
+        if (inConsecutiveCoverage && isCovered) {
           paidUpTo = new Date(iter);
-        } else {
+        } else if (!isCovered) {
           monthsBehind += 1;
+          inConsecutiveCoverage = false;
         }
         iter.setUTCMonth(iter.getUTCMonth() + 1);
       }
