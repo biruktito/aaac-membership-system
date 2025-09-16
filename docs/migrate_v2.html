@@ -9,6 +9,38 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script>
+    // Helpers to normalize payments and fill gaps up to current cutoff
+    const DUE_PER_MONTH = 15;
+    const CUTOFF_START = new Date('2022-01-01T00:00:00Z');
+    const CUTOFF_END = new Date('2025-09-01T00:00:00Z');
+    function ymKey(d) { return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`; }
+    function nextMonth(d) { const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)); x.setUTCMonth(x.getUTCMonth()+1); return x; }
+    function normalizeAndDistribute(paymentsIn) {
+      // Clone and coerce numeric
+      const payments = {};
+      Object.keys(paymentsIn || {}).forEach(k => payments[k] = Number(paymentsIn[k] || 0));
+      // Compute future credit (after cutoff end)
+      let credit = 0;
+      Object.keys(payments).forEach(k => {
+        const [y, m] = k.split('-');
+        const d = new Date(`${y}-${m}-01T00:00:00Z`);
+        if (d > CUTOFF_END) { credit += payments[k]; payments[k] = payments[k]; }
+      });
+      // Fill gaps from 2022-01 through 2025-09
+      let iter = new Date(Date.UTC(CUTOFF_START.getUTCFullYear(), CUTOFF_START.getUTCMonth(), 1));
+      while (iter <= CUTOFF_END && credit > 0) {
+        const k = ymKey(iter);
+        const paid = Number(payments[k] || 0);
+        if (paid < DUE_PER_MONTH) {
+          const need = DUE_PER_MONTH - paid;
+          const apply = Math.min(need, credit);
+          payments[k] = paid + apply;
+          credit -= apply;
+        }
+        iter = nextMonth(iter);
+      }
+      return payments;
+    }
     // Inline Firebase config (fallback to avoid Pages not loading external config)
     window.firebaseConfig = window.firebaseConfig || {
       apiKey: "AIzaSyDa4rimRWUUgPp7LAAaZzyrn13MKM-9naA",
@@ -131,10 +163,10 @@
       let arr = parse();
       // Auto-convert paymentsDues -> payments for compatibility
       arr = arr.map(m => {
-        if (m && !m.payments && m.paymentsDues) {
-          return { ...m, payments: m.paymentsDues };
-        }
-        return m;
+        if (!m) return m;
+        const raw = m.payments || m.paymentsDues || {};
+        const normalized = normalizeAndDistribute(raw);
+        return { ...m, payments: normalized };
       });
       const statusEl = document.getElementById('status');
       statusEl.textContent = 'Importing...';
@@ -143,7 +175,7 @@
         try {
           const docId = m.memberId ? String(m.memberId) : undefined;
           const ref = docId ? db.collection('members').doc(docId) : db.collection('members').doc();
-          const { payments, ...rest } = m;
+          const { payments, paymentsDues, ...rest } = m;
           await ref.set(rest, { merge: true });
           if (payments && typeof payments === 'object') {
             await ref.set({ payments }, { merge: true });
