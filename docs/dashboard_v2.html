@@ -241,8 +241,13 @@
         let members = [];
         snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
 
-        // Fallback: if no data in Firestore, load from local JSON (for verification)
-        if (!members.length) {
+        // If Firestore has no docs OR no payments across all docs, fallback to local JSON
+        const totalPayments = members.reduce((sum, m) => {
+          const p = m.payments || {};
+          return sum + Object.values(p).reduce((s, v) => s + Number(v || 0), 0);
+        }, 0);
+        const needsFallback = (!members.length) || (totalPayments === 0);
+        if (needsFallback) {
           try {
             const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
             if (res.ok) {
