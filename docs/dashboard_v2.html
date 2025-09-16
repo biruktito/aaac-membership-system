@@ -198,17 +198,15 @@
           const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
           const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
           // Admin actions (visible when signed-in email user)
-          const isAdmin = !!((window.firebaseServices||{}).auth && (window.firebaseServices.auth.currentUser && window.firebaseServices.auth.currentUser.email));
-          const actions = isAdmin ? `
+          const role = window.__role || 'member';
+          const isAdmin = role === 'admin';
+          const isBoard = role === 'board';
+          const actions = (isAdmin || isBoard) ? `
             <div class="row" style="gap:8px; margin-top:8px;">
-              <button data-action="record" data-id="${m.id}">Record Payment</button>
+              ${isAdmin ? `<button data-action="record" data-id="${m.id}">Record Payment</button>` : ''}
               <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
             </div>
-          ` : `
-            <div class="row" style="gap:8px; margin-top:8px;">
-              <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
-            </div>
-          `;
+          ` : '';
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -313,12 +311,21 @@
         catch(e){ alert('Email sign-in failed: ' + (e && e.message ? e.message : e)); }
       };
       signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
-      auth.onAuthStateChanged(user => {
+      auth.onAuthStateChanged(async user => {
         const showSignedOut = user ? 'none' : '';
         signInBtn.style.display = showSignedOut;
         signInEmailBtn.style.display = showSignedOut;
         signOutBtn.style.display = user ? '' : 'none';
-        // Re-render to show/hide admin buttons
+        // Load role document if signed in
+        try {
+          window.__role = 'member';
+          if (user && window.firebaseServices && window.firebaseServices.db) {
+            const snap = await window.firebaseServices.db.collection('roles').doc(user.uid).get();
+            if (snap.exists && snap.data() && snap.data().role) {
+              window.__role = snap.data().role;
+            }
+          }
+        } catch(_) { window.__role = 'member'; }
         if (window.__members) renderList(window.__members);
       });
     }
