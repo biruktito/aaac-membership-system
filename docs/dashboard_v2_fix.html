@@ -153,9 +153,13 @@
           return payments[k] > 0 && d >= threshold;
         });
       })();
-      if (!isActive || member.isActive === false) status = 'inactive';
-      else if (balance < 0) status = monthsBehind >= 6 ? 'risk' : (monthsBehind >= 3 ? 'issue' : 'behind');
-      else if (balance > 0) status = 'ahead';
+      if (balance < 0) {
+        status = monthsBehind >= 6 ? 'risk' : (monthsBehind >= 3 ? 'issue' : 'behind');
+      } else if (balance > 0) {
+        status = 'ahead';
+      } else { // balance === 0
+        status = isActive ? 'current' : 'inactive';
+      }
 
       return { balance, monthsBehind, paidUpTo: paidUpToAny, status, totalOwed, totalPaid: totalPaidTowardOwed + futureCredit, startAt: start };
     }
