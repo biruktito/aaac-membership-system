@@ -69,11 +69,40 @@
 
     <div class="row" style="gap:8px;">
       <input id="search" placeholder="Search members by name..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
+      <select id="filterStatus" style="padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        <option value="all">All</option>
+        <option value="current">Current</option>
+        <option value="behind">Behind</option>
+        <option value="issue">Issue</option>
+        <option value="risk">Risk</option>
+        <option value="inactive">Inactive</option>
+      </select>
       <button id="refresh">Recalculate</button>
     </div>
 
     <div id="list" class="list"></div>
   </main>
+
+  <!-- Record Payment Modal -->
+  <div id="paymentModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:16px; border-radius:10px; width:100%; max-width:420px; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
+      <div style="font-weight:700; font-size:16px;">Record Payment</div>
+      <div id="pmember" class="muted" style="margin:6px 0 12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <input id="pamount" type="number" min="0" step="0.01" placeholder="$ Amount" style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
+        <select id="ptype" style="padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+          <option value="monthly">Monthly Dues</option>
+          <option value="incidental">Incidental</option>
+          <option value="registration">Registration</option>
+        </select>
+      </div>
+      <div id="ppreview" class="muted" style="margin-top:8px; font-size:13px;"></div>
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button id="psave">Save</button>
+        <button id="pcancel" class="secondary">Cancel</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const CURRENT_DATE = new Date('2025-09-01T00:00:00Z');
@@ -85,11 +114,8 @@
       // Expected member schema (Firestore):
       // members/{memberId}: { fullName, isActive, payments: { [YYYY-MM]: number } }
       const payments = member.payments || {};
-      // Baseline cutoff: Jan 2022 regardless of provided startDate
-      const provided = new Date(member.startDate || '2020-01-01T00:00:00Z');
-      const parsed = isNaN(provided) ? new Date('2020-01-01T00:00:00Z') : provided;
-      const cutoff = new Date('2022-01-01T00:00:00Z');
-      const start = parsed < cutoff ? cutoff : parsed;
+      // Baseline cutoff: ALWAYS start at Jan 2022
+      const start = new Date('2022-01-01T00:00:00Z');
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
       let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
@@ -124,9 +150,22 @@
     function renderStats(members) {
       let total = members.length;
       let current = 0; let behind = 0; let owed = 0;
+
+      // Active definition: any payment in the last 36 months
+      const isActiveDerived = (m) => {
+        const payments = m.payments || {};
+        const keys = Object.keys(payments);
+        if (!keys.length) return false;
+        const threshold = new Date('2022-10-01T00:00:00Z'); // 36 months before 2025-09 is 2022-10
+        return keys.some(k => {
+          const [y, mm] = k.split('-');
+          const d = new Date(`${y}-${mm}-01T00:00:00Z`);
+          return payments[k] > 0 && d >= threshold;
+        });
+      };
       members.forEach(m => {
         const f = calculateMemberFinancials(m);
-        if (m.isActive) {
+        if (isActiveDerived(m)) {
           if (f.balance < 0) owed += Math.abs(f.balance);
           if (f.balance >= 0) current += 1; else behind += 1;
         }
@@ -144,6 +183,7 @@
 
     function renderList(members) {
       const q = document.getElementById('search').value.trim().toLowerCase();
+      const f = document.getElementById('filterStatus').value;
       const container = document.getElementById('list');
       container.innerHTML = '';
       members
@@ -151,10 +191,19 @@
         .slice(0, 250)
         .forEach(m => {
           const f = calculateMemberFinancials(m);
+          if (document.getElementById('filterStatus').value !== 'all' && f.status !== document.getElementById('filterStatus').value) return;
           const div = document.createElement('div');
           div.className = 'member';
           const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
           const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
+          // Admin actions (visible when signed-in email user)
+          const isAdmin = !!((window.firebaseServices||{}).auth && (window.firebaseServices.auth.currentUser && window.firebaseServices.auth.currentUser.email));
+          const actions = isAdmin ? `
+            <div class="row" style="gap:8px; margin-top:8px;">
+              <button data-action="record" data-id="${m.id}">Record Payment</button>
+              <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
+            </div>
+          ` : '';
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -164,9 +213,18 @@
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
             <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+            ${actions}
           `;
           container.appendChild(div);
         });
+
+      // Wire admin buttons
+      container.querySelectorAll('button[data-action="record"]').forEach(btn => {
+        btn.onclick = () => openPaymentModal(btn.getAttribute('data-id'));
+      });
+      container.querySelectorAll('button[data-action="remind"]').forEach(btn => {
+        btn.onclick = () => generateReminder(btn.getAttribute('data-id'));
+      });
     }
 
     function attachRealtime() {
@@ -198,6 +256,8 @@
       auth.onAuthStateChanged(user => {
         signInBtn.style.display = user ? 'none' : '';
         signOutBtn.style.display = user ? '' : 'none';
+        // Re-render to show/hide admin buttons
+        if (window.__members) renderList(window.__members);
       });
     }
 
@@ -214,9 +274,97 @@
       document.getElementById('search').addEventListener('input', () => {
         if (window.__members) renderList(window.__members);
       });
+      document.getElementById('filterStatus').addEventListener('change', () => {
+        if (window.__members) renderList(window.__members);
+      });
+      // Payment modal handlers
+      document.getElementById('pcancel').onclick = closePaymentModal;
+      document.getElementById('psave').onclick = savePayment;
     });
 
     window.addEventListener('unload', () => { if (typeof unsubscribe === 'function') unsubscribe(); });
+
+    // --- Admin: Record Payment & Reminder ---
+    function findMemberById(id) {
+      return (window.__members || []).find(m => String(m.id) === String(id));
+    }
+
+    function openPaymentModal(memberId) {
+      const m = findMemberById(memberId);
+      if (!m) return alert('Member not found');
+      document.getElementById('pmember').textContent = `${m.fullName} (ID ${m.memberId || m.id})`;
+      document.getElementById('pamount').value = '';
+      document.getElementById('ptype').value = 'monthly';
+      document.getElementById('ppreview').textContent = '';
+      const modal = document.getElementById('paymentModal');
+      modal.style.display = 'flex';
+      modal.setAttribute('data-id', m.id);
+    }
+
+    function closePaymentModal() {
+      const modal = document.getElementById('paymentModal');
+      modal.style.display = 'none';
+      modal.removeAttribute('data-id');
+    }
+
+    function distributeToUnpaidMonths(amount, payments) {
+      const map = { ...(payments || {}) };
+      let remaining = Number(amount) || 0;
+      const iter = new Date(Date.UTC(2022,0,1));
+      const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
+      while (iter <= end && remaining >= DUE_PER_MONTH) {
+        const key = monthKey(iter);
+        const paid = Number(map[key] || 0);
+        if (paid < DUE_PER_MONTH) {
+          const need = DUE_PER_MONTH - paid;
+          const apply = Math.min(need, remaining);
+          map[key] = paid + apply;
+          remaining -= apply;
+        }
+        iter.setUTCMonth(iter.getUTCMonth() + 1);
+      }
+      return { map, remaining };
+    }
+
+    async function savePayment() {
+      const { db, auth } = window.firebaseServices || {};
+      if (!db) return alert('Firebase not initialized');
+      const modal = document.getElementById('paymentModal');
+      const memberId = modal.getAttribute('data-id');
+      const m = findMemberById(memberId);
+      if (!m) return alert('Member not found');
+      const amount = Number(document.getElementById('pamount').value || 0);
+      const type = document.getElementById('ptype').value;
+      if (!(amount > 0)) return alert('Enter a valid amount');
+
+      try {
+        const docRef = db.collection('members').doc(String(m.id));
+        if (type === 'monthly') {
+          const dist = distributeToUnpaidMonths(amount, m.payments || {});
+          await docRef.set({ payments: dist.map }, { merge: true });
+        } else {
+          // For incidental/registration we log to an array field for now
+          const field = type === 'registration' ? 'registrationPayments' : 'incidentalPayments';
+          const entry = { amount, at: new Date().toISOString(), by: (auth && auth.currentUser && auth.currentUser.email) || 'admin' };
+          const payload = {};
+          payload[field] = firebase.firestore.FieldValue.arrayUnion(entry);
+          await docRef.set(payload, { merge: true });
+        }
+        closePaymentModal();
+      } catch (e) {
+        console.error(e);
+        alert('Failed to save payment');
+      }
+    }
+
+    async function generateReminder(memberId) {
+      const m = findMemberById(memberId);
+      if (!m) return alert('Member not found');
+      const f = calculateMemberFinancials(m);
+      const owed = f.balance < 0 ? Math.abs(f.balance).toFixed(2) : '0.00';
+      const msg = `Hello ${m.fullName},\n\nOur records show an outstanding balance of $${owed} for your monthly dues. Please make your payment at your earliest convenience.\n\nThank you!`;
+      try { await navigator.clipboard.writeText(msg); alert('Reminder copied to clipboard'); } catch(_) { alert('Could not copy to clipboard'); }
+    }
   </script>
 </body>
 </html>
