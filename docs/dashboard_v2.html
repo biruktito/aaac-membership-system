@@ -116,8 +116,14 @@
     function calculateMemberFinancials(member) {
       // Accept both Firestore map and local JSON paymentsDues
       const payments = member.payments || member.paymentsDues || {};
-      // Baseline cutoff: ALWAYS start at Jan 2022
-      const start = new Date('2022-01-01T00:00:00Z');
+      // Find the member's first payment date (their actual start date)
+      const firstPaymentDate = findFirstPaymentDate(payments);
+      if (!firstPaymentDate) {
+        return { totalOwed: 0, totalPaid: 0, balance: 0, monthsBehind: 0, paidUpTo: null, status: 'inactive' };
+      }
+      
+      // Calculate from first payment through current period (2025-09)
+      const start = new Date(firstPaymentDate);
       const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
       let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
@@ -175,6 +181,13 @@
       }
 
       return { balance, monthsBehind, paidUpTo: paidUpToAny, status, totalOwed, totalPaid };
+    }
+    
+    function findFirstPaymentDate(payments) {
+      const paymentDates = Object.keys(payments).filter(key => 
+        /^\d{4}-\d{2}$/.test(key) && Number(payments[key]) > 0
+      ).sort();
+      return paymentDates.length > 0 ? paymentDates[0] + '-01' : null;
     }
 
     function renderStats(members) {
