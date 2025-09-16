@@ -358,6 +358,46 @@
       });
     }
 
+    // Subscribe to a single member document (member-only view)
+    function attachMemberRealtime(memberId) {
+      const { db } = window.firebaseServices || {};
+      if (!db || !memberId) return () => {};
+      return db.collection('members').doc(String(memberId)).onSnapshot((doc) => {
+        const container = document.getElementById('list');
+        if (!doc.exists) {
+          container.innerHTML = '<div class="muted">No record found.</div>';
+          document.getElementById('statTotal').textContent = '—';
+          document.getElementById('statCurrent').textContent = '—';
+          document.getElementById('statBehind').textContent = '—';
+          document.getElementById('statOwed').textContent = '—';
+          return;
+        }
+        const m = { id: doc.id, ...doc.data() };
+        container.innerHTML = '';
+        const f = calculateMemberFinancials(m);
+        const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
+        const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
+        const div = document.createElement('div');
+        div.className = 'member';
+        div.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:600;">${m.fullName || 'Unnamed'}</div>
+              <div class="muted">Member ID: ${m.memberId || '—'}</div>
+            </div>
+            <span class="badge ${statusClass}">${f.status}</span>
+          </div>
+          <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+        `;
+        container.appendChild(div);
+        // Hide global stats for member-only view
+        document.getElementById('statTotal').textContent = '—';
+        document.getElementById('statCurrent').textContent = '—';
+        document.getElementById('statBehind').textContent = '—';
+        document.getElementById('statOwed').textContent = '—';
+      }, (err) => { console.warn('member onSnapshot error', err); });
+    }
+
     function setupAuth() {
       const { auth, db } = window.firebaseServices || {};
       if (!auth) return;
@@ -382,15 +422,17 @@
         // Load role document if signed in
         try {
           window.__role = 'member';
+          window.__memberId = null;
           if (user && db) {
             const snap = await db.collection('roles').doc(user.uid).get();
             if (snap.exists && snap.data() && snap.data().role) {
               window.__role = snap.data().role;
+              if (snap.data().memberId) window.__memberId = String(snap.data().memberId);
             }
           }
           const badge = document.getElementById('roleBadge');
           if (badge) badge.textContent = user ? `Role: ${window.__role}` : '';
-        } catch(_) { window.__role = 'member'; const badge = document.getElementById('roleBadge'); if (badge) badge.textContent = ''; }
+        } catch(_) { window.__role = 'member'; window.__memberId = null; const badge = document.getElementById('roleBadge'); if (badge) badge.textContent = ''; }
         if (window.__members) renderList(window.__members);
         // When logged out, hide list for security
         if (!user) {
@@ -424,7 +466,11 @@
         unsubscribe = attachRealtime();
         auth.onAuthStateChanged(async () => {
           if (unsubscribe) try { unsubscribe(); } catch(_){}
-          unsubscribe = attachRealtime();
+          if (window.__role === 'member' && window.__memberId) {
+            unsubscribe = attachMemberRealtime(window.__memberId);
+          } else {
+            unsubscribe = attachRealtime();
+          }
         });
       } else {
         try {
