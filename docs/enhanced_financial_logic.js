@@ -6,137 +6,106 @@ class EnhancedFinancialLogic {
     constructor() {
         this.monthlyFee = 15;
         this.registrationFee = 200;
-        this.currentDate = new Date('2025-09-01');
-        this.months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JULY', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+        // Align with v2 (UTC start of September 2025)
+        this.currentDate = new Date('2025-09-01T00:00:00Z');
+        // Correct month keys (use JUL not JULY)
+        this.months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
     }
 
-    // Enhanced balance calculation using ACTUAL PAYMENT RECORDS (CORRECTED)
+    // Enhanced balance calculation using per-month dues up to currentDate
     calculateEnhancedBalance(member) {
-        console.log('=== ENHANCED BALANCE CALCULATION ===');
-        console.log('Member:', member.name, '(ID:', member.id, ')');
-        
-        // Calculate based on ACTUAL payment records, not just Last Payment Date
+        const paymentsMap = this._normalizePayments(member);
+        const start = this._inferStartDate(member);
+        const end = new Date(Date.UTC(this.currentDate.getUTCFullYear(), this.currentDate.getUTCMonth(), 1));
+
         let totalPaid = 0;
         let totalOwed = 0;
         let monthsBehind = 0;
-        let lastPaymentMonth = null;
-        let paidUpToMonth = null;
-        
-        // FIXED: Current date: June 2025 (consistent with other functions)
-        const currentYear = 2025;
-        const currentMonth = 5; // June (0-indexed)
-        
-        // Process payment records to find actual payment history
-        if (member.paymentRecords && Array.isArray(member.paymentRecords)) {
-            // Calculate total paid from payment records
-            totalPaid = member.paymentRecords.reduce((sum, record) => {
-                if (record.type === 'monthly' && record.amount > 0) {
-                    return sum + record.amount;
-                }
-                return sum;
-            }, 0);
-            
-            // Find the last monthly payment date
-            const monthlyPayments = member.paymentRecords
-                .filter(record => record.type === 'monthly' && record.amount > 0)
-                .sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            if (monthlyPayments.length > 0) {
-                lastPaymentMonth = new Date(monthlyPayments[0].date);
-            }
-        }
-        
-        // If no payment records, check monthly payments data structure
-        if (!lastPaymentMonth && member.monthlyPayments) {
-            // Look through monthly payments by year/month
-            for (let year = 2022; year <= 2026; year++) {
-                const yearData = member.monthlyPayments[year];
-                if (yearData && typeof yearData === 'object') {
-                    this.months.forEach((month, index) => {
-                        const payment = parseFloat(yearData[month]) || 0;
-                        if (payment > 0) {
-                            totalPaid += payment;
-                            lastPaymentMonth = { year, month, index };
-                            
-                            // Track the last month they're fully paid up to
-                            if (payment >= this.monthlyFee) {
-                                paidUpToMonth = { year, month, index };
-                            }
-                        }
-                    });
-                }
-            }
-        }
-        
-        // Calculate months owed based on ACTUAL payment history
-        if (lastPaymentMonth) {
-            // Calculate months difference from last payment to current month
-            let lastYear, lastMonthIndex;
-            
-            if (lastPaymentMonth instanceof Date) {
-                // From payment records
-                lastYear = lastPaymentMonth.getFullYear();
-                lastMonthIndex = lastPaymentMonth.getMonth();
+        let paidUpTo = null;
+
+        const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+        while (iter <= end) {
+            const key = `${iter.getUTCFullYear()}-${String(iter.getUTCMonth()+1).padStart(2,'0')}`;
+            const paid = Number(paymentsMap[key] || 0);
+            totalPaid += paid;
+            totalOwed += this.monthlyFee;
+            if (paid >= this.monthlyFee) {
+                paidUpTo = new Date(iter);
             } else {
-                // From monthly payments structure
-                lastYear = lastPaymentMonth.year;
-                lastMonthIndex = lastPaymentMonth.index;
+                monthsBehind += 1;
             }
-            
-            // Calculate months difference
-            monthsBehind = (currentYear - lastYear) * 12 + (currentMonth - lastMonthIndex);
-            monthsBehind = Math.max(0, monthsBehind);
-            
-            // Calculate total owed (months behind * monthly fee)
-            totalOwed = monthsBehind * this.monthlyFee;
-        } else {
-            // No payment records found - calculate from 2022 to current
-            const monthsFrom2022 = (currentYear - 2022) * 12 + currentMonth + 1; // +1 because we start from January 2022
-            totalOwed = monthsFrom2022 * this.monthlyFee;
-            monthsBehind = monthsFrom2022;
+            iter.setUTCMonth(iter.getUTCMonth() + 1);
         }
-        
-        // Calculate current balance
+
         const currentBalance = totalPaid - totalOwed;
-        
-        // Determine status using CORRECTED categories (61 active, 39 inactive)
         let status = 'current';
-        if (monthsBehind >= 36) {
-            status = 'inactive';
-        } else if (monthsBehind >= 12) {
-            status = 'risk';
-        } else if (monthsBehind >= 6) {
-            status = 'issues';
-        } else if (monthsBehind > 0) {
-            status = 'behind';
-        } else {
-            status = 'current';
+        if (member.isActive === false) status = 'inactive';
+        else if (currentBalance < 0) {
+            if (monthsBehind >= 6) status = 'risk';
+            else if (monthsBehind >= 3) status = 'issues';
+            else status = 'behind';
+        } else if (currentBalance > 0) {
+            status = 'ahead';
         }
-        
-        // Get status display info
+
         const statusInfo = this.getStatusDisplay(status, monthsBehind);
-        
-        console.log('Enhanced calculation results:');
-        console.log('- Total paid:', totalPaid);
-        console.log('- Total owed:', totalOwed);
-        console.log('- Current balance:', currentBalance);
-        console.log('- Months behind:', monthsBehind);
-        console.log('- Last payment month:', lastPaymentMonth);
-        console.log('- Status:', status);
-        console.log('=== END ENHANCED CALCULATION ===');
-        
         return {
-            currentBalance: currentBalance,
-            totalPaid: totalPaid,
-            totalOwed: totalOwed,
-            monthsBehind: monthsBehind,
-            lastPaymentMonth: lastPaymentMonth,
-            status: status,
+            currentBalance,
+            totalPaid,
+            totalOwed,
+            monthsBehind,
+            lastPaymentMonth: paidUpTo,
+            status,
             statusText: statusInfo.text,
             statusClass: statusInfo.class,
-            paidUpTo: this.getPaidUpToText(lastPaymentMonth, monthsBehind),
-            balanceDetails: this.getBalanceDetails(currentBalance, monthsBehind, lastPaymentMonth)
+            paidUpTo: this.getPaidUpToText(paidUpTo, monthsBehind),
+            balanceDetails: this.getBalanceDetails(currentBalance, monthsBehind, paidUpTo)
         };
+    }
+
+    _inferStartDate(member) {
+        const startStr = member.startDate || (member.firstPaymentYear ? `${member.firstPaymentYear}-01-01` : '2020-01-01');
+        const d = new Date(startStr);
+        const fallback = new Date('2020-01-01T00:00:00Z');
+        const parsed = isNaN(d.getTime()) ? fallback : new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+        // Baseline cutoff: January 2022
+        const cutoff = new Date(Date.UTC(2022, 0, 1));
+        return parsed < cutoff ? cutoff : parsed;
+    }
+
+    _normalizePayments(member) {
+        // Prefer Firestore map: { 'YYYY-MM': amount }
+        if (member.payments && typeof member.payments === 'object') {
+            return { ...member.payments };
+        }
+
+        // Convert year-bucket structure into map
+        const map = {};
+        const years = ['2022','2023','2024','2025','2026'];
+        years.forEach(y => {
+            const row = member[y] || (member.monthlyPayments && member.monthlyPayments[y]);
+            if (row && typeof row === 'object') {
+                this.months.forEach((mon, idx) => {
+                    const amt = Number(row[mon] || 0);
+                    const key = `${y}-${String(idx+1).padStart(2,'0')}`;
+                    if (amt > 0) map[key] = amt;
+                });
+            }
+        });
+
+        // Also include explicit paymentRecords of monthly type
+        if (Array.isArray(member.paymentRecords)) {
+            member.paymentRecords.forEach(rec => {
+                if (rec && rec.type === 'monthly' && Number(rec.amount) > 0 && rec.date) {
+                    const d = new Date(rec.date);
+                    if (!isNaN(d)) {
+                        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                        map[key] = (map[key] || 0) + Number(rec.amount);
+                    }
+                }
+            });
+        }
+        return map;
     }
 
     // Get "paid up to" text that makes logical sense

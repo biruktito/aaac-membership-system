@@ -2500,6 +2500,13 @@
     <!-- GitHub Gist Persistent Storage -->
     <script src="firebase-persistent-storage.js"></script>
 
+    <!-- Firebase SDK (Compat) and Initialization -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-init.js"></script>
+
     <script>
         // Enhanced Financial System
         let enhancedLogic;
@@ -2704,7 +2711,119 @@
             return embeddedData;
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        // Attempt to load members from Firestore (fallback to embedded if not available)
+        async function tryLoadMembersFromFirestore() {
+            try {
+                const services = window.firebaseServices;
+                if (!services || !services.db || !services.auth) {
+                    console.warn('Firestore not initialized, using embedded data');
+                    return null;
+                }
+
+                // Ensure we have a user (anonymous is fine)
+                if (!services.auth.currentUser) {
+                    await services.auth.signInAnonymously();
+                }
+
+                const snapshot = await services.db.collection('members').limit(500).get();
+                const fromFs = [];
+                snapshot.forEach(doc => {
+                    const m = doc.data() || {};
+                    const fullName = m.fullName || m.name || m.memberName || `Member ${doc.id}`;
+                    const payments = m.payments || {};
+
+                    // Transform payments map {'YYYY-MM': amount} -> year buckets with JAN..DEC
+                    const yearBuckets = {};
+                    Object.keys(payments).forEach(key => {
+                        const [yearStr, monthStr] = key.split('-');
+                        const year = yearStr;
+                        const monthIndex = parseInt(monthStr, 10) - 1;
+                        if (!yearBuckets[year]) {
+                            yearBuckets[year] = { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 };
+                        }
+                        const monthNames = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+                        const keyName = monthNames[monthIndex] || null;
+                        if (keyName) {
+                            yearBuckets[year][keyName] = Number(payments[key]) || 0;
+                        }
+                    });
+
+                    const transformed = {
+                        id: String(m.memberId || doc.id),
+                        name: fullName,
+                        phone: m.phone || m.phoneNumber || '',
+                        status: m.isActive === false ? 'Inactive' : 'Active',
+                        firstPaymentYear: (m.startDate || '').slice(0,4) || '',
+                        registrationFeePaid: m.registrationFeePaid ? '200' : '0',
+                        registrationFeeAmount: '200',
+                        lastPaymentDate: '',
+                        ...yearBuckets,
+                        incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
+                    };
+
+                    fromFs.push(transformed);
+                });
+
+                console.log(`✅ Firestore loaded ${fromFs.length} members`);
+                return fromFs.length ? fromFs : null;
+            } catch (e) {
+                console.warn('Firestore load failed, using embedded data', e);
+                return null;
+            }
+        }
+
+        // --- Minimal Auth UI and Logout ---
+        function updateAuthUI() {
+            try {
+                const header = document.querySelector('.header');
+                if (!header) return;
+                let badge = document.getElementById('authStatusBadge');
+                if (!badge) {
+                    badge = document.createElement('div');
+                    badge.id = 'authStatusBadge';
+                    badge.style.position = 'absolute';
+                    badge.style.top = '24px';
+                    badge.style.right = '140px';
+                    badge.style.color = '#fff';
+                    badge.style.fontSize = '12px';
+                    badge.style.opacity = '0.9';
+                    header.appendChild(badge);
+                }
+                const services = window.firebaseServices || {};
+                const auth = services.auth;
+                const logoutBtn = document.querySelector('.logout-btn');
+                if (auth && auth.currentUser) {
+                    badge.textContent = `Signed in: ${auth.currentUser.email || 'Anonymous'}`;
+                    if (logoutBtn) logoutBtn.style.display = '';
+                } else {
+                    badge.textContent = 'Not signed in';
+                    if (logoutBtn) logoutBtn.style.display = 'none';
+                }
+            } catch (_) { /* noop */ }
+        }
+
+        async function initAuthSilent() {
+            try {
+                const services = window.firebaseServices;
+                if (!services || !services.auth) return;
+                if (!services.auth.currentUser) {
+                    await services.auth.signInAnonymously();
+                }
+            } catch (_) { /* ignore auth errors on dashboard */ }
+            updateAuthUI();
+        }
+
+        async function logout() {
+            try {
+                const services = window.firebaseServices;
+                if (services && services.auth) {
+                    await services.auth.signOut();
+                }
+            } catch (_) { /* noop */ }
+            updateAuthUI();
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
             console.log('🚀 ULTRA-SIMPLE LOADER: Loading embedded data directly');
             
             // Load embedded member data (100+ members)
@@ -2714,12 +2833,23 @@
             // Set as the single source of truth
             membersData = embeddedMembers;
             window.membersData = embeddedMembers;
+
+            // Initialize auth (silent) and update UI
+            await initAuthSilent();
+
+            // Try Firestore override
+            const fsMembers = await tryLoadMembersFromFirestore();
+            if (Array.isArray(fsMembers) && fsMembers.length > 0) {
+                membersData = fsMembers;
+                window.membersData = fsMembers;
+                console.log('🔄 Replaced embedded data with Firestore data');
+            }
             
             // Update dashboard
             updateDashboardStats();
             displayMembersWithRoleVisibility();
             
-            console.log('🎉 ULTRA-SIMPLE: Dashboard loaded successfully with', embeddedMembers.length, 'members');
+            console.log('🎉 ULTRA-SIMPLE: Dashboard loaded successfully with', (Array.isArray(window.membersData)? window.membersData.length : embeddedMembers.length), 'members');
         });
 
         // Enhanced Financial System Stats Update

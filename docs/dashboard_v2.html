@@ -53,7 +53,6 @@
         <div class="muted">Real-time, single source of truth. September 2025 calculations.</div>
       </div>
       <div class="row">
-        <button id="btnSignInEmail" class="secondary">Sign in with Email</button>
         <button id="btnSignIn" class="secondary">Sign in Anonymously</button>
         <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
       </div>
@@ -69,28 +68,8 @@
     </div>
 
     <div class="row" style="gap:8px;">
-      <input id="search" placeholder="Search by name or member ID..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
-      <select id="statusFilter" style="padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
-        <option value="">All Status</option>
-        <option value="ahead">Ahead</option>
-        <option value="current">Current</option>
-        <option value="behind">Behind</option>
-        <option value="issue">Issue (3-5 months)</option>
-        <option value="risk">Risk (6+ months)</option>
-        <option value="inactive">Inactive</option>
-      </select>
+      <input id="search" placeholder="Search members by name..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
       <button id="refresh">Recalculate</button>
-    </div>
-
-    <div class="card" style="margin-top:12px;">
-      <div style="font-weight:600; margin-bottom:8px;">Admin Actions</div>
-      <div class="row" style="gap:8px; flex-wrap: wrap;">
-        <button id="btnAddMember" class="secondary" style="display:none;">Add Member</button>
-        <button id="btnRecordPaymentGlobal" class="secondary" style="display:none;">Record Payment (by Member ID)</button>
-        <button id="btnGenerateReminders" class="secondary" style="display:none;">Generate Reminders</button>
-        <button id="btnLinkAccount" class="secondary">Link My Account to Member ID</button>
-        <span id="roleBadge" class="muted" style="margin-left:auto;">Role: guest</span>
-      </div>
     </div>
 
     <div id="list" class="list"></div>
@@ -104,48 +83,22 @@
 
     function calculateMemberFinancials(member) {
       // Expected member schema (Firestore):
-      // members/{memberId}: {
-      //   fullName,
-      //   isActive,
-      //   paymentsDues: { [YYYY-MM]: number }, // dues-only map
-      //   joiningFeeAmount?: number,            // one-time $200 joining fee (not counted toward dues)
-      //   joiningFeeDate?: string               // ISO date when fee was paid
-      // }
-      // Backwards-compat: fall back to legacy `payments` if `paymentsDues` is absent
-      const payments = member.paymentsDues || member.payments || {};
-      
-      // Find the earliest payment date to determine membership start
-      let earliestPaymentDate = null;
-      Object.keys(payments).forEach(key => {
-        if (payments[key] > 0) {
-          const [year, month] = key.split('-').map(Number);
-          const paymentDate = new Date(Date.UTC(year, month - 1, 1));
-          if (!earliestPaymentDate || paymentDate < earliestPaymentDate) {
-            earliestPaymentDate = paymentDate;
-          }
-        }
-      });
-      
-      // Use the actual first payment date as membership start
-      // This ensures we only charge from when they actually joined
-      const actualStart = earliestPaymentDate || new Date('2019-01-01T00:00:00Z');
-      
-      const iter = new Date(Date.UTC(actualStart.getUTCFullYear(), actualStart.getUTCMonth(), 1));
+      // members/{memberId}: { fullName, isActive, payments: { [YYYY-MM]: number } }
+      const payments = member.payments || {};
+      // Baseline cutoff: Jan 2022 regardless of provided startDate
+      const provided = new Date(member.startDate || '2020-01-01T00:00:00Z');
+      const parsed = isNaN(provided) ? new Date('2020-01-01T00:00:00Z') : provided;
+      const cutoff = new Date('2022-01-01T00:00:00Z');
+      const start = parsed < cutoff ? cutoff : parsed;
+      const iter = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
-      
-      let totalOwed = 0;
-      let totalPaid = 0;
-      let monthsBehind = 0;
-      let paidUpTo = null;
-      let currentMonth = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
+      let totalOwed = 0; let totalPaid = 0; let monthsBehind = 0; let paidUpTo = null;
 
-      // Calculate from actual start date to current month
       while (iter <= end) {
         const key = monthKey(iter);
         const paid = Number(payments[key] || 0);
         totalPaid += paid;
         totalOwed += DUE_PER_MONTH;
-        
         if (paid >= DUE_PER_MONTH) {
           paidUpTo = new Date(iter);
         } else {
@@ -154,26 +107,10 @@
         iter.setUTCMonth(iter.getUTCMonth() + 1);
       }
 
-      // Check future payments to extend paidUpTo
-      const currentKey = monthKey(currentMonth);
-      const futureKeys = Object.keys(payments).filter(k => k > currentKey).sort();
-      for (const k of futureKeys) {
-        if (Number(payments[k] || 0) >= DUE_PER_MONTH) {
-          const [y, m] = k.split('-').map(Number);
-          paidUpTo = new Date(Date.UTC(y, m - 1, 1));
-        } else {
-          break;
-        }
-      }
-
-      // Calculate balance: positive = ahead, negative = owes
-      const balance = totalPaid - totalOwed;
-
-      // Determine status
+      const balance = totalPaid - totalOwed; // negative means owes
       let status = 'current';
-      if (!member.isActive) {
-        status = 'inactive';
-      } else if (balance < 0) {
+      if (!member.isActive) status = 'inactive';
+      else if (balance < 0) {
         if (monthsBehind >= 6) status = 'risk';
         else if (monthsBehind >= 3) status = 'issue';
         else status = 'behind';
@@ -181,66 +118,23 @@
         status = 'ahead';
       }
 
-      return { 
-        balance, 
-        monthsBehind, 
-        paidUpTo, 
-        status, 
-        totalOwed, 
-        totalPaid 
-      };
+      return { balance, monthsBehind, paidUpTo, status, totalOwed, totalPaid };
     }
 
     function renderStats(members) {
-      const role = window.__role || 'guest';
-      const isPrivileged = role === 'admin' || role === 'board';
-
       let total = members.length;
-      let current = 0; 
-      let behind = 0; 
-      let totalOwed = 0;
-      let totalAhead = 0;
-      
+      let current = 0; let behind = 0; let owed = 0;
       members.forEach(m => {
         const f = calculateMemberFinancials(m);
         if (m.isActive) {
-          if (f.balance < 0) {
-            behind += 1;
-            totalOwed += Math.abs(f.balance);
-          } else if (f.balance > 0) {
-            current += 1;
-            totalAhead += f.balance;
-          } else {
-            current += 1; // balance = 0 means current
-          }
+          if (f.balance < 0) owed += Math.abs(f.balance);
+          if (f.balance >= 0) current += 1; else behind += 1;
         }
       });
-
-      const statTotalEl = document.getElementById('statTotal');
-      const statCurrentEl = document.getElementById('statCurrent');
-      const statBehindEl = document.getElementById('statBehind');
-      const statOwedEl = document.getElementById('statOwed');
-
-      if (isPrivileged) {
-        // Admin/Board: show all stats as-is
-        statTotalEl.textContent = total;
-        statCurrentEl.textContent = current;
-        statBehindEl.textContent = behind;
-        statOwedEl.textContent = `$${totalOwed.toFixed(2)}`;
-
-        // Ensure cards are visible
-        [statCurrentEl, statBehindEl, statOwedEl].forEach(el => {
-          const card = el && el.closest && el.closest('.card');
-          if (card) card.style.display = '';
-        });
-      } else {
-        // Member/Guest: show only active member count; hide other cards
-        statTotalEl.textContent = current; // repurpose as Active Members
-        [statCurrentEl, statBehindEl, statOwedEl].forEach(el => {
-          const card = el && el.closest && el.closest('.card');
-          if (card) card.style.display = 'none';
-        });
-      }
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statCurrent').textContent = current;
+      document.getElementById('statBehind').textContent = behind;
+      document.getElementById('statOwed').textContent = `$${owed.toFixed(2)}`;
     }
 
     function formatPaidUpTo(date) {
@@ -250,24 +144,10 @@
 
     function renderList(members) {
       const q = document.getElementById('search').value.trim().toLowerCase();
-      const statusFilter = document.getElementById('statusFilter').value;
       const container = document.getElementById('list');
       container.innerHTML = '';
       members
-        .filter(m => {
-          // Text search
-          if (q && !(m.fullName || '').toLowerCase().includes(q) && !String(m.memberId || m.id || '').includes(q)) {
-            return false;
-          }
-          // Status filter
-          if (statusFilter) {
-            const f = calculateMemberFinancials(m);
-            if (statusFilter === 'inactive' && m.isActive) return false;
-            if (statusFilter !== 'inactive' && !m.isActive) return false;
-            if (statusFilter !== 'inactive' && f.status !== statusFilter) return false;
-          }
-          return true;
-        })
+        .filter(m => !q || (m.fullName || '').toLowerCase().includes(q))
         .slice(0, 250)
         .forEach(m => {
           const f = calculateMemberFinancials(m);
@@ -275,16 +155,6 @@
           div.className = 'member';
           const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
           const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
-          // Assume all existing members have paid joining fee unless explicitly marked as not paid
-          // Only show "Not paid" if explicitly set to 0 or if it's a very new member (created after this update)
-          const joiningFeePaid = m.joiningFeeAmount !== 0; // undefined/null means paid, only 0 means not paid
-          const joiningFeeLine = `<div class="muted" style="margin-top:4px;">Joining fee: ${joiningFeePaid ? 'Paid' : 'Not paid'}${joiningFeePaid && m.joiningFeeDate ? ` on ${new Date(m.joiningFeeDate).toLocaleDateString()}` : ''}</div>`;
-          
-          // Show phone number only to admin/board
-          const role = window.__role || 'guest';
-          const isPrivileged = role === 'admin' || role === 'board';
-          const phoneLine = (isPrivileged && m.phone) ? `<div class="muted" style="margin-top:4px;">Phone: ${m.phone}</div>` : '';
-          
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -294,314 +164,41 @@
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
             <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
-            ${joiningFeeLine}
-            ${phoneLine}
           `;
-          const btn = document.createElement('button');
-          btn.textContent = 'Record Payment';
-          btn.className = 'secondary';
-          btn.style.marginTop = '8px';
-          btn.onclick = () => recordPaymentForMember(m.memberId || m.id);
-          div.appendChild(btn);
-
           container.appendChild(div);
         });
     }
 
-    function getFilteredMembers(allMembers) {
-      const { auth } = window.firebaseServices || {};
-      const role = window.__role || 'guest';
-      const roleLink = window.__linkedMemberIdFromRole || null;
-      const link = roleLink || window.localStorage.getItem('linkedMemberId');
-      const isPrivileged = role === 'admin' || role === 'board';
-      // If admin/board: see all; otherwise, if a link is set and user is signed in, filter to self
-      if (!isPrivileged && auth && auth.currentUser && link) {
-        return allMembers.filter(m => String(m.memberId || m.id) === String(link));
-      }
-      return allMembers;
-    }
-
-    function refreshFilter() {
-      const all = window.__allMembers || [];
-      const filtered = getFilteredMembers(all);
-      window.__members = filtered;
-      renderStats(all);
-      renderList(filtered);
-    }
-
     function attachRealtime() {
-      const { db, auth } = window.firebaseServices || {};
+      const { db } = window.firebaseServices || {};
       if (!db) {
         alert('Firebase not initialized. Create docs/firebase-config.js from the example and reload.');
         return () => {};
       }
-      // Load role mapping from roles/{uid} if signed in
-      const setRoleBadge = (role) => { document.getElementById('roleBadge').textContent = `Role: ${role || 'guest'}`; };
-      const uid = (auth && auth.currentUser) ? auth.currentUser.uid : null;
-      if (uid) {
-        db.collection('roles').doc(uid).get().then(doc => {
-          const data = doc.exists ? (doc.data() || {}) : {};
-          const role = data.role || 'member';
-          const roleLinkedMemberId = data.memberId ? String(data.memberId) : null;
-          window.__role = role;
-          window.__linkedMemberIdFromRole = roleLinkedMemberId;
-          setRoleBadge(role);
-          // Toggle admin UI
-          const adminBtns = ['btnAddMember','btnRecordPaymentGlobal','btnGenerateReminders'];
-          adminBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = (role === 'admin' || role === 'board') ? '' : 'none';});
-          // After role resolved, (re)subscribe appropriately
-          if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
-          window.__unsubscribe = subscribeMembersStream();
-        }).catch(()=> setRoleBadge('guest'));
-      } else {
-        // Signed out: set guest, clear any active subscriptions and UI
-        setRoleBadge('guest');
-        if (typeof window.__unsubscribe === 'function') {
-          window.__unsubscribe();
-          window.__unsubscribe = null;
-        }
-        window.__role = 'guest';
-        window.__allMembers = [];
-        renderStats([]);
-        renderList([]);
-        // Do NOT subscribe when signed out (rules likely block reads when unauthenticated)
-      }
 
-      function subscribeMembersStream() {
-        const role = window.__role || 'guest';
-        const roleLink = window.__linkedMemberIdFromRole || null;
-        const link = roleLink || window.localStorage.getItem('linkedMemberId');
-        const isPrivileged = role === 'admin' || role === 'board';
-        if (!isPrivileged && link) {
-          // Subscribe to a single member doc to satisfy restrictive rules
-          return db.collection('members').doc(String(link)).onSnapshot((doc) => {
-            const members = doc.exists ? [{ id: doc.id, ...doc.data() }] : [];
-            window.__allMembers = members;
-            refreshFilter();
-          }, (err) => {
-            console.error('onSnapshot(doc) error', err);
-            // Suppress noisy alerts if signed out; otherwise show helpful message
-            const currentUser = (auth && auth.currentUser) ? auth.currentUser : null;
-            if (currentUser) {
-              alert('Realtime subscription failed (doc). Link a valid Member ID or relax rules.');
-            }
-          });
-        }
-        // Admin/board (or no link): subscribe to full collection
-        return db.collection('members').onSnapshot((snap) => {
-          const members = [];
-          snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
-          window.__allMembers = members;
-          refreshFilter();
-        }, (err) => {
-          console.error('onSnapshot(col) error', err);
-          const currentUser = (auth && auth.currentUser) ? auth.currentUser : null;
-          if (currentUser) {
-            alert('Realtime subscription failed. Check Firestore rules and network.');
-          }
-        });
-      }
-
-      return subscribeMembersStream();
+      return db.collection('members').onSnapshot((snap) => {
+        const members = [];
+        snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
+        window.__members = members;
+        renderStats(members);
+        renderList(members);
+      }, (err) => {
+        console.error('onSnapshot error', err);
+        alert('Realtime subscription failed. Check Firestore rules and network.');
+      });
     }
 
     function setupAuth() {
       const { auth } = window.firebaseServices || {};
       if (!auth) return;
-      const signInEmailBtn = document.getElementById('btnSignInEmail');
       const signInBtn = document.getElementById('btnSignIn');
       const signOutBtn = document.getElementById('btnSignOut');
-      
-      // Email/Password sign-in
-      signInEmailBtn.onclick = async () => {
-        const email = prompt('Enter email:');
-        if (!email) return;
-        const password = prompt('Enter password:');
-        if (!password) return;
-        try {
-          await auth.signInWithEmailAndPassword(email, password);
-          alert('Signed in successfully!');
-        } catch(e) {
-          alert('Sign in failed: ' + e.message);
-        }
-      };
-      
       signInBtn.onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
-      signOutBtn.onclick = async () => {
-        try {
-          // Proactively tear down subscription before signing out to avoid transient errors
-          if (typeof window.__unsubscribe === 'function') {
-            window.__unsubscribe();
-            window.__unsubscribe = null;
-          }
-          await auth.signOut();
-        } catch(e){ alert('Signout failed'); }
-      };
+      signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(e){ alert('Signout failed'); } };
       auth.onAuthStateChanged(user => {
-        signInEmailBtn.style.display = user ? 'none' : '';
         signInBtn.style.display = user ? 'none' : '';
         signOutBtn.style.display = user ? '' : 'none';
-        if (user) {
-          // Re-attach realtime to load role and filter
-          if (typeof window.__unsubscribe === 'function') window.__unsubscribe();
-          window.__unsubscribe = attachRealtime();
-        } else {
-          // Ensure no subscriptions remain and UI reflects signed-out state
-          if (typeof window.__unsubscribe === 'function') {
-            window.__unsubscribe();
-            window.__unsubscribe = null;
-          }
-          const roleBadge = document.getElementById('roleBadge');
-          if (roleBadge) roleBadge.textContent = 'Role: guest';
-          const adminBtns = ['btnAddMember','btnRecordPaymentGlobal'];
-          adminBtns.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none';});
-          window.__role = 'guest';
-          window.__allMembers = [];
-          renderStats([]);
-          renderList([]);
-        }
       });
-    }
-
-    // --- Firestore write helpers ---
-    async function addMemberFlow() {
-      const { db } = window.firebaseServices || {};
-      if (!db) return alert('Firebase not initialized');
-      const memberId = prompt('Member ID (required):');
-      if (!memberId) return;
-      const fullName = prompt('Full name (required):');
-      if (!fullName) return;
-      const start = prompt('Start date (YYYY-MM or YYYY-MM-DD). Default 2025-01-01:', '2025-01-01') || '2025-01-01';
-      try {
-        await db.collection('members').doc(String(memberId)).set({
-          memberId: String(memberId),
-          fullName,
-          isActive: true,
-          startDate: start,
-          paymentsDues: {},
-          joiningFeeAmount: 0, // New members start with joining fee not paid
-          joiningFeeDate: null,
-        }, { merge: true });
-        alert('Member added.');
-      } catch (e) {
-        console.error(e); alert('Failed to add member: ' + (e.message || e));
-      }
-    }
-
-    async function recordPaymentForMember(memberId) {
-      const { db } = window.firebaseServices || {};
-      if (!db) return alert('Firebase not initialized');
-      const type = prompt('Payment type: dues or joining (enter "dues" or "joining"):', 'dues');
-      if (!type) return;
-      if (type === 'joining') {
-        // Record one-time $200 joining fee
-        try {
-          await db.collection('members').doc(String(memberId)).set({
-            joiningFeeAmount: 200,
-            joiningFeeDate: new Date().toISOString(),
-          }, { merge: true });
-          alert('Joining fee recorded.');
-        } catch (e) {
-          console.error(e); alert('Failed to record joining fee: ' + (e.message || e));
-        }
-        return;
-      }
-      // Otherwise record dues payment
-      const month = prompt('Payment month (YYYY-MM):');
-      if (!month || !/^\d{4}-\d{2}$/.test(month)) return alert('Invalid month format.');
-      const amountStr = prompt('Dues amount (e.g., 15):', '15');
-      const amount = Number(amountStr);
-      if (!isFinite(amount) || amount <= 0) return alert('Invalid amount.');
-      try {
-        const inc = firebase.firestore.FieldValue.increment(amount);
-        await db.collection('members').doc(String(memberId)).set({
-          paymentsDues: { [month]: inc },
-          isActive: true,
-        }, { merge: true });
-        alert('Dues payment recorded.');
-      } catch (e) {
-        console.error(e); alert('Failed to record dues: ' + (e.message || e));
-      }
-    }
-
-    async function recordPaymentGlobalFlow() {
-      const id = prompt('Member ID to credit:');
-      if (!id) return;
-      await recordPaymentForMember(id);
-    }
-
-    function linkAccountFlow() {
-      const { auth } = window.firebaseServices || {};
-      if (!auth || !auth.currentUser) {
-        alert('Please sign in first (Anonymous is fine).');
-        return;
-      }
-      const id = prompt('Enter your Member ID to link this login:');
-      if (!id) return;
-      window.localStorage.setItem('linkedMemberId', String(id));
-      refreshFilter();
-    }
-
-    function generateReminders() {
-      // Use currently displayed/filtered members instead of all behind members
-      const members = window.__members || [];
-      
-      if (members.length === 0) {
-        alert('No members to generate reminders for. Try adjusting your filters.');
-        return;
-      }
-
-      let reminders = '=== AAAC Payment Reminders ===\n\n';
-      
-      members.forEach(m => {
-        const f = calculateMemberFinancials(m);
-        const balance = Math.abs(f.balance);
-        const monthsBehind = f.monthsBehind;
-        
-        // Amharic reminder message (using established text from previous builds)
-        const amharicMessage = `የአዲስ አበባ ማሕበር በቺካጎ ክፍያ ማስታወሻ
-
-ውድ ${m.fullName || 'አባል'}
-
-የአዲስ አበባ ማሕበር በቺካጎ አባልነትዎ ቀሪ ሂሳብ $${balance.toFixed(2)} ነው።
-የተቀሩ ወራት: ${monthsBehind}
-አባል መለያ: ${m.memberId || 'N/A'}
-
-ክፍያውን በ Zelle ለመላክ: aaaichicago@gmail.com ይጠቀሙና ሒሳቦትን ይከፍሉ ዘንድ በትሕትና እንጠይቃለን።
-
-ከምስጋና ጋር
-የአዲስ አበባ ማሕበር በቺካጎ ቦርድ`;
-        
-        const phoneInfo = m.phone ? ` | Phone: ${m.phone}` : '';
-        reminders += `--- ${m.fullName || 'Unnamed'} (ID: ${m.memberId || 'N/A'})${phoneInfo} ---\n`;
-        reminders += `Balance: $${balance.toFixed(2)} | Months behind: ${monthsBehind}\n`;
-        reminders += `Amharic Message:\n${amharicMessage}\n`;
-        reminders += `English Message:\n`;
-        reminders += `Hello ${m.fullName || 'there'},\n\n`;
-        reminders += `This is a friendly reminder about your AAAC membership dues.\n\n`;
-        reminders += `Amount owed: $${balance.toFixed(2)}\n`;
-        reminders += `Months behind: ${monthsBehind}\n`;
-        reminders += `Member ID: ${m.memberId || 'N/A'}\n`;
-        if (m.phone) {
-          reminders += `Phone: ${m.phone}\n`;
-        }
-        reminders += `\nPlease make your payment soon. Contact us for more information.\n\n`;
-        reminders += `Thank you,\nAAAC Administration\n\n`;
-        reminders += '='.repeat(50) + '\n\n';
-      });
-
-      // Show in a popup for easy copying
-      const popup = window.open('', '_blank', 'width=800,height=600,scrollbars=yes');
-      popup.document.write(`
-        <html>
-          <head><title>AAAC Payment Reminders</title></head>
-          <body style="font-family: monospace; white-space: pre-wrap; padding: 20px;">
-            ${reminders}
-          </body>
-        </html>
-      `);
-      
-      alert(`Generated reminders for ${members.length} members. Check the popup window to copy the messages.`);
     }
 
     let unsubscribe = null;
@@ -615,13 +212,6 @@
         }
       };
       document.getElementById('search').addEventListener('input', () => {
-        if (window.__members) renderList(window.__members);
-      });
-      document.getElementById('btnAddMember').onclick = addMemberFlow;
-      document.getElementById('btnRecordPaymentGlobal').onclick = recordPaymentGlobalFlow;
-      document.getElementById('btnGenerateReminders').onclick = generateReminders;
-      document.getElementById('btnLinkAccount').onclick = linkAccountFlow;
-      document.getElementById('statusFilter').addEventListener('change', () => {
         if (window.__members) renderList(window.__members);
       });
     });

@@ -2530,22 +2530,22 @@
                 
                 // Load member data using Promise-based approach
                 csvLoader.loadAllData().then(members => {
-                    console.log(`✅ Loaded ${members.length} members with enhanced system`);
-                    
-                    // Update membersData with enhanced data
-                    membersData = members;
-                    
-                    // Note: Payment data will be loaded when persistent storage is initialized
-                    console.log('🔄 Payment data will be loaded when persistent storage is initialized');
-                    
-                    // Update dashboard with enhanced stats
-                    updateEnhancedStats();
-                    
-                    // Force fallback to run to ensure correct numbers
-                    setTimeout(() => {
-                        console.log('Forcing fallback to ensure correct numbers...');
-                        updateStatsFallback();
-                    }, 500);
+                console.log(`✅ Loaded ${members.length} members with enhanced system`);
+                
+                // Update membersData with enhanced data
+                membersData = members;
+                
+                // Note: Payment data will be loaded when persistent storage is initialized
+                console.log('🔄 Payment data will be loaded when persistent storage is initialized');
+                
+                // Update dashboard with enhanced stats
+                updateEnhancedStats();
+                
+                // Force fallback to run to ensure correct numbers
+                setTimeout(() => {
+                    console.log('Forcing fallback to ensure correct numbers...');
+                    updateStatsFallback();
+                }, 500);
                 }).catch(error => {
                     console.error('❌ Failed to load member data:', error);
                     // Fall back to existing system
@@ -2721,7 +2721,7 @@
 
         window.clearSearch = function() {
             document.getElementById('searchInput').value = '';
-            displayMembers();
+                        displayMembers();
         };
 
         window.addNewMember = function() {
@@ -2870,26 +2870,26 @@
                 
                 // Initialize with token and return the Promise chain
                 return window.gitHubStorage.initialize(null, githubToken).then(success => {
-                    if (success) {
-                        console.log('✅ Persistent storage initialized successfully');
-                        
-                        // Load existing payment data and apply to member data
+                if (success) {
+                    console.log('✅ Persistent storage initialized successfully');
+                    
+                    // Load existing payment data and apply to member data
                         return loadPaymentDataFromGitHub().then(() => {
                             // Update display (guard for function existence)
                             if (typeof displayMembers === 'function') {
-                                displayMembers();
+                    displayMembers();
                             }
                             if (typeof updateStats === 'function') {
-                                updateStats();
+                    updateStats();
                             }
-                            return true;
+                    return true;
                         }).catch(error => {
                             console.error('❌ Error loading payment data:', error);
                             return true; // storage initialized, proceed
                         });
-                    } else {
-                        throw new Error('Failed to initialize storage');
-                    }
+                } else {
+                    throw new Error('Failed to initialize storage');
+                }
                 }).catch(error => {
                     console.error('❌ Error initializing persistent storage:', error);
                     alert(`Failed to initialize persistent storage: ${error.message}`);
@@ -2959,11 +2959,11 @@
 
                 // Save to GitHub Gist
                 return window.gitHubStorage.addPayment(payment).then(() => {
-                    console.log('💾 Payment saved to GitHub Gist:', payment);
-                    return true;
+                console.log('💾 Payment saved to GitHub Gist:', payment);
+                return true;
                 }).catch(error => {
-                    console.error('❌ Error saving payment to GitHub:', error);
-                    throw error;
+                console.error('❌ Error saving payment to GitHub:', error);
+                throw error;
                 });
             } catch (error) {
                 console.error('❌ Error saving payment to GitHub:', error);
