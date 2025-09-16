@@ -54,9 +54,7 @@
       </div>
       <div class="row">
         <button id="btnSignInEmail" class="secondary">Sign in (Email)</button>
-        <button id="btnSignInPhone" class="secondary">Sign in (Phone)</button>
         <button id="btnClaimPhoneId" class="secondary">Sign in (Phone+ID)</button>
-        <button id="btnSignIn" class="secondary">Sign in Anonymously</button>
         <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
         <span id="roleBadge" class="muted" style="margin-left:12px; font-weight:600;"></span>
       </div>
@@ -403,12 +401,12 @@
     function setupAuth() {
       const { auth, db } = window.firebaseServices || {};
       if (!auth) return;
-      const signInBtn = document.getElementById('btnSignIn');
+      const signInBtn = null;
       const signInEmailBtn = document.getElementById('btnSignInEmail');
-      const signInPhoneBtn = document.getElementById('btnSignInPhone');
+      const signInPhoneBtn = null;
       const claimPhoneIdBtn = document.getElementById('btnClaimPhoneId');
       const signOutBtn = document.getElementById('btnSignOut');
-      signInBtn.onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
+      // Anonymous sign-in disabled
       signInEmailBtn.onclick = async () => {
         const email = prompt('Enter email:');
         if (!email) return;
@@ -523,15 +521,21 @@
 
       const { auth } = window.firebaseServices || {};
       if (auth) {
-        try { if (!auth.currentUser) await auth.signInAnonymously(); } catch(_){}
-        if (unsubscribe) try { unsubscribe(); } catch(_){}
-        unsubscribe = attachRealtime();
         auth.onAuthStateChanged(async () => {
           if (unsubscribe) try { unsubscribe(); } catch(_){}
-          if (window.__role === 'member' && window.__memberId) {
-            unsubscribe = attachMemberRealtime(window.__memberId);
+          if (auth.currentUser) {
+            if (window.__role === 'member' && window.__memberId) {
+              unsubscribe = attachMemberRealtime(window.__memberId);
+            } else {
+              unsubscribe = attachRealtime();
+            }
           } else {
-            unsubscribe = attachRealtime();
+            const container = document.getElementById('list');
+            if (container) container.innerHTML = '';
+            document.getElementById('statTotal').textContent = '—';
+            document.getElementById('statCurrent').textContent = '—';
+            document.getElementById('statBehind').textContent = '—';
+            document.getElementById('statOwed').textContent = '—';
           }
         });
       } else {
