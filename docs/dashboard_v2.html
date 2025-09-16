@@ -55,6 +55,7 @@
       <div class="row">
         <button id="btnSignInEmail" class="secondary">Sign in (Email)</button>
         <button id="btnSignInPhone" class="secondary">Sign in (Phone)</button>
+        <button id="btnClaimPhoneId" class="secondary">Sign in (Phone+ID)</button>
         <button id="btnSignIn" class="secondary">Sign in Anonymously</button>
         <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
         <span id="roleBadge" class="muted" style="margin-left:12px; font-weight:600;"></span>
@@ -405,6 +406,7 @@
       const signInBtn = document.getElementById('btnSignIn');
       const signInEmailBtn = document.getElementById('btnSignInEmail');
       const signInPhoneBtn = document.getElementById('btnSignInPhone');
+      const claimPhoneIdBtn = document.getElementById('btnClaimPhoneId');
       const signOutBtn = document.getElementById('btnSignOut');
       signInBtn.onclick = async () => { try { await auth.signInAnonymously(); } catch(e){ alert('Signin failed'); } };
       signInEmailBtn.onclick = async () => {
@@ -414,6 +416,48 @@
         if (!password) return;
         try { await auth.signInWithEmailAndPassword(email, password); }
         catch(e){ alert('Email sign-in failed: ' + (e && e.message ? e.message : e)); }
+      };
+      // Passwordless phone+ID claim (no SMS): anonymous auth + verify against members/{memberId}
+      claimPhoneIdBtn.onclick = async () => {
+        const phoneRaw = prompt('Enter your phone (digits only or +1...):');
+        if (!phoneRaw) return;
+        const memberId = prompt('Enter your member ID (number):');
+        if (!memberId) return;
+        const normalize = (p) => {
+          let s = String(p).trim();
+          if (s.startsWith('+')) return '+' + s.slice(1).replace(/\D+/g, '');
+          s = s.replace(/\D+/g, '');
+          if (s.length === 10) return '+1' + s;
+          return s.startsWith('+') ? s : ('+' + s);
+        };
+        const phone = normalize(phoneRaw);
+        try {
+          if (!auth.currentUser) await auth.signInAnonymously();
+        } catch(_){}
+        try {
+          const { db } = window.firebaseServices || {};
+          const doc = await db.collection('members').doc(String(memberId)).get();
+          if (!doc.exists) { alert('Member not found'); return; }
+          const m = doc.data() || {};
+          const stored = (m.phone || m.phoneNumber || '').toString();
+          const storedNorm = normalize(stored);
+          if (!storedNorm || storedNorm !== phone) {
+            alert('Phone does not match our records.');
+            return;
+          }
+          // Link this anon user to member role for this session by writing roles/{uid}
+          const uid = auth.currentUser && auth.currentUser.uid;
+          if (!uid) { alert('Auth not ready'); return; }
+          await db.collection('roles').doc(uid).set({ role: 'member', memberId: String(memberId) }, { merge: true });
+          alert('Verified. Loading your account...');
+          // Force re-subscribe with member-only view
+          if (typeof unsubscribe === 'function') try { unsubscribe(); } catch(_){}
+          window.__role = 'member';
+          window.__memberId = String(memberId);
+          unsubscribe = attachMemberRealtime(String(memberId));
+        } catch (e) {
+          alert('Claim failed: ' + (e && e.message ? e.message : e));
+        }
       };
       signInPhoneBtn.onclick = async () => {
         try {
