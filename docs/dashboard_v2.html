@@ -148,6 +148,21 @@
       } catch(_) {}
 
       const balance = (totalPaid + futureCredit) - totalOwed; // negative means owes
+
+      // Show paidUpTo as the latest month with a posted payment (even if future)
+      let paidUpToAny = paidUpTo;
+      try {
+        let maxD = null;
+        Object.keys(payments).forEach(k => {
+          const amount = Number(payments[k] || 0);
+          if (amount >= DUE_PER_MONTH) {
+            const [yy, mm] = k.split('-');
+            const d = new Date(`${yy}-${mm}-01T00:00:00Z`);
+            if (!maxD || d > maxD) maxD = d;
+          }
+        });
+        if (maxD) paidUpToAny = maxD;
+      } catch(_) {}
       let status = 'current';
       if (!member.isActive) status = 'inactive';
       else if (balance < 0) {
@@ -158,7 +173,7 @@
         status = 'ahead';
       }
 
-      return { balance, monthsBehind, paidUpTo, status, totalOwed, totalPaid };
+      return { balance, monthsBehind, paidUpTo: paidUpToAny, status, totalOwed, totalPaid };
     }
 
     function renderStats(members) {
@@ -328,7 +343,7 @@
     }
 
     function setupAuth() {
-      const { auth } = window.firebaseServices || {};
+      const { auth, db } = window.firebaseServices || {};
       if (!auth) return;
       const signInBtn = document.getElementById('btnSignIn');
       const signInEmailBtn = document.getElementById('btnSignInEmail');
@@ -351,14 +366,23 @@
         // Load role document if signed in
         try {
           window.__role = 'member';
-          if (user && window.firebaseServices && window.firebaseServices.db) {
-            const snap = await window.firebaseServices.db.collection('roles').doc(user.uid).get();
+          if (user && db) {
+            const snap = await db.collection('roles').doc(user.uid).get();
             if (snap.exists && snap.data() && snap.data().role) {
               window.__role = snap.data().role;
             }
           }
         } catch(_) { window.__role = 'member'; }
         if (window.__members) renderList(window.__members);
+        // When logged out, hide list for security
+        if (!user) {
+          const container = document.getElementById('list');
+          if (container) container.innerHTML = '';
+          document.getElementById('statTotal').textContent = '—';
+          document.getElementById('statCurrent').textContent = '—';
+          document.getElementById('statBehind').textContent = '—';
+          document.getElementById('statOwed').textContent = '—';
+        }
       });
     }
 
