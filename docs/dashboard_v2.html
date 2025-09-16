@@ -448,7 +448,7 @@
           // Link this anon user to member role for this session by writing roles/{uid}
           const uid = auth.currentUser && auth.currentUser.uid;
           if (!uid) { alert('Auth not ready'); return; }
-          await db.collection('roles').doc(uid).set({ role: 'member', memberId: String(memberId) }, { merge: true });
+          await db.collection('roles').doc(uid).set({ role: 'member', memberId: String(memberId), phone }, { merge: true });
           alert('Verified. Loading your account...');
           // Force re-subscribe with member-only view
           if (typeof unsubscribe === 'function') try { unsubscribe(); } catch(_){}
