@@ -137,7 +137,17 @@
         iter.setUTCMonth(iter.getUTCMonth() + 1);
       }
 
-      const balance = totalPaid - totalOwed; // negative means owes
+      // Count payments after end date as credit (do NOT change monthsBehind/paidUpTo)
+      let futureCredit = 0;
+      try {
+        Object.keys(payments).forEach(k => {
+          const [yy, mm] = k.split('-');
+          const d = new Date(`${yy}-${mm}-01T00:00:00Z`);
+          if (d > end) futureCredit += Number(payments[k] || 0);
+        });
+      } catch(_) {}
+
+      const balance = (totalPaid + futureCredit) - totalOwed; // negative means owes
       let status = 'current';
       if (!member.isActive) status = 'inactive';
       else if (balance < 0) {
