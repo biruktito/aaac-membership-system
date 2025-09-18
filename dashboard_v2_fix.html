@@ -81,6 +81,7 @@
         <option value="inactive">Inactive</option>
       </select>
       <button id="refresh">Recalculate</button>
+      <button id="exportBtn" style="background: #0a0; color: white;">Export Selected</button>
     </div>
 
     <div id="list" class="list"></div>
@@ -331,9 +332,12 @@
             'Start: —';
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <div style="font-weight:600;">${m.fullName || 'Unnamed'}</div>
-                <div class="muted">Member ID: ${m.memberId || '—'}</div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" class="member-checkbox" data-id="${m.id}" />
+                <div>
+                  <div style="font-weight:600;">${m.fullName || 'Unnamed'}</div>
+                  <div class="muted">Member ID: ${m.memberId || '—'}</div>
+                </div>
               </div>
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
@@ -641,6 +645,9 @@
       // Payment modal handlers
       document.getElementById('pcancel').onclick = closePaymentModal;
       document.getElementById('psave').onclick = savePayment;
+      
+      // Export functionality
+      document.getElementById('exportBtn').onclick = exportSelectedMembers;
     });
 
     window.addEventListener('unload', () => { if (typeof unsubscribe === 'function') unsubscribe(); });
@@ -730,12 +737,96 @@
     }
 
     async function generateReminder(memberId) {
+      const { db, auth } = window.firebaseServices || {};
       const m = findMemberById(memberId);
       if (!m) return alert('Member not found');
       const f = calculateMemberFinancials(m);
       const owed = f.balance < 0 ? Math.abs(f.balance).toFixed(2) : '0.00';
       const msg = `ሰላም ${m.fullName},\n\nበአሁኑ ጊዜ የወርሃዊ ክፍያ ቀሪ ዕለት $${owed} አለ። እባክዎ ክፍያውን በተመጣጣኝ ጊዜ ይፈፅሙ።\n\nእናመሰግናለን!`;
-      try { await navigator.clipboard.writeText(msg); alert('Reminder copied to clipboard'); } catch(_) { alert('Could not copy to clipboard'); }
+      
+      try { 
+        await navigator.clipboard.writeText(msg); 
+        
+        // Record reminder timestamp in Firestore
+        if (db && auth && auth.currentUser) {
+          try {
+            await db.collection('reminders').add({
+              memberId: memberId,
+              memberName: m.fullName,
+              sentBy: auth.currentUser.uid,
+              sentAt: new Date(),
+              amountOwed: parseFloat(owed),
+              message: msg
+            });
+            console.log('Reminder recorded in Firestore');
+          } catch (e) {
+            console.warn('Failed to record reminder:', e);
+          }
+        }
+        
+        alert('Reminder copied to clipboard and recorded');
+      } catch(_) { 
+        alert('Could not copy to clipboard'); 
+      }
+    }
+
+    function exportSelectedMembers() {
+      const checkboxes = document.querySelectorAll('.member-checkbox:checked');
+      if (checkboxes.length === 0) {
+        alert('Please select members to export');
+        return;
+      }
+      
+      const selectedIds = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
+      const selectedMembers = (window.__members || []).filter(m => selectedIds.includes(String(m.id)));
+      
+      if (selectedMembers.length === 0) {
+        alert('No selected members found');
+        return;
+      }
+      
+      // Create export data with financial calculations
+      const exportData = {
+        exportedAt: new Date().toISOString(),
+        count: selectedMembers.length,
+        members: selectedMembers.map(m => {
+          const f = calculateMemberFinancials(m);
+          return {
+            memberId: m.memberId,
+            fullName: m.fullName,
+            phone: m.phone,
+            isActive: m.isActive,
+            startDate: m.startDate,
+            financials: {
+              startAt: f.startAt,
+              totalOwed: f.totalOwed,
+              paidTowardOwed: f.paidTowardOwed,
+              futureCredit: f.futureCredit,
+              balance: f.balance,
+              monthsCovered: f.monthsCovered,
+              monthsBehind: f.monthsBehind,
+              paidUpTo: f.paidUpTo,
+              status: f.status,
+              active: f.active,
+              ignored: f.ignored
+            },
+            payments: m.payments || m.paymentsDues || {}
+          };
+        })
+      };
+      
+      // Download as JSON file
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `aaac_members_export_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      alert(`Exported ${selectedMembers.length} members`);
     }
   </script>
 </body>
