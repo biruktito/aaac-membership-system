@@ -476,13 +476,32 @@
           </div>\n\
           <div class=\"muted\" style=\"margin-top:6px;\">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>\n\
           ${f.ignored ? `<div class=\\"warn\\" style=\\"margin-top:6px; font-weight:600;\\">Member excluded from balances ( >36 months unpaid )</div>` : ''}\n\
+          <div class=\"row\" style=\"gap:8px; margin-top:12px;\">\n\
+            <button data-action=\"view-payment\" data-id=\"${m.id}\">View Payment Options</button>\n\
+            <button class=\"secondary\" data-action=\"contact-admin\">Contact Admin</button>\n\
+          </div>\n\
         `;
         container.appendChild(div);
-        // Hide global stats for member-only view
-        document.getElementById('statTotal').textContent = '—';
-        document.getElementById('statCurrent').textContent = '—';
-        document.getElementById('statBehind').textContent = '—';
-        document.getElementById('statOwed').textContent = '—';
+        
+        // Show member-specific stats
+        document.getElementById('statTotal').textContent = '1';
+        document.getElementById('statCurrent').textContent = f.status === 'current' || f.status === 'ahead' ? '1' : '0';
+        document.getElementById('statBehind').textContent = f.status === 'behind' || f.status === 'issue' || f.status === 'risk' ? '1' : '0';
+        document.getElementById('statOwed').textContent = f.balance < 0 ? `$${Math.abs(f.balance).toFixed(2)}` : '$0.00';
+        
+        // Hide admin controls for member view
+        document.getElementById('search').style.display = 'none';
+        document.getElementById('filterStatus').style.display = 'none';
+        document.getElementById('refresh').style.display = 'none';
+        document.getElementById('exportBtn').style.display = 'none';
+        
+        // Add member view event handlers
+        container.querySelectorAll('button[data-action="view-payment"]').forEach(btn => {
+          btn.onclick = () => showMemberPaymentInfo(btn.getAttribute('data-id'));
+        });
+        container.querySelectorAll('button[data-action="contact-admin"]').forEach(btn => {
+          btn.onclick = () => contactAdmin();
+        });
       }, (err) => { console.warn('member onSnapshot error', err); });
     }
 
@@ -598,11 +617,17 @@
             }
           } else {
             const container = document.getElementById('list');
-            if (container) container.innerHTML = '';
+            if (container) container.innerHTML = '<div class="muted" style="text-align:center; padding:40px;">Please sign in to view member information</div>';
             document.getElementById('statTotal').textContent = '—';
             document.getElementById('statCurrent').textContent = '—';
             document.getElementById('statBehind').textContent = '—';
             document.getElementById('statOwed').textContent = '—';
+            
+            // Hide admin controls when not logged in
+            document.getElementById('search').style.display = 'none';
+            document.getElementById('filterStatus').style.display = 'none';
+            document.getElementById('refresh').style.display = 'none';
+            document.getElementById('exportBtn').style.display = 'none';
           }
         });
         return true;
@@ -827,6 +852,56 @@
       URL.revokeObjectURL(url);
       
       alert(`Exported ${selectedMembers.length} members`);
+    }
+
+    function showMemberPaymentInfo(memberId) {
+      const m = findMemberById(memberId);
+      if (!m) return alert('Member not found');
+      const f = calculateMemberFinancials(m);
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000;';
+      modal.innerHTML = `
+        <div style="background:white; padding:24px; border-radius:8px; max-width:500px; width:90%; max-height:80vh; overflow:auto;">
+          <h3>Payment Information</h3>
+          <div style="margin:16px 0;">
+            <div><strong>Current Balance:</strong> ${f.balance < 0 ? `-$${Math.abs(f.balance).toFixed(2)}` : `$${f.balance.toFixed(2)}`}</div>
+            <div><strong>Months Behind:</strong> ${f.monthsBehind}</div>
+            <div><strong>Paid Up To:</strong> ${formatPaidUpTo(f.paidUpTo)}</div>
+            <div><strong>Status:</strong> ${f.status}</div>
+          </div>
+          <div style="margin:16px 0; padding:12px; background:#f7f7f7; border-radius:4px;">
+            <h4>Payment Instructions:</h4>
+            <p>Monthly dues: $15 per month</p>
+            <p>Payment methods: Bank transfer, Cash, Check</p>
+            <p>Contact admin for payment details and to update your record.</p>
+          </div>
+          <div style="margin:16px 0;">
+            <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()" style="padding:8px 16px; background:#111; color:white; border:none; border-radius:4px; cursor:pointer;">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+
+    function contactAdmin() {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; z-index:1000;';
+      modal.innerHTML = `
+        <div style="background:white; padding:24px; border-radius:8px; max-width:500px; width:90%;">
+          <h3>Contact Admin</h3>
+          <div style="margin:16px 0;">
+            <p><strong>For payment questions or account updates:</strong></p>
+            <p>Email: admin@aaac.org</p>
+            <p>Phone: (555) 123-4567</p>
+            <p>Office Hours: Monday-Friday, 9 AM - 5 PM</p>
+          </div>
+          <div style="margin:16px 0;">
+            <button onclick="this.closest('div[style*=\"position:fixed\"]').remove()" style="padding:8px 16px; background:#111; color:white; border:none; border-radius:4px; cursor:pointer;">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
     }
   </script>
 </body>
