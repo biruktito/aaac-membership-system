@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Regenerate Validator Output</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 20px; }
+    button { padding: 8px 14px; border: 1px solid #ccc; border-radius: 8px; background: #111; color: #fff; cursor: pointer; }
+    button[disabled] { opacity: .6; cursor: default; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .muted { color: #666; }
+    pre { background: #f7f7f7; padding: 12px; border-radius: 8px; overflow: auto; max-height: 40vh; }
+    .ok { color: #0a0; }
+    .err { color: #b00; }
+  </style>
+</head>
+<body>
+  <h1>Regenerate Validator Output</h1>
+  <p class="muted">Loads <code>docs/cleaned_members_final_normalized.json</code>, runs <code>AAACValidator</code>, and lets you download <code>members_fuzzy_output.json</code>.</p>
+
+  <div class="row">
+    <button id="runBtn">Run validator</button>
+    <button id="downloadBtn" disabled>Download members_fuzzy_output.json</button>
+    <span id="status" class="muted"></span>
+  </div>
+
+  <p id="summary" class="muted"></p>
+  <pre id="preview" hidden></pre>
+
+  <script src="./financial_validator.js"></script>
+  <script>
+    const runBtn = document.getElementById('runBtn');
+    const dlBtn = document.getElementById('downloadBtn');
+    const statusEl = document.getElementById('status');
+    const summaryEl = document.getElementById('summary');
+    const previewEl = document.getElementById('preview');
+
+    async function fetchJson(url) {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch ' + url + ': ' + res.status);
+      return res.json();
+    }
+
+    function toMembersArray(processed) {
+      if (!processed) return [];
+      if (Array.isArray(processed)) return processed;
+      if (processed.members && Array.isArray(processed.members)) return processed.members;
+      if (processed.results && Array.isArray(processed.results)) return processed.results;
+      if (processed.list && Array.isArray(processed.list)) return processed.list;
+      return [];
+    }
+
+    function downloadObject(filename, obj) {
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    let lastOutput = null;
+
+    runBtn.addEventListener('click', async () => {
+      statusEl.textContent = 'Running...';
+      runBtn.disabled = true;
+      dlBtn.disabled = true;
+      try {
+        const srcPath = './cleaned_members_final_normalized.json';
+        const members = await fetchJson(srcPath);
+        if (!Array.isArray(members)) throw new Error('Source JSON is not an array');
+
+        if (!window.AAACValidator || typeof window.AAACValidator.processAll !== 'function') {
+          throw new Error('AAACValidator not loaded');
+        }
+
+        const processed = window.AAACValidator.processAll(members);
+        const arr = toMembersArray(processed);
+        const membersOut = arr.length ? arr : members; // fallback
+
+        lastOutput = { members: membersOut };
+
+        const srcCount = members.length;
+        const outCount = membersOut.length;
+        summaryEl.textContent = `Source count: ${srcCount} • Output count: ${outCount}`;
+        previewEl.hidden = false;
+        previewEl.textContent = JSON.stringify(lastOutput, null, 2).slice(0, 4000) + (JSON.stringify(lastOutput).length > 4000 ? '\n... (truncated)' : '');
+        statusEl.textContent = outCount === srcCount ? 'OK: counts match' : 'WARNING: counts differ';
+        statusEl.className = outCount === srcCount ? 'ok' : 'err';
+        dlBtn.disabled = false;
+      } catch (e) {
+        statusEl.textContent = 'Error: ' + e.message;
+        statusEl.className = 'err';
+      } finally {
+        runBtn.disabled = false;
+      }
+    });
+
+    dlBtn.addEventListener('click', () => {
+      if (!lastOutput) return;
+      downloadObject('members_fuzzy_output.json', lastOutput);
+    });
+  </script>
+</body>
+</html>
+
+
