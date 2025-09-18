@@ -310,20 +310,20 @@
         })
         .slice(0, 250)
         .forEach(m => {
+          // Use JSON fields if available, otherwise calculate
           const f = m.computed || calculateMemberFinancials(m);
+          const status = m.status || f.status || 'unknown';
+          const balance = m.balance !== undefined ? m.balance : f.balance || 0;
+          const monthsBehind = m.monthsBehind !== undefined ? m.monthsBehind : f.monthsBehind || 0;
+          const paidUpTo = m.paidUpTo || f.paidUpTo || null;
+          
           const sel = document.getElementById('filterStatus').value;
           if (sel !== 'all') {
-            const effective = (f.status === 'ahead') ? 'current' : f.status;
+            const effective = (status === 'ahead') ? 'current' : status;
             if (effective !== sel) return;
           }
           const div = document.createElement('div');
           div.className = 'member';
-          
-          // Use JSON fields directly for display
-          const status = f.status || 'unknown';
-          const balance = f.balance || 0;
-          const monthsBehind = f.monthsBehind || 0;
-          const paidUpTo = f.paidUpTo || null;
           
           const statusClass = (status === 'current' || status === 'ahead') ? 'current' : 'behind';
           const balanceEl = balance < 0 ? `<span class="warn">-$${Math.abs(balance).toFixed(2)}</span>` : `<span class="green">$${balance.toFixed(2)}</span>`;
@@ -469,13 +469,13 @@
         }
         const m = { id: doc.id, ...doc.data() };
         container.innerHTML = '';
-        const f = m.computed || calculateMemberFinancials(m);
         
-        // Use JSON fields directly for display
-        const status = f.status || 'unknown';
-        const balance = f.balance || 0;
-        const monthsBehind = f.monthsBehind || 0;
-        const paidUpTo = f.paidUpTo || null;
+        // Use JSON fields if available, otherwise calculate
+        const f = m.computed || calculateMemberFinancials(m);
+        const status = m.status || f.status || 'unknown';
+        const balance = m.balance !== undefined ? m.balance : f.balance || 0;
+        const monthsBehind = m.monthsBehind !== undefined ? m.monthsBehind : f.monthsBehind || 0;
+        const paidUpTo = m.paidUpTo || f.paidUpTo || null;
         
         const statusClass = (status === 'current' || status === 'ahead') ? 'current' : 'behind';
         const balanceEl = balance < 0 ? `<span class="warn">-$${Math.abs(balance).toFixed(2)}</span>` : `<span class="green">$${balance.toFixed(2)}</span>`;
@@ -778,13 +778,13 @@
             // Member view - update single member display
             const container = document.getElementById('list');
             container.innerHTML = '';
-            const f = m.computed;
             
-            // Use JSON fields directly for display
-            const status = f.status || 'unknown';
-            const balance = f.balance || 0;
-            const monthsBehind = f.monthsBehind || 0;
-            const paidUpTo = f.paidUpTo || null;
+            // Use JSON fields if available, otherwise calculate
+            const f = m.computed || calculateMemberFinancials(m);
+            const status = m.status || f.status || 'unknown';
+            const balance = m.balance !== undefined ? m.balance : f.balance || 0;
+            const monthsBehind = m.monthsBehind !== undefined ? m.monthsBehind : f.monthsBehind || 0;
+            const paidUpTo = m.paidUpTo || f.paidUpTo || null;
             
             const statusClass = (status === 'current' || status === 'ahead') ? 'current' : 'behind';
             const balanceEl = balance < 0 ? `<span class="warn">-$${Math.abs(balance).toFixed(2)}</span>` : `<span class="green">$${balance.toFixed(2)}</span>`;
