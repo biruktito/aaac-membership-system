@@ -45,6 +45,7 @@
   </script>
   <!-- NOTE: On root page, reference the docs/ path for init file -->
   <script src="docs/firebase-init.js"></script>
+  <script src="docs/financial_validator.js"></script>
 </head>
 <body>
   <header>
@@ -237,6 +238,22 @@
     }
 
     function renderStats(members) {
+      // If validator totals are present, prefer them
+      if (window.__validatorTotals) {
+        const t = window.__validatorTotals;
+        // Derive owed/ahead from included balances
+        let owed = 0, ahead = 0, current = 0, behind = 0;
+        (window.__validatorResults || []).forEach(r => {
+          if (r.ignored) return;
+          if (r.balance < 0) owed += Math.abs(r.balance), behind += 1; 
+          else current += 1, ahead += r.balance;
+        });
+        document.getElementById('statTotal').textContent = (window.__validatorResults || []).length;
+        document.getElementById('statCurrent').textContent = current;
+        document.getElementById('statBehind').textContent = behind;
+        document.getElementById('statOwed').textContent = `$${owed.toFixed(2)}`;
+        return;
+      }
       let total = members.length;
       let current = 0; let behind = 0; let owed = 0;
 
@@ -290,7 +307,7 @@
         })
         .slice(0, 250)
         .forEach(m => {
-          const f = calculateMemberFinancials(m);
+          const f = m.computed || calculateMemberFinancials(m);
           const sel = document.getElementById('filterStatus').value;
           if (sel !== 'all') {
             const effective = (f.status === 'ahead') ? 'current' : f.status;
@@ -322,6 +339,7 @@
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
             <div class="muted" style="margin-top:6px;">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+            ${f.ignored ? `<div class="warn" style="margin-top:6px; font-weight:600;">Member excluded from balances ( >36 months unpaid )</div>` : ''}
             ${actions}
           `;
           container.appendChild(div);
@@ -437,7 +455,7 @@
         }
         const m = { id: doc.id, ...doc.data() };
         container.innerHTML = '';
-        const f = calculateMemberFinancials(m);
+        const f = m.computed || calculateMemberFinancials(m);
         const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
         const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
         const div = document.createElement('div');
@@ -454,6 +472,7 @@
             <span class=\"badge ${statusClass}\">${f.status}</span>\n\
           </div>\n\
           <div class=\"muted\" style=\"margin-top:6px;\">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>\n\
+          ${f.ignored ? `<div class=\\"warn\\" style=\\"margin-top:6px; font-weight:600;\\">Member excluded from balances ( >36 months unpaid )</div>` : ''}\n\
         `;
         container.appendChild(div);
         // Hide global stats for member-only view
@@ -563,6 +582,34 @@
     let unsubscribe = null;
     window.addEventListener('DOMContentLoaded', async () => {
       setupAuth();
+      // First, attempt to load validator JSON, if present
+      try {
+        const vf = await fetch('docs/data/members_fuzzy_output.json', { cache: 'no-store' });
+        if (vf.ok) {
+          const parsed = await vf.json();
+          const members = parsed.members || parsed || [];
+          if (Array.isArray(members) && members.length) {
+            const processed = (window.AAACValidator && window.AAACValidator.processAll) ? window.AAACValidator.processAll(members) : null;
+            if (processed && processed.results) {
+              // Map back to member shape for rendering
+              window.__validatorResults = processed.results.map(r => ({
+                id: String(r.memberId || ''),
+                memberId: r.memberId,
+                fullName: r.fullName,
+                phone: r.phone,
+                isActive: true,
+                computed: r.computed
+              }));
+              window.__validatorTotals = processed.totals;
+              window.__members = window.__validatorResults;
+              renderStats(window.__members);
+              renderList(window.__members);
+              return; // Prefer validator data path
+            }
+          }
+        }
+      } catch(_) {}
+
       if (USE_LOCAL_ONLY) {
         try {
           const members = await loadLocalJsonMembers();
