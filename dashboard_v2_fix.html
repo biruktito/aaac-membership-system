@@ -254,7 +254,7 @@
         document.getElementById('statOwed').textContent = `$${owed.toFixed(2)}`;
         return;
       }
-      let total = members.length;
+      let totalIncluded = 0;
       let current = 0; let behind = 0; let owed = 0;
 
       // Active definition: any payment in the last 36 months
@@ -271,12 +271,15 @@
       };
       members.forEach(m => {
         const f = calculateMemberFinancials(m);
+        // Exclude ignored members (>36 months behind) from aggregates
+        if (f && typeof f.monthsBehind === 'number' && f.monthsBehind > 36) return;
+        totalIncluded += 1;
         if (isActiveDerived(m)) {
           if (f.balance < 0) owed += Math.abs(f.balance);
           if (f.balance >= 0) current += 1; else behind += 1;
         }
       });
-      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statTotal').textContent = totalIncluded;
       document.getElementById('statCurrent').textContent = current;
       document.getElementById('statBehind').textContent = behind;
       document.getElementById('statOwed').textContent = `$${owed.toFixed(2)}`;
