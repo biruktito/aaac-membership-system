@@ -318,8 +318,15 @@
           }
           const div = document.createElement('div');
           div.className = 'member';
-          const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
-          const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
+          
+          // Use JSON fields directly for display
+          const status = f.status || 'unknown';
+          const balance = f.balance || 0;
+          const monthsBehind = f.monthsBehind || 0;
+          const paidUpTo = f.paidUpTo || null;
+          
+          const statusClass = (status === 'current' || status === 'ahead') ? 'current' : 'behind';
+          const balanceEl = balance < 0 ? `<span class="warn">-$${Math.abs(balance).toFixed(2)}</span>` : `<span class="green">$${balance.toFixed(2)}</span>`;
           // Admin actions (visible when signed-in email user)
           const role = window.__role || 'member';
           const isAdmin = role === 'admin';
@@ -330,8 +337,8 @@
               <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
             </div>
           ` : '';
-          const startChip = f.startAt ? 
-            `Start: ${f.startAt.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
+          const startChip = m.startDate ? 
+            `Start: ${new Date(m.startDate).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
             'Start: —';
           div.innerHTML = `
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -342,9 +349,9 @@
                   <div class="muted">Member ID: ${m.memberId || '—'}</div>
                 </div>
               </div>
-              <span class="badge ${statusClass}">${f.status}</span>
+              <span class="badge ${statusClass}">${status}</span>
             </div>
-            <div class="muted" style="margin-top:6px;">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+            <div class="muted" style="margin-top:6px;">${startChip} • Balance: ${balanceEl} • Months behind: ${monthsBehind} • Paid up to: ${formatPaidUpTo(paidUpTo)}</div>
             ${f.ignored ? `<div class="warn" style="margin-top:6px; font-weight:600;">Member excluded from balances ( >36 months unpaid )</div>` : ''}
             ${actions}
           `;
@@ -463,12 +470,19 @@
         const m = { id: doc.id, ...doc.data() };
         container.innerHTML = '';
         const f = m.computed || calculateMemberFinancials(m);
-        const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
-        const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
+        
+        // Use JSON fields directly for display
+        const status = f.status || 'unknown';
+        const balance = f.balance || 0;
+        const monthsBehind = f.monthsBehind || 0;
+        const paidUpTo = f.paidUpTo || null;
+        
+        const statusClass = (status === 'current' || status === 'ahead') ? 'current' : 'behind';
+        const balanceEl = balance < 0 ? `<span class="warn">-$${Math.abs(balance).toFixed(2)}</span>` : `<span class="green">$${balance.toFixed(2)}</span>`;
         const div = document.createElement('div');
         div.className = 'member';
-        const startChip = f.startAt ? 
-          `Start: ${f.startAt.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
+        const startChip = m.startDate ? 
+          `Start: ${new Date(m.startDate).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
           'Start: —';
         div.innerHTML = `
           <div style=\"display:flex; justify-content:space-between; align-items:center;\">\n\
@@ -476,9 +490,9 @@
               <div style=\"font-weight:600;\">${m.fullName || 'Unnamed'}</div>\n\
               <div class=\"muted\">Member ID: ${m.memberId || '—'}</div>\n\
             </div>\n\
-            <span class=\"badge ${statusClass}\">${f.status}</span>\n\
+            <span class=\"badge ${statusClass}\">${status}</span>\n\
           </div>\n\
-          <div class=\"muted\" style=\"margin-top:6px;\">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>\n\
+          <div class=\"muted\" style=\"margin-top:6px;\">${startChip} • Balance: ${balanceEl} • Months behind: ${monthsBehind} • Paid up to: ${formatPaidUpTo(paidUpTo)}</div>\n\
           ${f.ignored ? `<div class=\\"warn\\" style=\\"margin-top:6px; font-weight:600;\\">Member excluded from balances ( >36 months unpaid )</div>` : ''}\n\
           <div class=\"row\" style=\"gap:8px; margin-top:12px;\">\n\
             <button data-action=\"view-payment\" data-id=\"${m.id}\">View Payment Options</button>\n\
@@ -765,10 +779,17 @@
             const container = document.getElementById('list');
             container.innerHTML = '';
             const f = m.computed;
-            const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
-            const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
-            const startChip = f.startAt ? 
-              `Start: ${f.startAt.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
+            
+            // Use JSON fields directly for display
+            const status = f.status || 'unknown';
+            const balance = f.balance || 0;
+            const monthsBehind = f.monthsBehind || 0;
+            const paidUpTo = f.paidUpTo || null;
+            
+            const statusClass = (status === 'current' || status === 'ahead') ? 'current' : 'behind';
+            const balanceEl = balance < 0 ? `<span class="warn">-$${Math.abs(balance).toFixed(2)}</span>` : `<span class="green">$${balance.toFixed(2)}</span>`;
+            const startChip = m.startDate ? 
+              `Start: ${new Date(m.startDate).toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' })}` : 
               'Start: —';
             const div = document.createElement('div');
             div.className = 'member';
@@ -778,9 +799,9 @@
                   <div style="font-weight:600;">${m.fullName || 'Unnamed'}</div>
                   <div class="muted">Member ID: ${m.memberId || '—'}</div>
                 </div>
-                <span class="badge ${statusClass}">${f.status}</span>
+                <span class="badge ${statusClass}">${status}</span>
               </div>
-              <div class="muted" style="margin-top:6px;">${startChip} • Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+              <div class="muted" style="margin-top:6px;">${startChip} • Balance: ${balanceEl} • Months behind: ${monthsBehind} • Paid up to: ${formatPaidUpTo(paidUpTo)}</div>
               ${f.ignored ? `<div class="warn" style="margin-top:6px; font-weight:600;">Member excluded from balances ( >36 months unpaid )</div>` : ''}
               <div class="row" style="gap:8px; margin-top:12px;">
                 <button data-action="view-payment" data-id="${m.id}">View Payment Options</button>
@@ -934,9 +955,9 @@
           <h3>Payment Information</h3>
           <div style="margin:16px 0;">
             <div><strong>Current Balance:</strong> ${f.balance < 0 ? `-$${Math.abs(f.balance).toFixed(2)}` : `$${f.balance.toFixed(2)}`}</div>
-            <div><strong>Months Behind:</strong> ${f.monthsBehind}</div>
+            <div><strong>Months Behind:</strong> ${f.monthsBehind || 0}</div>
             <div><strong>Paid Up To:</strong> ${formatPaidUpTo(f.paidUpTo)}</div>
-            <div><strong>Status:</strong> ${f.status}</div>
+            <div><strong>Status:</strong> ${f.status || 'unknown'}</div>
           </div>
           <div style="margin:16px 0; padding:12px; background:#f7f7f7; border-radius:4px;">
             <h4>Payment Instructions:</h4>
