@@ -81,6 +81,9 @@
         <option value="risk">Risk</option>
         <option value="inactive">Inactive</option>
       </select>
+      <label class="muted" style="display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="toggleSource" /> Use validator JSON
+      </label>
       <button id="refresh">Recalculate</button>
     </div>
 
@@ -580,50 +583,37 @@
     }
 
     let unsubscribe = null;
-    window.addEventListener('DOMContentLoaded', async () => {
-      setupAuth();
-      // First, attempt to load validator JSON, if present
+    async function loadFromValidator() {
       try {
         const vf = await fetch('docs/data/members_fuzzy_output.json', { cache: 'no-store' });
-        if (vf.ok) {
-          const parsed = await vf.json();
-          const members = parsed.members || parsed || [];
-          if (Array.isArray(members) && members.length) {
-            const processed = (window.AAACValidator && window.AAACValidator.processAll) ? window.AAACValidator.processAll(members) : null;
-            if (processed && processed.results) {
-              // Map back to member shape for rendering
-              window.__validatorResults = processed.results.map(r => ({
-                id: String(r.memberId || ''),
-                memberId: r.memberId,
-                fullName: r.fullName,
-                phone: r.phone,
-                isActive: true,
-                computed: r.computed
-              }));
-              window.__validatorTotals = processed.totals;
-              window.__members = window.__validatorResults;
-              renderStats(window.__members);
-              renderList(window.__members);
-              return; // Prefer validator data path
-            }
-          }
-        }
-      } catch(_) {}
+        if (!vf.ok) return false;
+        const parsed = await vf.json();
+        const members = parsed.members || parsed || [];
+        if (!Array.isArray(members) || !members.length) return false;
+        const processed = (window.AAACValidator && window.AAACValidator.processAll) ? window.AAACValidator.processAll(members) : null;
+        if (!processed || !processed.results) return false;
+        window.__validatorResults = processed.results.map(r => ({
+          id: String(r.memberId || ''),
+          memberId: r.memberId,
+          fullName: r.fullName,
+          phone: r.phone,
+          isActive: true,
+          computed: r.computed
+        }));
+        window.__validatorTotals = processed.totals;
+        window.__members = window.__validatorResults;
+        renderStats(window.__members);
+        renderList(window.__members);
+        return true;
+      } catch(_) { return false; }
+    }
 
-      if (USE_LOCAL_ONLY) {
-        try {
-          const members = await loadLocalJsonMembers();
-          window.__members = members;
-          renderStats(members);
-          renderList(members);
-        } catch (e) { console.error(e); }
-        return;
-      }
-
+    async function loadFromFirestoreOrLocal() {
       const { auth } = window.firebaseServices || {};
       if (auth) {
-        auth.onAuthStateChanged(async () => {
-          if (unsubscribe) try { unsubscribe(); } catch(_){ }
+        if (window.__unsubscribeOnce) { try { window.__unsubscribeOnce(); } catch(_){} }
+        window.__unsubscribeOnce = auth.onAuthStateChanged(async () => {
+          if (typeof unsubscribe === 'function') try { unsubscribe(); } catch(_){ }
           if (auth.currentUser) {
             if (window.__role === 'member' && window.__memberId) {
               unsubscribe = attachMemberRealtime(window.__memberId);
@@ -639,14 +629,36 @@
             document.getElementById('statOwed').textContent = '—';
           }
         });
-      } else {
+        return true;
+      }
+      try {
+        const members = await loadLocalJsonMembers();
+        window.__members = members;
+        renderStats(members);
+        renderList(members);
+        return true;
+      } catch(_) { return false; }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      setupAuth();
+      // Initial source load based on toggle
+      const toggle = document.getElementById('toggleSource');
+      if (toggle && toggle.checked) {
+        const ok = await loadFromValidator();
+        if (ok) return;
+      }
+
+      if (USE_LOCAL_ONLY) {
         try {
           const members = await loadLocalJsonMembers();
           window.__members = members;
           renderStats(members);
           renderList(members);
-        } catch(_){ }
+        } catch (e) { console.error(e); }
+        return;
       }
+      await loadFromFirestoreOrLocal();
       document.getElementById('refresh').onclick = () => {
         if (window.__members) {
           renderStats(window.__members);
@@ -659,6 +671,22 @@
       document.getElementById('filterStatus').addEventListener('change', () => {
         if (window.__members) renderList(window.__members);
       });
+      if (toggle) {
+        toggle.addEventListener('change', async () => {
+          window.__validatorResults = null;
+          window.__validatorTotals = null;
+          if (toggle.checked) {
+            const ok = await loadFromValidator();
+            if (!ok) {
+              alert('Validator JSON not available; falling back to Firestore/local');
+              toggle.checked = false;
+              await loadFromFirestoreOrLocal();
+            }
+          } else {
+            await loadFromFirestoreOrLocal();
+          }
+        });
+      }
       // Payment modal handlers
       document.getElementById('pcancel').onclick = closePaymentModal;
       document.getElementById('psave').onclick = savePayment;
