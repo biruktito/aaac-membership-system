@@ -45,7 +45,6 @@
   </script>
   <!-- NOTE: On root page, reference the docs/ path for init file -->
   <script src="docs/firebase-init.js"></script>
-  <script src="docs/financial_validator.js"></script>
 </head>
 <body>
   <header>
@@ -81,9 +80,6 @@
         <option value="risk">Risk</option>
         <option value="inactive">Inactive</option>
       </select>
-      <label class="muted" style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" id="toggleSource" /> Use validator JSON
-      </label>
       <button id="refresh">Recalculate</button>
     </div>
 
@@ -359,7 +355,7 @@
 
     async function loadLocalJsonMembers() {
       // On root page, JSON lives under docs/
-      const res = await fetch('docs/cleaned_members_final.json', { cache: 'no-store' });
+      const res = await fetch('docs/cleaned_members_final_normalized.json', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load local JSON');
       const raw = await res.json();
       return raw.map(m => ({
@@ -391,7 +387,7 @@
         const needsFallback = (!members.length) || (totalPayments === 0);
         if (needsFallback) {
           try {
-            const res = await fetch('docs/cleaned_members_final.json', { cache: 'no-store' });
+            const res = await fetch('docs/cleaned_members_final_normalized.json', { cache: 'no-store' });
             if (res.ok) {
               const raw = await res.json();
               // Transform JSON schema -> v2 schema
@@ -416,7 +412,7 @@
       }, async (err) => {
         console.warn('onSnapshot error; falling back to local JSON', err);
         try {
-          const res = await fetch('docs/cleaned_members_final.json', { cache: 'no-store' });
+          const res = await fetch('docs/cleaned_members_final_normalized.json', { cache: 'no-store' });
           if (res.ok) {
             const raw = await res.json();
             const members = raw.map(m => {
@@ -583,30 +579,6 @@
     }
 
     let unsubscribe = null;
-    async function loadFromValidator() {
-      try {
-        const vf = await fetch('docs/data/members_fuzzy_output.json', { cache: 'no-store' });
-        if (!vf.ok) return false;
-        const parsed = await vf.json();
-        const members = parsed.members || parsed || [];
-        if (!Array.isArray(members) || !members.length) return false;
-        const processed = (window.AAACValidator && window.AAACValidator.processAll) ? window.AAACValidator.processAll(members) : null;
-        if (!processed || !processed.results) return false;
-        window.__validatorResults = processed.results.map(r => ({
-          id: String(r.memberId || ''),
-          memberId: r.memberId,
-          fullName: r.fullName,
-          phone: r.phone,
-          isActive: true,
-          computed: r.computed
-        }));
-        window.__validatorTotals = processed.totals;
-        window.__members = window.__validatorResults;
-        renderStats(window.__members);
-        renderList(window.__members);
-        return true;
-      } catch(_) { return false; }
-    }
 
     async function loadFromFirestoreOrLocal() {
       const { auth } = window.firebaseServices || {};
@@ -643,11 +615,6 @@
     window.addEventListener('DOMContentLoaded', async () => {
       setupAuth();
       // Initial source load based on toggle
-      const toggle = document.getElementById('toggleSource');
-      if (toggle && toggle.checked) {
-        const ok = await loadFromValidator();
-        if (ok) return;
-      }
 
       if (USE_LOCAL_ONLY) {
         try {
@@ -671,22 +638,6 @@
       document.getElementById('filterStatus').addEventListener('change', () => {
         if (window.__members) renderList(window.__members);
       });
-      if (toggle) {
-        toggle.addEventListener('change', async () => {
-          window.__validatorResults = null;
-          window.__validatorTotals = null;
-          if (toggle.checked) {
-            const ok = await loadFromValidator();
-            if (!ok) {
-              alert('Validator JSON not available; falling back to Firestore/local');
-              toggle.checked = false;
-              await loadFromFirestoreOrLocal();
-            }
-          } else {
-            await loadFromFirestoreOrLocal();
-          }
-        });
-      }
       // Payment modal handlers
       document.getElementById('pcancel').onclick = closePaymentModal;
       document.getElementById('psave').onclick = savePayment;
