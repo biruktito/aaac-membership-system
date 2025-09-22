@@ -386,10 +386,15 @@
           document.getElementById('statBehind').textContent = '—';
           document.getElementById('statOwed').textContent = '—';
         } else {
-          // Subscribe globally for board/admin
+          // Subscribe globally for board/admin; for member role load local JSON once
           if (window.__role !== 'member') {
-            if (typeof window.__unsub === 'function') try { window.__unsub(); } catch(_){}
+            if (typeof window.__unsub === 'function') try { window.__unsub(); } catch(_){ }
             window.__unsub = attachRealtime();
+          } else {
+            try {
+              const members = await loadLocalJsonMembers();
+              window.__members = members; renderStats(members); renderList(members);
+            } catch(_) {}
           }
         }
       });
@@ -397,6 +402,18 @@
 
     window.addEventListener('DOMContentLoaded', async () => {
       setupAuth();
+      const filter = document.getElementById('filterStatus');
+      const search = document.getElementById('search');
+      const refreshBtn = document.getElementById('refresh');
+      const rerender = () => { if (Array.isArray(window.__members)) renderList(window.__members); };
+      if (filter) filter.addEventListener('change', rerender);
+      if (search) search.addEventListener('input', rerender);
+      if (refreshBtn) refreshBtn.addEventListener('click', async () => {
+        if (!Array.isArray(window.__members)) {
+          try { const members = await loadLocalJsonMembers(); window.__members = members; } catch(_) {}
+        }
+        if (Array.isArray(window.__members)) { renderStats(window.__members); renderList(window.__members); }
+      });
     });
   </script>
 </body>
