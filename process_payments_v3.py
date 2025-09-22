@@ -35,7 +35,7 @@ REG_FEES = {100.0, 200.0}
 INACTIVE_MONTHS = 36
 
 SRC_XLSX = \
-    "/Users/birukeyesus/terraform_practice/aaac-system/docs/AAAIC_Book.xlsx"
+    "/Users/birukeyesus/terraform_practice/aaac-system/aaac-membership-system/docs/AAAIC_Book.xlsx"
 OUT_CSV = \
     "/Users/birukeyesus/terraform_practice/aaac-system/docs/normalized_payments.csv"
 OUT_JSON = \
@@ -182,10 +182,10 @@ def compute_financials(norm: pd.DataFrame) -> dict:
         # Build month->amount mapping for dues
         dues_map = {m: float(a) for m, a in dues.values}
 
-        # Determine startAt as first month with dues >= 15
+        # Determine startAt as first month with any dues > 0 (safer for start)
         startAt = None
         for m in sorted(dues_map.keys()):
-            if dues_map[m] >= DUES:
+            if dues_map[m] > 0:
                 startAt = m
                 break
 
@@ -218,28 +218,47 @@ def compute_financials(norm: pd.DataFrame) -> dict:
         owed_months = [to_month_key(y, m) for y, m in month_iter(sy, sm, NOW.year, NOW.month)]
         totalOwed = DUES * len(owed_months)
 
-        # Sum dues dollars <= NOW and > NOW
-        paid_now_or_past = 0.0
-        paid_future = 0.0
-        for m, amt in dues_map.items():
-            y, mm = map(int, m.split("-"))
-            if (y > NOW.year) or (y == NOW.year and mm > NOW.month):
-                paid_future += amt
-            else:
-                paid_now_or_past += amt
+        # Reallocate total dues dollars oldest-first across owed months, then future
+        total_paid_all = sum(float(a) for a in dues_map.values())
+        remaining = total_paid_all
+        allocated_owed = {}
+        for m in owed_months:
+            if remaining <= 0:
+                allocated_owed[m] = 0.0
+                continue
+            add = min(DUES, remaining)
+            allocated_owed[m] = add
+            remaining -= add
 
-        # Oldest-first, cap 15 per month => paidTowardOwed is min(paid_now_or_past, totalOwed)
-        paidTowardOwed = min(paid_now_or_past, totalOwed)
+        # Allocate any remaining into future months sequentially
+        allocated_future = {}
+        fy, fm = NOW.year, NOW.month
+        # start next month
+        fm += 1
+        if fm > 12:
+            fm = 1
+            fy += 1
+        while remaining > 0:
+            key = to_month_key(fy, fm)
+            add = min(DUES, remaining)
+            allocated_future[key] = add
+            remaining -= add
+            fm += 1
+            if fm > 12:
+                fm = 1
+                fy += 1
+
+        paidTowardOwed = min(total_paid_all, totalOwed)
         monthsCovered = int(paidTowardOwed // DUES)
         monthsBehind = max(0, len(owed_months) - monthsCovered)
+
+        # paidUpTo is latest fully-paid month (>= DUES) across allocated owed+future
         paidUpTo = None
         if monthsCovered > 0:
-            py, pm = sy, sm
-            # advance monthsCovered - 1 from startAt
-            adv = monthsCovered - 1
-            py += (pm - 1 + adv) // 12
-            pm = ((pm - 1 + adv) % 12) + 1
-            paidUpTo = to_month_key(py, pm)
+            full_paid_keys = [k for k, v in allocated_owed.items() if v >= DUES]
+            full_paid_keys += [k for k, v in allocated_future.items() if v >= DUES]
+            if full_paid_keys:
+                paidUpTo = max(full_paid_keys)
 
         # Activity: any payment in last 36 months
         isActive = False
@@ -250,7 +269,7 @@ def compute_financials(norm: pd.DataFrame) -> dict:
                 isActive = True
                 break
 
-        futureCredit = paid_future
+        futureCredit = sum(allocated_future.values())
         balance = round((paidTowardOwed + futureCredit) - totalOwed, 2)
 
         # Status per guide
@@ -269,8 +288,8 @@ def compute_financials(norm: pd.DataFrame) -> dict:
 
         ignored = monthsBehind > 36
 
-        # Build paymentsDues mapping as-is
-        paymentsDues = {k: float(v) for k, v in sorted(dues_map.items())}
+        # Emit payments as allocated map so gaps are filled
+        paymentsDues = {k: float(v) for k, v in sorted({**allocated_owed, **allocated_future}.items())}
         reg_list = [{"amount": float(a), "date": f"{owed_months[0]}-01"} for a in reg] if reg else []
 
         member_obj = {
