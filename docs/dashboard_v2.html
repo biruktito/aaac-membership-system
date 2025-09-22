@@ -107,7 +107,7 @@
   </div>
 
   <script>
-    const CURRENT_DATE = new Date('2025-09-01T00:00:00Z');
+    const CURRENT_DATE = new Date();
     const DUE_PER_MONTH = 15; // USD
     const USE_LOCAL_ONLY = false; // Firestore is the single source of truth for v2
 
@@ -247,7 +247,23 @@
         })
         .slice(0, 250)
         .forEach(m => {
-          const f = calculateMemberFinancials(m);
+          // Prefer provided JSON/computed fields from data when available
+          const fc = calculateMemberFinancials(m);
+          const f = {
+            balance: (m.balance !== undefined ? Number(m.balance) : fc.balance),
+            monthsBehind: (m.monthsBehind !== undefined ? Number(m.monthsBehind) : fc.monthsBehind),
+            paidUpTo: (m.paidUpTo || fc.paidUpTo),
+            status: (m.status || fc.status)
+          };
+          // Updated status mapping
+          const isActive = (m.isActive !== undefined) ? !!m.isActive : (fc.status !== 'inactive');
+          if (!isActive || f.monthsBehind >= 36) f.status = 'inactive';
+          else if (f.balance > 0) f.status = 'ahead';
+          else if (f.monthsBehind === 0) f.status = 'current';
+          else if (f.monthsBehind <= 2) f.status = 'behind';
+          else if (f.monthsBehind <= 11) f.status = 'issue';
+          else f.status = 'risk';
+
           const sel = document.getElementById('filterStatus').value;
           if (sel !== 'all') {
             const effective = (f.status === 'ahead') ? 'current' : f.status;
@@ -276,7 +292,7 @@
               </div>
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
-            <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+            <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${(f.balance>0)?0:f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
             ${actions}
           `;
           container.appendChild(div);
@@ -295,12 +311,17 @@
       const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load local JSON');
       const raw = await res.json();
-      return raw.map(m => ({
+      const arr = Array.isArray(raw) ? raw : (raw.members || []);
+      return arr.map(m => ({
         id: String(m.memberId || m.id || ''),
         memberId: m.memberId,
         fullName: m.fullName || m.name,
         isActive: m.isActive,
         startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
+        balance: m.balance,
+        monthsBehind: m.monthsBehind,
+        paidUpTo: m.paidUpTo,
+        status: m.status,
         payments: m.payments || m.paymentsDues || {}
       }));
     }
@@ -535,7 +556,7 @@
             if (window.__role === 'member' && window.__memberId) {
               unsubscribe = attachMemberRealtime(window.__memberId);
             } else {
-              unsubscribe = attachRealtime();
+      unsubscribe = attachRealtime();
             }
           } else {
             const container = document.getElementById('list');
