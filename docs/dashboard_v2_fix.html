@@ -171,14 +171,24 @@
       return paymentDates.length > 0 ? paymentDates[0] + '-01' : null;
     }
 
-    function formatPaidUpTo(date) {
-      if (!date) return 'Not Started';
-      return date.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    function parseYm(ym) {
+      if (!ym || typeof ym !== 'string' || !/^\d{4}-\d{2}$/.test(ym)) return null;
+      const [y, m] = ym.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, 1));
     }
 
-    function formatMonth(date) {
-      if (!date) return '—';
-      return date.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+    function formatPaidUpTo(dateOrYm) {
+      if (!dateOrYm) return 'Not Started';
+      const d = (typeof dateOrYm === 'string') ? parseYm(dateOrYm) : dateOrYm;
+      if (!d) return 'Not Started';
+      return d.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    }
+
+    function formatMonth(dateOrYm) {
+      if (!dateOrYm) return '—';
+      const d = (typeof dateOrYm === 'string') ? parseYm(dateOrYm) : dateOrYm;
+      if (!d) return '—';
+      return d.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
     }
 
     function renderStats(members) {
@@ -227,14 +237,47 @@
         })
         .slice(0, 250)
         .forEach(m => {
-          const f = calculateMemberFinancials(m);
+          // Prefer provided JSON fields; fallback to computed
+          let fComputed = calculateMemberFinancials(m);
+          let f = {
+            balance: (m.balance !== undefined ? Number(m.balance) : fComputed.balance),
+            monthsBehind: (m.monthsBehind !== undefined ? Number(m.monthsBehind) : fComputed.monthsBehind),
+            paidUpTo: (m.paidUpTo || fComputed.paidUpTo),
+            status: (m.status || fComputed.status),
+            startAt: (m.startAt ? parseYm(m.startAt) : fComputed.startAt)
+          };
+
+          // Enforce updated status mapping
+          const isActive = (m.isActive !== undefined) ? !!m.isActive : (fComputed.status !== 'inactive');
+          if (!isActive || f.monthsBehind >= 36) {
+            f.status = 'inactive';
+          } else if (f.balance > 0) {
+            f.status = 'ahead';
+          } else if (f.monthsBehind === 0) {
+            f.status = 'current';
+          } else if (f.monthsBehind <= 2) {
+            f.status = 'behind';
+          } else if (f.monthsBehind <= 11) {
+            f.status = 'issue';
+          } else {
+            f.status = 'risk';
+          }
+
+          // Ahead display consistency
+          let monthsBehindDisplay = f.monthsBehind;
+          let paidUpToDisplay = f.paidUpTo;
+          if (f.balance > 0) {
+            monthsBehindDisplay = 0;
+            paidUpToDisplay = CURRENT_DATE; // show current month
+          }
+
           const effective = (f.status === 'ahead') ? 'current' : f.status;
           if (selFilter !== 'all' && effective !== selFilter) return;
           const div = document.createElement('div');
           div.className = 'member';
           const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
           const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
-          const startChip = `<span class="chip">Start: ${formatMonth(f.startAt)}</span>`;
+          const startChip = `<span class="chip">Start: ${formatMonth(m.startAt || m.startDate || f.startAt)}</span>`;
           const role = window.__role || 'member';
           const isAdmin = role === 'admin';
           const isBoard = role === 'board';
@@ -252,7 +295,7 @@
               </div>
               <span class="badge ${statusClass}">${f.status}</span>
             </div>
-            <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${f.monthsBehind} • Paid up to: ${formatPaidUpTo(f.paidUpTo)}</div>
+            <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${monthsBehindDisplay} • Paid up to: ${formatPaidUpTo(paidUpToDisplay)}</div>
             ${actions}
           `;
           container.appendChild(div);
@@ -270,12 +313,18 @@
       const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
       if (!res.ok) throw new Error('Failed to load local JSON');
       const raw = await res.json();
-      return raw.map(m => ({
+      const arr = Array.isArray(raw) ? raw : (raw.members || []);
+      return arr.map(m => ({
         id: String(m.memberId || m.id || ''),
         memberId: m.memberId,
         fullName: m.fullName || m.name,
         isActive: m.isActive,
-        startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
+        startDate: (m.startDate || ''),
+        startAt: (m.startAt || null),
+        balance: (m.balance !== undefined ? m.balance : undefined),
+        monthsBehind: (m.monthsBehind !== undefined ? m.monthsBehind : undefined),
+        paidUpTo: (m.paidUpTo || null),
+        status: (m.status || null),
         payments: m.payments || m.paymentsDues || {}
       }));
     }
