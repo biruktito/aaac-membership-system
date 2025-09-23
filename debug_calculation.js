@@ -123,3 +123,6 @@ console.log('Total paid:', result.totalPaid);
 console.log('Total owed:', result.totalOwed);
 
 
+
+
+

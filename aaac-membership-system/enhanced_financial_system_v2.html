@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAAC Enhanced Financial System v2.0</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.2em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .current { color: #27ae60; }
+        .issues { color: #f39c12; }
+        .risk { color: #e74c3c; }
+        .removal { color: #c0392b; }
+        .inactive { color: #95a5a6; }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .control-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+
+        .members-table {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+
+        .members-table h3 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .status-current { background: #d5f4e6; color: #27ae60; }
+        .status-issues { background: #fef9e7; color: #f39c12; }
+        .status-risk { background: #fadbd8; color: #e74c3c; }
+        .status-removal { background: #f2d7d5; color: #c0392b; }
+        .status-inactive { background: #e8f8f5; color: #95a5a6; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close {
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+
+        .close:hover {
+            color: #2c3e50;
+        }
+
+        .payment-preview {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .payment-preview h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .preview-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .preview-item:last-child {
+            border-bottom: none;
+        }
+
+        .export-btn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            margin-left: 10px;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .filter-select {
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏛️ AAAC Enhanced Financial System v2.0</h1>
+            <p>Complete 100-Member Financial Management with Smart Payment Distribution</p>
+            <p><strong>Current Date:</strong> September 2025 | <strong>Monthly Fee:</strong> $15</p>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalMembers">100</div>
+                <div class="stat-label">Total Members</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number current" id="currentMembers">0</div>
+                <div class="stat-label">Current (0-5 months)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number issues" id="issuesMembers">0</div>
+                <div class="stat-label">Issues (6-11 months)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number risk" id="riskMembers">0</div>
+                <div class="stat-label">Risk (12-23 months)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number removal" id="removalMembers">0</div>
+                <div class="stat-label">Risk of Removal (24+ months)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number inactive" id="inactiveMembers">0</div>
+                <div class="stat-label">Inactive (36+ months)</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <h3>🎯 Member Management & Payment Recording</h3>
+            <div class="control-row">
+                <div class="form-group">
+                    <label for="memberSelect">Select Member:</label>
+                    <select id="memberSelect">
+                        <option value="">Choose a member...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentAmount">Payment Amount ($):</label>
+                    <input type="number" id="paymentAmount" placeholder="Enter amount" min="0" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="paymentType">Payment Type:</label>
+                    <select id="paymentType">
+                        <option value="monthly">📅 Monthly Payment</option>
+                        <option value="registration">📝 Registration Fee ($200)</option>
+                        <option value="incidental">🎯 Incidental</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paymentNotes">Notes:</label>
+                    <input type="text" id="paymentNotes" placeholder="Optional description">
+                </div>
+                <button class="btn" onclick="recordPayment()">💾 Record Payment</button>
+                <button class="btn btn-secondary" onclick="addNewMember()">➕ Add New Member</button>
+            </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="controls">
+            <h3>🔍 Search & Filter Members</h3>
+            <div class="control-row">
+                <div class="form-group search-box">
+                    <label for="searchInput">Search by Name or ID:</label>
+                    <input type="text" id="searchInput" placeholder="Type to search...">
+                </div>
+                <div class="form-group filter-select">
+                    <label for="statusFilter">Filter by Status:</label>
+                    <select id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="current">Current</option>
+                        <option value="issues">Issues</option>
+                        <option value="risk">Risk</option>
+                        <option value="removal">Risk of Removal</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+                <button class="btn export-btn" onclick="exportToCSV()">📊 Export to CSV</button>
+            </div>
+        </div>
+
+        <!-- Members Table -->
+        <div class="members-table">
+            <h3>📋 Member Financial Status</h3>
+            <table id="membersTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Months Behind</th>
+                        <th>Total Owed</th>
+                        <th>Registration</th>
+                        <th>Incidentals</th>
+                        <th>Last Payment</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="membersTableBody">
+                    <!-- Members will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💰 Payment Preview & Confirmation</h3>
+                <span class="close" onclick="closePaymentModal()">&times;</span>
+            </div>
+            <div id="paymentPreviewContent">
+                <!-- Payment preview will be shown here -->
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="confirmPayment()">✅ Confirm Payment</button>
+                <button class="btn btn-secondary" onclick="closePaymentModal()">❌ Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Details Modal -->
+    <div id="memberModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👤 Member Financial Details</h3>
+                <span class="close" onclick="closeMemberModal()">&times;</span>
+            </div>
+            <div id="memberDetailsContent">
+                <!-- Member details will be shown here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let members = [];
+        let currentMember = null;
+        let currentPayment = null;
+
+        // Constants
+        const MONTHLY_FEE = 15;
+        const REGISTRATION_FEE = 200;
+        const CURRENT_DATE = new Date('2025-09-01');
+        const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUNE', 'JULY', 'AUG', 'SEPT', 'OCT', 'NOV', 'DEC'];
+
+        // Initialize the system
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllMembers();
+            setupEventListeners();
+        });
+
+        // Load all 100 members from CSV data
+        function loadAllMembers() {
+            // This would normally load from your CSV files
+            // For now, creating sample data structure
+            members = createSampleMembers();
+            updateDashboard();
+            populateMemberSelect();
+            displayMembers();
+        }
+
+        // Create sample members (replace with actual CSV loading)
+        function createSampleMembers() {
+            const sampleMembers = [];
+            
+            // Load first 20 members as example
+            for (let i = 1; i <= 20; i++) {
+                const member = {
+                    id: i,
+                    name: `Sample Member ${i}`,
+                    phone: `773-${String(i).padStart(3, '0')}-${String(i).padStart(4, '0')}`,
+                    registration: { amount: 200, date: '2022-01-01', status: 'paid' },
+                    incidentals: [],
+                    '2022': generateYearPayments(2022, i),
+                    '2023': generateYearPayments(2023, i),
+                    '2024': generateYearPayments(2024, i),
+                    '2025': generateYearPayments(2025, i),
+                    '2026': generateYearPayments(2026, i)
+                };
+                sampleMembers.push(member);
+            }
+
+            // Add some real data examples
+            sampleMembers[0] = {
+                id: 1,
+                name: "Habtamu Bekuma Bekana",
+                phone: "7734941942",
+                registration: { amount: 200, date: '2022-01-01', status: 'paid' },
+                incidentals: [],
+                '2022': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUNE: 15, JULY: 15, AUG: 15, SEPT: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2023': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUNE: 15, JULY: 15, AUG: 15, SEPT: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2024': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUNE: 15, JULY: 15, AUG: 15, SEPT: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2025': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUNE: 15, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUNE: 0, JULY: 0, AUG: 0, SEPT: 0, OCT: 0, NOV: 0, DEC: 0 }
+            };
+
+            return sampleMembers;
+        }
+
+        // Generate year payments for sample data
+        function generateYearPayments(year, memberId) {
+            const payments = {};
+            const randomPaid = Math.random() > 0.3; // 70% chance of being paid
+            
+            MONTHS.forEach(month => {
+                if (year <= 2025 && randomPaid) {
+                    payments[month] = MONTHLY_FEE;
+                } else {
+                    payments[month] = 0;
+                }
+            });
+            
+            return payments;
+        }
+
+        // Calculate member financial status
+        function calculateMemberBalance(member) {
+            const currentYear = CURRENT_DATE.getFullYear();
+            const currentMonth = CURRENT_DATE.getMonth();
+            const currentMonthName = MONTHS[currentMonth];
+            
+            let totalPaid = 0;
+            let totalOwed = 0;
+            let monthsBehind = 0;
+            let lastPaymentMonth = null;
+            
+            // Calculate total paid and owed up to current month
+            for (let year = 2022; year <= currentYear; year++) {
+                const yearData = member[year];
+                if (yearData) {
+                    MONTHS.forEach((month, index) => {
+                        if (year < currentYear || (year === currentYear && index <= currentMonth)) {
+                            if (yearData[month] > 0) {
+                                totalPaid += yearData[month];
+                                lastPaymentMonth = { year, month, index };
+                            } else {
+                                totalOwed += MONTHLY_FEE;
+                                monthsBehind++;
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // Calculate current balance
+            const currentBalance = totalPaid - totalOwed;
+            
+            // Determine status
+            let status = 'current';
+            if (monthsBehind >= 36) status = 'inactive';
+            else if (monthsBehind >= 24) status = 'removal';
+            else if (monthsBehind >= 12) status = 'risk';
+            else if (monthsBehind >= 6) status = 'issues';
+            else if (monthsBehind >= 0) status = 'current';
+            
+            return {
+                totalPaid,
+                totalOwed,
+                currentBalance,
+                monthsBehind,
+                lastPaymentMonth,
+                status,
+                registration: member.registration,
+                incidentals: member.incidentals
+            };
+        }
+
+        // Update dashboard statistics
+        function updateDashboard() {
+            const statusCounts = { current: 0, issues: 0, risk: 0, removal: 0, inactive: 0 };
+            
+            members.forEach(member => {
+                const balance = calculateMemberBalance(member);
+                statusCounts[balance.status]++;
+            });
+            
+            document.getElementById('totalMembers').textContent = members.length;
+            document.getElementById('currentMembers').textContent = statusCounts.current;
+            document.getElementById('issuesMembers').textContent = statusCounts.issues;
+            document.getElementById('riskMembers').textContent = statusCounts.risk;
+            document.getElementById('removalMembers').textContent = statusCounts.removal;
+            document.getElementById('inactiveMembers').textContent = statusCounts.inactive;
+        }
+
+        // Populate member select dropdown
+        function populateMemberSelect() {
+            const select = document.getElementById('memberSelect');
+            select.innerHTML = '<option value="">Choose a member...</option>';
+            
+            members.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = `${member.id} - ${member.name}`;
+                select.appendChild(option);
+            });
+        }
+
+        // Display members in table
+        function displayMembers() {
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '';
+            
+            members.forEach(member => {
+                const balance = calculateMemberBalance(member);
+                const row = createMemberRow(member, balance);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create member table row
+        function createMemberRow(member, balance) {
+            const row = document.createElement('tr');
+            
+            row.innerHTML = `
+                <td>${member.id}</td>
+                <td>${member.name}</td>
+                <td>${member.phone}</td>
+                <td><span class="status-badge status-${balance.status}">${balance.status.toUpperCase()}</span></td>
+                <td>${balance.monthsBehind}</td>
+                <td>$${balance.totalOwed}</td>
+                <td>$${balance.registration.amount} (${balance.registration.status})</td>
+                <td>$${balance.incidentals.reduce((sum, inc) => sum + inc.amount, 0)}</td>
+                <td>${balance.lastPaymentMonth ? `${balance.lastPaymentMonth.month} ${balance.lastPaymentMonth.year}` : 'Never'}</td>
+                <td>
+                    <button class="btn btn-secondary" onclick="viewMemberDetails(${member.id})">👁️ View</button>
+                    <button class="btn" onclick="recordPaymentForMember(${member.id})">💰 Pay</button>
+                </td>
+            `;
+            
+            return row;
+        }
+
+        // Record payment for a specific member
+        function recordPaymentForMember(memberId) {
+            const member = members.find(m => m.id === memberId);
+            if (member) {
+                document.getElementById('memberSelect').value = memberId;
+                document.getElementById('paymentAmount').focus();
+            }
+        }
+
+        // Record payment
+        function recordPayment() {
+            const memberId = document.getElementById('memberSelect').value;
+            const amount = parseFloat(document.getElementById('paymentAmount').value);
+            const paymentType = document.getElementById('paymentType').value;
+            const notes = document.getElementById('paymentNotes').value;
+            
+            if (!memberId || !amount || amount <= 0) {
+                alert('Please select a member and enter a valid payment amount.');
+                return;
+            }
+            
+            const member = members.find(m => m.id == memberId);
+            if (!member) {
+                alert('Member not found.');
+                return;
+            }
+            
+            // Store current payment for preview
+            currentPayment = { member, amount, paymentType, notes };
+            currentMember = member;
+            
+            // Show payment preview
+            showPaymentPreview();
+        }
+
+        // Show payment preview
+        function showPaymentPreview() {
+            const modal = document.getElementById('paymentModal');
+            const content = document.getElementById('paymentPreviewContent');
+            
+            const balance = calculateMemberBalance(currentMember);
+            let previewHTML = `
+                <h4>Payment Preview for ${currentMember.name}</h4>
+                <div class="payment-preview">
+                    <div class="preview-item">
+                        <span>Payment Amount:</span>
+                        <span>$${currentPayment.amount}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Payment Type:</span>
+                        <span>${getPaymentTypeLabel(currentPayment.paymentType)}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Current Balance:</span>
+                        <span>$${balance.currentBalance}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Months Behind:</span>
+                        <span>${balance.monthsBehind}</span>
+                    </div>
+            `;
+            
+            if (currentPayment.paymentType === 'monthly') {
+                const distribution = calculatePaymentDistribution(currentPayment.amount, balance);
+                previewHTML += `
+                    <h4>Payment Distribution Preview:</h4>
+                    <div class="payment-preview">
+                        <div class="preview-item">
+                            <span>Months Covered:</span>
+                            <span>${distribution.monthsCovered}</span>
+                        </div>
+                        <div class="preview-item">
+                            <span>Amount Applied:</span>
+                            <span>$${distribution.amountApplied}</span>
+                        </div>
+                        <div class="preview-item">
+                            <span>Excess Payment:</span>
+                            <span>$${distribution.excess}</span>
+                        </div>
+                        <div class="preview-item">
+                            <span>New Balance:</span>
+                            <span>$${distribution.newBalance}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            content.innerHTML = previewHTML;
+            modal.style.display = 'block';
+        }
+
+        // Calculate payment distribution for monthly payments
+        function calculatePaymentDistribution(amount, balance) {
+            const monthsCovered = Math.floor(amount / MONTHLY_FEE);
+            const amountApplied = monthsCovered * MONTHLY_FEE;
+            const excess = amount - amountApplied;
+            const newBalance = balance.currentBalance + amountApplied;
+            
+            return {
+                monthsCovered,
+                amountApplied,
+                excess,
+                newBalance
+            };
+        }
+
+        // Get payment type label
+        function getPaymentTypeLabel(type) {
+            switch(type) {
+                case 'monthly': return '📅 Monthly Payment';
+                case 'registration': return '📝 Registration Fee';
+                case 'incidental': return '🎯 Incidental';
+                default: return type;
+            }
+        }
+
+        // Confirm payment
+        function confirmPayment() {
+            if (!currentPayment || !currentMember) return;
+            
+            // Apply payment based on type
+            switch(currentPayment.paymentType) {
+                case 'monthly':
+                    applyMonthlyPayment();
+                    break;
+                case 'registration':
+                    applyRegistrationPayment();
+                    break;
+                case 'incidental':
+                    applyIncidentalPayment();
+                    break;
+            }
+            
+            // Clear form
+            document.getElementById('paymentAmount').value = '';
+            document.getElementById('paymentNotes').value = '';
+            
+            // Update display
+            updateDashboard();
+            displayMembers();
+            
+            // Close modal
+            closePaymentModal();
+            
+            alert('Payment recorded successfully!');
+        }
+
+        // Apply monthly payment
+        function applyMonthlyPayment() {
+            const balance = calculateMemberBalance(currentMember);
+            const distribution = calculatePaymentDistribution(currentPayment.amount, balance);
+            
+            // Apply payment to months (simplified - would need more complex logic for actual month allocation)
+            // For now, just update the member's balance
+            currentMember.lastPayment = {
+                amount: currentPayment.amount,
+                type: 'monthly',
+                date: new Date().toISOString(),
+                notes: currentPayment.notes
+            };
+        }
+
+        // Apply registration payment
+        function applyRegistrationPayment() {
+            currentMember.registration = {
+                amount: currentPayment.amount,
+                date: new Date().toISOString(),
+                status: 'paid'
+            };
+        }
+
+        // Apply incidental payment
+        function applyIncidentalPayment() {
+            currentMember.incidentals.push({
+                amount: currentPayment.amount,
+                date: new Date().toISOString(),
+                notes: currentPayment.notes
+            });
+        }
+
+        // Close payment modal
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            currentPayment = null;
+            currentMember = null;
+        }
+
+        // View member details
+        function viewMemberDetails(memberId) {
+            const member = members.find(m => m.id == memberId);
+            if (!member) return;
+            
+            const balance = calculateMemberBalance(member);
+            const modal = document.getElementById('memberModal');
+            const content = document.getElementById('memberDetailsContent');
+            
+            content.innerHTML = `
+                <h4>${member.name} - Financial Details</h4>
+                <div class="payment-preview">
+                    <div class="preview-item">
+                        <span>Member ID:</span>
+                        <span>${member.id}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Phone:</span>
+                        <span>${member.phone}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Status:</span>
+                        <span class="status-badge status-${balance.status}">${balance.status.toUpperCase()}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Months Behind:</span>
+                        <span>${balance.monthsBehind}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Total Owed:</span>
+                        <span>$${balance.totalOwed}</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Registration:</span>
+                        <span>$${balance.registration.amount} (${balance.registration.status})</span>
+                    </div>
+                    <div class="preview-item">
+                        <span>Incidentals:</span>
+                        <span>$${balance.incidentals.reduce((sum, inc) => sum + inc.amount, 0)}</span>
+                    </div>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        // Close member modal
+        function closeMemberModal() {
+            document.getElementById('memberModal').style.display = 'none';
+        }
+
+        // Add new member
+        function addNewMember() {
+            const name = prompt('Enter member name:');
+            if (!name) return;
+            
+            const phone = prompt('Enter phone number:');
+            if (!phone) return;
+            
+            const newMember = {
+                id: members.length + 1,
+                name: name,
+                phone: phone,
+                registration: { amount: 0, date: null, status: 'unpaid' },
+                incidentals: [],
+                '2022': {},
+                '2023': {},
+                '2024': {},
+                '2025': {},
+                '2026': {}
+            };
+            
+            // Initialize all months as unpaid
+            MONTHS.forEach(month => {
+                newMember['2022'][month] = 0;
+                newMember['2023'][month] = 0;
+                newMember['2024'][month] = 0;
+                newMember['2025'][month] = 0;
+                newMember['2026'][month] = 0;
+            });
+            
+            members.push(newMember);
+            updateDashboard();
+            populateMemberSelect();
+            displayMembers();
+            
+            alert(`New member "${name}" added successfully!`);
+        }
+
+        // Export to CSV
+        function exportToCSV() {
+            let csv = 'ID,Name,Phone,Status,Months Behind,Total Owed,Registration,Incidentals,Last Payment\n';
+            
+            members.forEach(member => {
+                const balance = calculateMemberBalance(member);
+                const row = [
+                    member.id,
+                    member.name,
+                    member.phone,
+                    balance.status.toUpperCase(),
+                    balance.monthsBehind,
+                    balance.totalOwed,
+                    `${balance.registration.amount} (${balance.registration.status})`,
+                    balance.incidentals.reduce((sum, inc) => sum + inc.amount, 0),
+                    balance.lastPaymentMonth ? `${balance.lastPaymentMonth.month} ${balance.lastPaymentMonth.year}` : 'Never'
+                ].join(',');
+                
+                csv += row + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `AAAC_Financial_Report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                filterMembers(searchTerm);
+            });
+            
+            // Status filter
+            document.getElementById('statusFilter').addEventListener('change', function(e) {
+                const statusFilter = e.target.value;
+                filterMembers('', statusFilter);
+            });
+        }
+
+        // Filter members
+        function filterMembers(searchTerm = '', statusFilter = '') {
+            const tbody = document.getElementById('membersTableBody');
+            tbody.innerHTML = '';
+            
+            const filteredMembers = members.filter(member => {
+                const balance = calculateMemberBalance(member);
+                const matchesSearch = member.name.toLowerCase().includes(searchTerm) || 
+                                    member.id.toString().includes(searchTerm);
+                const matchesStatus = !statusFilter || balance.status === statusFilter;
+                
+                return matchesSearch && matchesStatus;
+            });
+            
+            filteredMembers.forEach(member => {
+                const balance = calculateMemberBalance(member);
+                const row = createMemberRow(member, balance);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const paymentModal = document.getElementById('paymentModal');
+            const memberModal = document.getElementById('memberModal');
+            
+            if (event.target === paymentModal) {
+                closePaymentModal();
+            }
+            if (event.target === memberModal) {
+                closeMemberModal();
+            }
+        }
+    </script>
+</body>
+</html>

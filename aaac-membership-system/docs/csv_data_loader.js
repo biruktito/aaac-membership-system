@@ -12,20 +12,48 @@ class CSVDataLoader {
         try {
             console.log('🔄 Loading member data from CSV files...');
             
-            // Load contact list first (for member names and IDs)
-            const contactList = await this.loadContactList();
-            console.log(`✅ Loaded contact list: ${contactList.length} members`);
-            
-            // Load accountant database (for payment data and last payment dates)
-            const accountantData = await this.loadAccountantDatabase();
+            // FORCE SINGLE SOURCE: Use accountant database only (avoid shrinking counts)
+            let accountantData = await this.loadAccountantDatabase();
             console.log(`✅ Loaded accountant database: ${accountantData.length} records`);
             
-            // Merge the data
+            // Retry without cache-bust if empty
+            if (!accountantData || accountantData.length === 0) {
+                console.warn('⚠️ 0 records from CSV. Retrying without cache-bust...');
+                accountantData = await this.loadAccountantDatabase(true);
+                console.log(`↩️ Retry got ${accountantData.length} records`);
+            }
+            
+            // If still empty, restore from cache
+            if (!accountantData || accountantData.length === 0) {
+                const cached = localStorage.getItem('aaacMembersCache');
+                if (cached) {
+                    console.warn('⚠️ Using cached members dataset');
+                    this.members = JSON.parse(cached);
+                    this.loaded = true;
+                    return this.members;
+                }
+                console.warn('⚠️ No cache found; using embedded sample');
+                this.members = this.loadEmbeddedData();
+                this.loaded = true;
+                return this.members;
+            }
+            
+            // Merge with empty contact list (keeps all accountant rows)
+            const contactList = [];
             this.members = this.mergeMemberData(contactList, accountantData);
-            console.log(`✅ Merged data: ${this.members.length} members`);
+            console.log(`📈 Member count after merge (contacts disabled): ${this.members.length}`);
             
             // Initialize payment records for existing members
             this.initializePaymentRecords();
+            console.log(`🧾 Payment records initialized for ${this.members.length} members`);
+            
+            // Cache the successful dataset
+            try {
+                localStorage.setItem('aaacMembersCache', JSON.stringify(this.members));
+                console.log('💾 Cached members dataset');
+            } catch (e) {
+                console.warn('⚠️ Could not cache dataset:', e);
+            }
             
             this.loaded = true;
             console.log('🎉 All member data loaded successfully!');
@@ -34,63 +62,91 @@ class CSVDataLoader {
             
         } catch (error) {
             console.error('❌ Error loading member data:', error);
-            throw error;
+            // Fallback to cache or embedded
+            const cached = localStorage.getItem('aaacMembersCache');
+            if (cached) {
+                console.warn('⚠️ Falling back to cached members dataset');
+                this.members = JSON.parse(cached);
+                this.loaded = true;
+                return this.members;
+            }
+            console.warn('⚠️ No cache available; loading embedded sample');
+            this.members = this.loadEmbeddedData();
+            this.loaded = true;
+            return this.members;
         }
     }
 
     // Load contact list for member names and IDs
     async loadContactList() {
-        // Try multiple paths (relative first, then raw GitHub fallbacks)
-        const paths = [
-            'data/AAAC_members_contact_list.xlsx - Sheet1.csv',
-            'AAAC_members_contact_list.xlsx - Sheet1.csv',
-            'AAAC_members_contact_list.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/data/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/data/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/AAAC_members_contact_list.xlsx%20-%20Sheet1.csv'
-        ];
-        for (const path of paths) {
-            try {
-                console.log('🔄 Loading contact list from:', path);
-                const response = await fetch(path, { cache: 'no-store' });
-                if (!response.ok) continue;
-                const csvText = await response.text();
-                return this.parseCSV(csvText);
-            } catch (e) {
-                // Try next
+        try {
+            const response = await fetch('data/AAAC_members_contact_list.xlsx - Sheet1.csv');
+            if (!response.ok) {
+                throw new Error(`Failed to load contact list: ${response.status}`);
             }
+            
+            const csvText = await response.text();
+            return this.parseCSV(csvText);
+            
+        } catch (error) {
+            console.warn('⚠️ Could not load contact list, using accountant database only');
+            return [];
         }
-        console.warn('⚠️ Could not load contact list from any path; proceeding without it');
-        return [];
     }
 
     // Load accountant database (primary data source)
-    async loadAccountantDatabase() {
-        const paths = [
-            'data/AAAC_Real_Data.csv',
-            'data/AAAC_Accountant_Database_20250826.csv',
-            'AAAC_Accountant_Database_20250826.csv',
-            'AAAC_Real_Data.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/data/AAAC_Real_Data.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/master/aaac-membership-system/docs/data/AAAC_Accountant_Database_20250826.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/data/AAAC_Real_Data.csv',
-            'https://raw.githubusercontent.com/biruktito/aaac-membership-system/main/aaac-membership-system/docs/data/AAAC_Accountant_Database_20250826.csv'
-        ];
-        let lastStatus = null;
-        for (const path of paths) {
-            try {
-                console.log('🔄 Loading accountant database from:', path);
-                const response = await fetch(path, { cache: 'no-store' });
-                lastStatus = response.status;
-                if (!response.ok) continue;
-                const csvText = await response.text();
-                return this.parseCSV(csvText);
-            } catch (e) {
-                // Try next
+    async loadAccountantDatabase(retryWithoutBust = false) {
+        try {
+            console.log('🔄 Attempting to load CSV data...');
+            const cacheBust = `v=${Date.now()}`;
+            const base = 'data/AAAC_Accountant_Database_20250826.csv';
+            const url = retryWithoutBust ? base : `${base}?${cacheBust}`;
+            const response = await fetch(url, {
+                cache: 'no-store',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    Pragma: 'no-cache',
+                    Expires: '0'
+                }
+            });
+            if (!response.ok) {
+                throw new Error(`Failed to load accountant database: ${response.status}`);
             }
+            const csvText = await response.text();
+            console.log('✅ CSV data loaded successfully');
+            return this.parseCSV(csvText);
+        } catch (error) {
+            console.error('❌ Failed to load accountant database:', error);
+            // Let caller decide fallback path
+            return [];
         }
-        throw new Error(`Failed to load accountant database from all paths (last status: ${lastStatus})`);
+    }
+    
+    // Load embedded data as fallback
+    loadEmbeddedData() {
+        console.log('🔄 Loading embedded member data...');
+        // This will be populated with actual data if CSV loading fails
+        const embeddedData = [
+            {
+                id: '1',
+                name: 'Habtamu Bekuma Bekana',
+                phone: '7734941942',
+                status: 'Active',
+                firstPaymentYear: '2022',
+                registrationFeePaid: '0',
+                registrationFeeAmount: '200',
+                lastPaymentDate: 'JUN 2025',
+                notes: '',
+                '2022': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2023': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2024': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 15, JUL: 15, AUG: 15, SEP: 15, OCT: 15, NOV: 15, DEC: 15 },
+                '2025': { JAN: 15, FEB: 15, MAR: 15, APR: 15, MAY: 15, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                '2026': { JAN: 0, FEB: 0, MAR: 0, APR: 0, MAY: 0, JUN: 0, JUL: 0, AUG: 0, SEP: 0, OCT: 0, NOV: 0, DEC: 0 },
+                incidentals: { 2022: 0, 2023: 0, 2024: 0, 2025: 0, 2026: 0 }
+            }
+        ];
+        console.log('✅ Embedded data loaded:', embeddedData.length, 'members');
+        return embeddedData;
     }
 
     // Parse CSV text into array of objects

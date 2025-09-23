@@ -231,3 +231,6 @@ When a payment is made, it's allocated using the following priority:
 - Background financial recalculation
 - Audit trail for all changes
 - Backup and recovery procedures
+
+
+

@@ -35,16 +35,26 @@ REG_FEES = {100.0, 200.0}
 INACTIVE_MONTHS = 36
 
 SRC_XLSX = \
-    "/Users/birukeyesus/terraform_practice/aaac-system/aaac-membership-system/docs/AAAIC_Book.xlsx"
+    "/Users/birukeyesus/Downloads/AAAIC_Book-2.xlsx"
 OUT_CSV = \
     "/Users/birukeyesus/terraform_practice/aaac-system/docs/normalized_payments.csv"
 OUT_JSON = \
     "/Users/birukeyesus/terraform_practice/aaac-system/docs/cleaned_members_final.json"
 
+# Include rich set of month header aliases commonly found in spreadsheets
 MONTH_LABELS = [
-    ("JAN", "01"), ("FEB", "02"), ("MAR", "03"), ("APR", "04"), ("MAY", "05"),
-    ("JUN", "06"), ("JUL", "07"), ("AUG", "08"), ("SEP", "09"), ("SEPT", "09"),
-    ("OCT", "10"), ("NOV", "11"), ("DEC", "12"),
+    ("JAN", "01"), ("JANUARY", "01"),
+    ("FEB", "02"), ("FEBRUARY", "02"),
+    ("MAR", "03"), ("MARCH", "03"),
+    ("APR", "04"), ("APRIL", "04"),
+    ("MAY", "05"),
+    ("JUN", "06"), ("JUNE", "06"),
+    ("JUL", "07"), ("JULY", "07"),
+    ("AUG", "08"), ("AUGUST", "08"),
+    ("SEP", "09"), ("SEPT", "09"), ("SEPTEMBER", "09"),
+    ("OCT", "10"), ("OCTOBER", "10"),
+    ("NOV", "11"), ("NOVEMBER", "11"),
+    ("DEC", "12"), ("DECEMBER", "12"),
 ]
 
 def normalize_name(first: str, middle: str, last: str) -> str:
@@ -76,7 +86,7 @@ def detect_columns(df: pd.DataFrame):
     middle_col = None
     last_col = None
     reg_col = None
-    month_cols = []
+    month_cols = []  # list of tuples: (orig_col, mode, value)
 
     for orig, up in cols_upper.items():
         if id_col is None and (up.startswith("NUMBER") or up == "ID" or up == "MEMBER_ID" or up == "UNNAMED: 0"):
@@ -87,14 +97,21 @@ def detect_columns(df: pd.DataFrame):
             middle_col = orig
         if last_col is None and ("LAST" in up or up == "NAME" or "SURNAME" in up):
             last_col = orig
-        if reg_col is None and ("REGIST" in up or "REGISTRATION" in up):
+        if reg_col is None and ("REGIST" in up or "REGISTRATION" in up or up == "REGISTRATION FEE"):
             reg_col = orig
 
-    # month columns
+    # month columns - support both named months and explicit YYYY-MM headers
     for orig, up in cols_upper.items():
+        # Numeric form: 2025-06 or 2025/06
+        m = re.search(r"\b(20\d{2})[-/](0[1-9]|1[0-2])\b", up)
+        if m:
+            yyyy, mm = m.group(1), m.group(2)
+            month_cols.append((orig, "key", f"{yyyy}-{mm}"))
+            continue
+        # Named month aliases
         for label, mm in MONTH_LABELS:
-            if re.fullmatch(rf".*\b{label}\b.*", up):
-                month_cols.append((orig, label))
+            if label in up:
+                month_cols.append((orig, "label", label))
                 break
 
     return id_col, first_col, middle_col, last_col, reg_col, month_cols
@@ -140,7 +157,8 @@ def normalize_payments() -> pd.DataFrame:
                     pass
 
             # Monthly dues per month column
-            for orig, label in month_cols:
+            for item in month_cols:
+                orig = item[0]
                 if pd.isna(row.get(orig)):
                     continue
                 try:
@@ -149,14 +167,19 @@ def normalize_payments() -> pd.DataFrame:
                     continue
                 if amt <= 0:
                     continue
-                # Map label to month number
-                mm = next((mm for lab, mm in MONTH_LABELS if lab == label), None)
-                if not mm:
-                    continue
+                mode = item[1]
+                if mode == "key":
+                    month_key = item[2]
+                else:
+                    label = item[2]
+                    mm = next((mm for lab, mm in MONTH_LABELS if lab == label), None)
+                    if not mm:
+                        continue
+                    month_key = f"{year}-{mm}"
                 records.append({
                     "memberId": member_id or "",
                     "fullName": full_name,
-                    "month": f"{year}-{mm}",
+                    "month": month_key,
                     "amount": amt,
                     "type": "dues",
                 })
@@ -272,16 +295,16 @@ def compute_financials(norm: pd.DataFrame) -> dict:
         futureCredit = sum(allocated_future.values())
         balance = round((paidTowardOwed + futureCredit) - totalOwed, 2)
 
-        # Status per guide
+        # Status per guide (corrected thresholds)
         if not isActive:
             status = "inactive"
         elif balance > 0:
             status = "ahead"
-        elif balance >= 0 and monthsBehind == 0:
+        elif balance == 0 and monthsBehind == 0:
             status = "current"
         elif monthsBehind <= 2:
             status = "behind"
-        elif monthsBehind <= 5:
+        elif monthsBehind <= 11:
             status = "issue"
         else:
             status = "risk"

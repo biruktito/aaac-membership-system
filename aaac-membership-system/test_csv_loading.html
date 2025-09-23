@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSV Loading Test</title>
+</head>
+<body>
+    <h1>CSV Loading Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        async function testCSVLoading() {
+            const results = document.getElementById('results');
+            const yearFiles = ['AAAC_2022.csv', 'AAAC_2023.csv', 'AAAC_2024.csv', 'AAAC_2025.csv', 'AAAC_2026.csv'];
+            
+            for (const file of yearFiles) {
+                try {
+                    console.log(`Testing ${file}...`);
+                    const response = await fetch(file);
+                    if (response.ok) {
+                        const text = await response.text();
+                        const lines = text.split('\n');
+                        console.log(`${file}: ${lines.length} lines`);
+                        results.innerHTML += `<p>✅ ${file}: ${lines.length} lines loaded successfully</p>`;
+                        
+                        // Check for Habtamu in 2025
+                        if (file === 'AAAC_2025.csv') {
+                            const habtamuLine = lines.find(line => line.includes('HABTAMU BAKANA'));
+                            if (habtamuLine) {
+                                console.log('Habtamu line found:', habtamuLine);
+                                results.innerHTML += `<p>✅ Habtamu found in 2025: ${habtamuLine}</p>`;
+                            } else {
+                                results.innerHTML += `<p>❌ Habtamu NOT found in 2025</p>`;
+                            }
+                        }
+                    } else {
+                        console.error(`${file}: ${response.status} ${response.statusText}`);
+                        results.innerHTML += `<p>❌ ${file}: ${response.status} ${response.statusText}</p>`;
+                    }
+                } catch (error) {
+                    console.error(`Error loading ${file}:`, error);
+                    results.innerHTML += `<p>❌ ${file}: ${error.message}</p>`;
+                }
+            }
+        }
+        
+        testCSVLoading();
+    </script>
+</body>
+</html>
+
+

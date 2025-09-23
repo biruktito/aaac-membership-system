@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AAAC Dashboard v2 FIX (Firestore)</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background:#f8fafc; color:#0f172a; }
+    header { padding: 16px; background:#0ea5e9; color:white; }
+    main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 12px 0; }
+    .card { background:white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 14px; }
+    .row { display:flex; gap: 10px; align-items:center; }
+    .list { display:grid; gap:8px; margin-top: 16px; }
+    .member { background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size: 12px; }
+    .badge.current{ background:#dcfce7; color:#166534; }
+    .badge.behind{ background:#fee2e2; color:#991b1b; }
+    .muted { color:#475569; font-size: 13px; }
+    button { background:#0ea5e9; color:white; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; }
+    button.secondary { background:#e2e8f0; color:#0f172a; }
+    .warn { color:#b91c1c; }
+    .green { color:#166534; }
+    .chip { display:inline-block; background:#eef2ff; color:#3730a3; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:8px; }
+  </style>
+
+  <!-- Firebase compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <!-- Inline config fallback to avoid Pages loading issues -->
+  <script>
+    window.firebaseConfig = window.firebaseConfig || {
+      apiKey: "AIzaSyDa4rimRWUUgPp7LAAaZzyrn13MKM-9naA",
+      authDomain: "aaac-membership-1221.firebaseapp.com",
+      projectId: "aaac-membership-1221",
+      storageBucket: "aaac-membership-1221.firebasestorage.app",
+      messagingSenderId: "134230731518",
+      appId: "1:134230731518:web:2eb24bfa5cb9e9df2453af",
+      measurementId: "G-YJJD19WXBG",
+    };
+  </script>
+  <script src="firebase-init.js?v=fix1"></script>
+</head>
+<body>
+  <header>
+    <div class="row" style="justify-content: space-between;">
+      <div>
+        <div style="font-weight:700; font-size:18px;">AAAC Membership System — v2 FIX (Firestore)</div>
+        <div class="muted">Real-time, single source of truth. September 2025 calculations.</div>
+      </div>
+      <div class="row">
+        <button id="btnSignInEmail" class="secondary">Sign in (Email)</button>
+        <button id="btnClaimPhoneId" class="secondary">Sign in (Phone+ID)</button>
+        <button id="btnSignOut" class="secondary" style="display:none;">Sign out</button>
+        <span id="roleBadge" class="muted" style="margin-left:12px; font-weight:600;"></span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="cards">
+      <div class="card"><div>Total Members</div><div id="statTotal" style="font-size:24px; font-weight:700;">—</div></div>
+      <div class="card"><div>Current</div><div id="statCurrent" style="font-size:24px; font-weight:700;">—</div></div>
+      <div class="card"><div>Behind</div><div id="statBehind" style="font-size:24px; font-weight:700;">—</div></div>
+      <div class="card"><div>Owed by Active</div><div id="statOwed" style="font-size:24px; font-weight:700;">—</div></div>
+    </div>
+
+    <div class="row" style="gap:8px;">
+      <input id="search" placeholder="Search members by name..." style="flex:1; padding:10px; border:1px solid #cbd5e1; border-radius:8px;" />
+      <select id="filterStatus" style="padding:10px; border:1px solid #cbd5e1; border-radius:8px;">
+        <option value="all">All</option>
+        <option value="current">Current</option>
+        <option value="behind">Behind</option>
+        <option value="issue">Issue</option>
+        <option value="risk">Risk</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <button id="refresh">Recalculate</button>
+    </div>
+
+    <div id="list" class="list"></div>
+  </main>
+
+  <script>
+    const CURRENT_DATE = new Date('2025-09-01T00:00:00Z');
+    const DUE_PER_MONTH = 15; // USD
+    const USE_LOCAL_ONLY = false; // Firestore is the single source of truth for v2
+
+    function monthKey(date) { return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}`; }
+
+    function calculateMemberFinancials(member) {
+      const payments = member.payments || member.paymentsDues || {};
+      const firstPaymentDate = findFirstPaymentDate(payments);
+      if (!firstPaymentDate) {
+        return { totalOwed: 0, totalPaid: 0, balance: 0, monthsBehind: 0, paidUpTo: null, status: 'inactive', startAt: null };
+      }
+      // Baseline = max(startDate, firstPaymentDate)
+      const startDateStr = (member.startDate || '').slice(0,10);
+      const startDate = startDateStr ? new Date(startDateStr + (startDateStr.length===7?'-01':'') ) : null;
+      const base = (!startDate || isNaN(startDate)) ? new Date(firstPaymentDate) : (new Date(firstPaymentDate) > startDate ? new Date(firstPaymentDate) : startDate);
+      const start = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1));
+      const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
+
+      // Owed months and totals
+      let owedMonths = 0;
+      let totalPaidTowardOwed = 0;
+      let iter = new Date(start);
+      while (iter <= end) {
+        const key = monthKey(iter);
+        totalPaidTowardOwed += Number(payments[key] || 0);
+        owedMonths += 1;
+        iter.setUTCMonth(iter.getUTCMonth() + 1);
+      }
+      const totalOwed = owedMonths * DUE_PER_MONTH;
+
+      // Future credit (payments after current period)
+      let futureCredit = 0;
+      Object.keys(payments).forEach(k => {
+        const [yy, mm] = k.split('-');
+        const d = new Date(`${yy}-${mm}-01T00:00:00Z`);
+        if (d > end) futureCredit += Number(payments[k] || 0);
+      });
+
+      // Dollar-based coverage
+      const monthsCovered = Math.floor((totalPaidTowardOwed) / DUE_PER_MONTH);
+      const monthsBehind = Math.max(0, owedMonths - monthsCovered);
+      const balance = (totalPaidTowardOwed + futureCredit) - totalOwed;
+
+      // Paid up to (latest posted month with >= $15)
+      let paidUpToAny = null; let maxD = null;
+      Object.keys(payments).forEach(k => {
+        const amount = Number(payments[k] || 0);
+        if (amount >= DUE_PER_MONTH) {
+          const [yy, mm] = k.split('-');
+          const d = new Date(`${yy}-${mm}-01T00:00:00Z`);
+          if (!maxD || d > maxD) maxD = d;
+        }
+      });
+      if (maxD) paidUpToAny = maxD;
+
+      // Status
+      let status = 'current';
+      const isActive = (() => {
+        const threshold = new Date('2022-10-01T00:00:00Z');
+        return Object.keys(payments).some(k => {
+          const [y, m] = k.split('-');
+          const d = new Date(`${y}-${m}-01T00:00:00Z`);
+          return payments[k] > 0 && d >= threshold;
+        });
+      })();
+      if (balance < 0) {
+        status = monthsBehind >= 6 ? 'risk' : (monthsBehind >= 3 ? 'issue' : 'behind');
+      } else if (balance > 0) {
+        status = 'ahead';
+      } else { // balance === 0
+        status = isActive ? 'current' : 'inactive';
+      }
+
+      return { balance, monthsBehind, paidUpTo: paidUpToAny, status, totalOwed, totalPaid: totalPaidTowardOwed + futureCredit, startAt: start };
+    }
+
+    function findFirstPaymentDate(payments) {
+      const paymentDates = Object.keys(payments).filter(key => 
+        /^\d{4}-\d{2}$/.test(key) && Number(payments[key]) > 0
+      ).sort();
+      return paymentDates.length > 0 ? paymentDates[0] + '-01' : null;
+    }
+
+    function parseYm(ym) {
+      if (!ym || typeof ym !== 'string' || !/^\d{4}-\d{2}$/.test(ym)) return null;
+      const [y, m] = ym.split('-').map(Number);
+      return new Date(Date.UTC(y, m - 1, 1));
+    }
+
+    function formatPaidUpTo(dateOrYm) {
+      if (!dateOrYm) return 'Not Started';
+      const d = (typeof dateOrYm === 'string') ? parseYm(dateOrYm) : dateOrYm;
+      if (!d) return 'Not Started';
+      return d.toLocaleString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    }
+
+    function formatMonth(dateOrYm) {
+      if (!dateOrYm) return '—';
+      const d = (typeof dateOrYm === 'string') ? parseYm(dateOrYm) : dateOrYm;
+      if (!d) return '—';
+      return d.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+    }
+
+    function renderStats(members) {
+      let total = members.length;
+      let current = 0; let behind = 0; let owed = 0;
+      const isActiveDerived = (m) => {
+        const payments = m.payments || m.paymentsDues || {};
+        const keys = Object.keys(payments);
+        if (!keys.length) return false;
+        const threshold = new Date('2022-10-01T00:00:00Z');
+        return keys.some(k => {
+          const [y, mm] = k.split('-');
+          const d = new Date(`${y}-${mm}-01T00:00:00Z`);
+          return payments[k] > 0 && d >= threshold;
+        });
+      };
+      members.forEach(m => {
+        const f = calculateMemberFinancials(m);
+        if (isActiveDerived(m)) {
+          if (f.balance < 0) owed += Math.abs(f.balance);
+          if (f.balance >= 0) current += 1; else behind += 1;
+        }
+      });
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statCurrent').textContent = current;
+      document.getElementById('statBehind').textContent = behind;
+      document.getElementById('statOwed').textContent = `$${owed.toFixed(2)}`;
+    }
+
+    function renderList(members) {
+      const q = document.getElementById('search').value.trim().toLowerCase();
+      const selFilter = document.getElementById('filterStatus').value;
+      const container = document.getElementById('list');
+      container.innerHTML = '';
+      const sorted = [...members].sort((a,b) => {
+        const ai = parseInt(String(a.memberId || a.id || 0), 10) || 0;
+        const bi = parseInt(String(b.memberId || b.id || 0), 10) || 0;
+        return ai - bi;
+      });
+      sorted
+        .filter(m => {
+          if (!q) return true;
+          const name = (m.fullName || '').toLowerCase();
+          const id = String(m.memberId || m.id || '').toLowerCase();
+          return name.includes(q) || id.includes(q);
+        })
+        .slice(0, 250)
+        .forEach(m => {
+          // Prefer provided JSON fields; fallback to computed
+          let fComputed = calculateMemberFinancials(m);
+          let f = {
+            balance: (m.balance !== undefined ? Number(m.balance) : fComputed.balance),
+            monthsBehind: (m.monthsBehind !== undefined ? Number(m.monthsBehind) : fComputed.monthsBehind),
+            paidUpTo: (m.paidUpTo || fComputed.paidUpTo),
+            status: (m.status || fComputed.status),
+            startAt: (m.startAt ? parseYm(m.startAt) : fComputed.startAt)
+          };
+
+          // Enforce updated status mapping
+          const isActive = (m.isActive !== undefined) ? !!m.isActive : (fComputed.status !== 'inactive');
+          if (!isActive || f.monthsBehind >= 36) {
+            f.status = 'inactive';
+          } else if (f.balance > 0) {
+            f.status = 'ahead';
+          } else if (f.monthsBehind === 0) {
+            f.status = 'current';
+          } else if (f.monthsBehind <= 2) {
+            f.status = 'behind';
+          } else if (f.monthsBehind <= 11) {
+            f.status = 'issue';
+          } else {
+            f.status = 'risk';
+          }
+
+          // Ahead display consistency
+          let monthsBehindDisplay = f.monthsBehind;
+          let paidUpToDisplay = f.paidUpTo;
+          if (f.balance > 0) {
+            monthsBehindDisplay = 0;
+            paidUpToDisplay = f.paidUpTo; // use JSON-provided paidUpTo for ahead members
+          }
+
+          const effective = (f.status === 'ahead') ? 'current' : f.status;
+          if (selFilter !== 'all' && effective !== selFilter) return;
+          const div = document.createElement('div');
+          div.className = 'member';
+          const statusClass = (f.status === 'current' || f.status === 'ahead') ? 'current' : 'behind';
+          const balanceEl = f.balance < 0 ? `<span class="warn">-$${Math.abs(f.balance).toFixed(2)}</span>` : `<span class="green">$${f.balance.toFixed(2)}</span>`;
+          const startChip = `<span class="chip">Start: ${formatMonth(m.startAt || m.startDate || f.startAt)}</span>`;
+          const role = window.__role || 'member';
+          const isAdmin = role === 'admin';
+          const isBoard = role === 'board';
+          const actions = (isAdmin || isBoard) ? `
+            <div class="row" style="gap:8px; margin-top:8px;">
+              ${isAdmin ? `<button data-action="record" data-id="${m.id}">Record Payment</button>` : ''}
+              <button class="secondary" data-action="remind" data-id="${m.id}">Generate Reminder</button>
+            </div>
+          ` : '';
+          div.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-weight:600;">${m.fullName || 'Unnamed'} ${startChip}</div>
+                <div class="muted">Member ID: ${m.memberId || '—'}</div>
+              </div>
+              <span class="badge ${statusClass}">${f.status}</span>
+            </div>
+            <div class="muted" style="margin-top:6px;">Balance: ${balanceEl} • Months behind: ${monthsBehindDisplay} • Paid up to: ${formatPaidUpTo(paidUpToDisplay)}</div>
+            ${actions}
+          `;
+          container.appendChild(div);
+        });
+
+      container.querySelectorAll('button[data-action="record"]').forEach(btn => {
+        btn.onclick = () => alert('Record Payment available in main dashboard for admins.');
+      });
+      container.querySelectorAll('button[data-action="remind"]').forEach(btn => {
+        btn.onclick = () => alert('Reminder available in main dashboard.');
+      });
+    }
+
+    async function loadLocalJsonMembers() {
+      const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to load local JSON');
+      const raw = await res.json();
+      const arr = Array.isArray(raw) ? raw : (raw.members || []);
+      return arr.map(m => ({
+        id: String(m.memberId || m.id || ''),
+        memberId: m.memberId,
+        fullName: m.fullName || m.name,
+        isActive: m.isActive,
+        startDate: (m.startDate || ''),
+        startAt: (m.startAt || null),
+        balance: (m.balance !== undefined ? m.balance : undefined),
+        monthsBehind: (m.monthsBehind !== undefined ? m.monthsBehind : undefined),
+        paidUpTo: (m.paidUpTo || null),
+        status: (m.status || null),
+        payments: m.payments || m.paymentsDues || {}
+      }));
+    }
+
+    function attachRealtime() {
+      const { db } = window.firebaseServices || {};
+      if (!db) { alert('Firebase not initialized.'); return () => {}; }
+      return db.collection('members').onSnapshot(async (snap) => {
+        let members = [];
+        snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
+        window.__members = members;
+        renderStats(members);
+        renderList(members);
+      }, async () => {
+        try {
+          const members = await loadLocalJsonMembers();
+          window.__members = members; renderStats(members); renderList(members);
+        } catch(_){}
+      });
+    }
+
+    function setupAuth() {
+      const { auth, db } = window.firebaseServices || {};
+      if (!auth) return;
+      const signInEmailBtn = document.getElementById('btnSignInEmail');
+      const claimPhoneIdBtn = document.getElementById('btnClaimPhoneId');
+      const signOutBtn = document.getElementById('btnSignOut');
+      signInEmailBtn.onclick = async () => {
+        const email = prompt('Enter email:'); if (!email) return;
+        const password = prompt('Enter password:'); if (!password) return;
+        try { await auth.signInWithEmailAndPassword(email, password); } catch(e){ alert('Email sign-in failed'); }
+      };
+      claimPhoneIdBtn.onclick = async () => {
+        alert('Use Phone+ID in main dashboard page. This fix page is for verification.');
+      };
+      signOutBtn.onclick = async () => { try { await auth.signOut(); } catch(_){ } };
+      auth.onAuthStateChanged(async user => {
+        const showSignedOut = user ? 'none' : '';
+        if (signInEmailBtn) signInEmailBtn.style.display = showSignedOut;
+        if (claimPhoneIdBtn) claimPhoneIdBtn.style.display = showSignedOut;
+        signOutBtn.style.display = user ? '' : 'none';
+        try {
+          window.__role = 'member'; window.__memberId = null;
+          if (user && db) {
+            const snap = await db.collection('roles').doc(user.uid).get();
+            if (snap.exists && snap.data() && snap.data().role) {
+              window.__role = snap.data().role;
+              if (snap.data().memberId) window.__memberId = String(snap.data().memberId);
+            }
+          }
+          const badge = document.getElementById('roleBadge');
+          if (badge) badge.textContent = user ? `Role: ${window.__role}` : '';
+        } catch(_) {}
+        if (!user) {
+          const container = document.getElementById('list');
+          if (container) container.innerHTML = '';
+          document.getElementById('statTotal').textContent = '—';
+          document.getElementById('statCurrent').textContent = '—';
+          document.getElementById('statBehind').textContent = '—';
+          document.getElementById('statOwed').textContent = '—';
+        } else {
+          // Subscribe globally for board/admin; for member role load local JSON once
+          if (window.__role !== 'member') {
+            if (typeof window.__unsub === 'function') try { window.__unsub(); } catch(_){ }
+            window.__unsub = attachRealtime();
+          } else {
+            try {
+              const members = await loadLocalJsonMembers();
+              window.__members = members; renderStats(members); renderList(members);
+            } catch(_) {}
+          }
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      setupAuth();
+      const filter = document.getElementById('filterStatus');
+      const search = document.getElementById('search');
+      const refreshBtn = document.getElementById('refresh');
+      const rerender = () => { if (Array.isArray(window.__members)) renderList(window.__members); };
+      if (filter) filter.addEventListener('change', rerender);
+      if (search) search.addEventListener('input', rerender);
+      if (refreshBtn) refreshBtn.addEventListener('click', async () => {
+        if (!Array.isArray(window.__members)) {
+          try { const members = await loadLocalJsonMembers(); window.__members = members; } catch(_) {}
+        }
+        if (Array.isArray(window.__members)) { renderStats(window.__members); renderList(window.__members); }
+      });
+    });
+  </script>
+</body>
+</html>
+
+

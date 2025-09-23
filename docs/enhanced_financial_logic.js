@@ -17,7 +17,7 @@ class EnhancedFinancialLogic {
         const paymentsMap = this._normalizePayments(member);
         const start = this._inferStartDate(member);
         const end = new Date(Date.UTC(this.currentDate.getUTCFullYear(), this.currentDate.getUTCMonth(), 1));
-
+        
         let totalPaid = 0;
         let totalOwed = 0;
         let monthsBehind = 0;

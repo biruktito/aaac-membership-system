@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AAAC Data Import to Firestore</title>
+  <style> body{font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; padding:16px;} textarea{width:100%; height:200px;} </style>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script>
+    // Helpers to normalize payments and fill gaps up to current cutoff
+    const DUE_PER_MONTH = 15;
+    const CUTOFF_START = new Date('2022-01-01T00:00:00Z');
+    const CUTOFF_END = new Date('2025-09-01T00:00:00Z');
+    function ymKey(d) { return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`; }
+    function nextMonth(d) { const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)); x.setUTCMonth(x.getUTCMonth()+1); return x; }
+    function normalizeAndDistribute(paymentsIn) {
+      // Clone and coerce numeric
+      const payments = {};
+      Object.keys(paymentsIn || {}).forEach(k => payments[k] = Number(paymentsIn[k] || 0));
+      // Compute future credit (after cutoff end)
+      let credit = 0;
+      Object.keys(payments).forEach(k => {
+        const [y, m] = k.split('-');
+        const d = new Date(`${y}-${m}-01T00:00:00Z`);
+        if (d > CUTOFF_END) { credit += payments[k]; payments[k] = payments[k]; }
+      });
+      // Fill gaps from 2022-01 through 2025-09
+      let iter = new Date(Date.UTC(CUTOFF_START.getUTCFullYear(), CUTOFF_START.getUTCMonth(), 1));
+      while (iter <= CUTOFF_END && credit > 0) {
+        const k = ymKey(iter);
+        const paid = Number(payments[k] || 0);
+        if (paid < DUE_PER_MONTH) {
+          const need = DUE_PER_MONTH - paid;
+          const apply = Math.min(need, credit);
+          payments[k] = paid + apply;
+          credit -= apply;
+        }
+        iter = nextMonth(iter);
+      }
+      return payments;
+    }
+    // Inline Firebase config (fallback to avoid Pages not loading external config)
+    window.firebaseConfig = window.firebaseConfig || {
+      apiKey: "AIzaSyDa4rimRWUUgPp7LAAaZzyrn13MKM-9naA",
+      authDomain: "aaac-membership-1221.firebaseapp.com",
+      projectId: "aaac-membership-1221",
+      storageBucket: "aaac-membership-1221.firebasestorage.app",
+      messagingSenderId: "134230731518",
+      appId: "1:134230731518:web:2eb24bfa5cb9e9df2453af",
+      measurementId: "G-YJJD19WXBG",
+    };
+  </script>
+  <script src="firebase-init.js"></script>
+</head>
+<body>
+  <h2>Import Members JSON into Firestore</h2>
+  <div style="margin-bottom:16px; padding:12px; background:#f0f9ff; border-radius:8px;">
+    <div style="display:flex; gap:8px; margin-bottom:8px;">
+      <button id="btnSignInEmail" style="padding:8px 12px; background:#0ea5e9; color:white; border:0; border-radius:6px; cursor:pointer;">Sign in with Email</button>
+      <button id="btnSignInAnon" style="padding:8px 12px; background:#6b7280; color:white; border:0; border-radius:6px; cursor:pointer;">Sign in Anonymously</button>
+      <button id="btnSignOut" style="padding:8px 12px; background:#dc2626; color:white; border:0; border-radius:6px; cursor:pointer; display:none;">Sign out</button>
+    </div>
+    <div id="authStatus" style="font-size:14px; color:#374151;">Not signed in</div>
+  </div>
+  <ol>
+    <li>Prepare a JSON array of members: [{ memberId, fullName, isActive, startDate, payments: {"YYYY-MM": amount} }]</li>
+    <li>Paste it below and click Import.</li>
+  </ol>
+  <textarea id="json"></textarea>
+  <div style="margin-top:10px; display:flex; gap:8px;">
+    <button id="btnImport">Import</button>
+    <button id="btnSample">Fill Sample</button>
+    <div id="status" style="margin-left:auto;">Idle</div>
+  </div>
+
+  <script>
+    function parse() {
+      try { return JSON.parse(document.getElementById('json').value); } catch(e) { alert('Invalid JSON'); throw e; }
+    }
+    async function ensureAuth() {
+      const { auth } = window.firebaseServices || {};
+      if (!auth) { alert('Firebase not initialized'); throw new Error('No auth'); }
+      if (!auth.currentUser) {
+        try { await auth.signInAnonymously(); } catch (e) { alert('Anonymous sign-in failed'); throw e; }
+      }
+    }
+
+    function updateAuthStatus() {
+      const { auth } = window.firebaseServices || {};
+      const statusEl = document.getElementById('authStatus');
+      const signOutBtn = document.getElementById('btnSignOut');
+      const signInBtns = document.getElementById('btnSignInEmail').parentElement;
+      
+      if (auth && auth.currentUser) {
+        statusEl.textContent = `Signed in as: ${auth.currentUser.email || 'Anonymous'}`;
+        signOutBtn.style.display = '';
+        signInBtns.style.display = 'none';
+      } else {
+        statusEl.textContent = 'Not signed in';
+        signOutBtn.style.display = 'none';
+        signInBtns.style.display = '';
+      }
+    }
+
+    // Email/Password sign-in
+    document.getElementById('btnSignInEmail').onclick = async () => {
+      const { auth } = window.firebaseServices || {};
+      if (!auth) return;
+      
+      const email = prompt('Enter email:');
+      if (!email) return;
+      const password = prompt('Enter password:');
+      if (!password) return;
+      
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        updateAuthStatus();
+        alert('Signed in successfully!');
+      } catch(e) {
+        alert('Sign in failed: ' + e.message);
+      }
+    };
+
+    // Anonymous sign-in
+    document.getElementById('btnSignInAnon').onclick = async () => {
+      const { auth } = window.firebaseServices || {};
+      if (!auth) return;
+      
+      try {
+        await auth.signInAnonymously();
+        updateAuthStatus();
+        alert('Signed in anonymously!');
+      } catch(e) {
+        alert('Anonymous sign-in failed: ' + e.message);
+      }
+    };
+
+    // Sign out
+    document.getElementById('btnSignOut').onclick = async () => {
+      const { auth } = window.firebaseServices || {};
+      if (!auth) return;
+      
+      try {
+        await auth.signOut();
+        updateAuthStatus();
+        alert('Signed out!');
+      } catch(e) {
+        alert('Sign out failed: ' + e.message);
+      }
+    };
+    document.getElementById('btnSample').onclick = () => {
+      document.getElementById('json').value = JSON.stringify([
+        { memberId: '1', fullName: 'Habtamu Bekuma Bekana', isActive: true, startDate: '2020-01-01', payments: { '2025-01':15, '2025-02':15, '2025-03':15, '2025-04':15, '2025-05':15 } },
+        { memberId: '2', fullName: 'Biruk Eyesus', isActive: true, startDate: '2020-01-01', payments: { '2025-01':15, '2025-02':15, '2025-03':15, '2025-04':15, '2025-05':15, '2025-06':15, '2025-07':15, '2025-08':15, '2025-09':15 } }
+      ], null, 2);
+    };
+    document.getElementById('btnImport').onclick = async () => {
+      const { db } = window.firebaseServices || {};
+      if (!db) return alert('Firebase not initialized');
+      try { await ensureAuth(); } catch (_) { return; }
+      let arr = parse();
+      // Auto-convert paymentsDues -> payments for compatibility
+      arr = arr.map(m => {
+        if (!m) return m;
+        const raw = m.payments || m.paymentsDues || {};
+        const normalized = normalizeAndDistribute(raw);
+        return { ...m, payments: normalized };
+      });
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = 'Importing...';
+      let ok = 0, fail = 0;
+      for (const m of arr) {
+        try {
+          const docId = m.memberId ? String(m.memberId) : undefined;
+          const ref = docId ? db.collection('members').doc(docId) : db.collection('members').doc();
+          const { payments, paymentsDues, ...rest } = m;
+          await ref.set(rest, { merge: true });
+          if (payments && typeof payments === 'object') {
+            await ref.set({ payments }, { merge: true });
+          }
+          ok++;
+        } catch (e) {
+          console.error('Import error for', m, e); fail++;
+          statusEl.textContent = `Error: ${e.code || ''} ${e.message || e}`;
+        }
+      }
+      statusEl.textContent = `Done. Imported ${ok}, failed ${fail}.`;
+      alert(`Done. Imported ${ok}, failed ${fail}.`);
+    };
+    // Try to auth on load for convenience
+    window.addEventListener('DOMContentLoaded', async () => {
+      updateAuthStatus();
+      try { await ensureAuth(); document.getElementById('status').textContent = 'Signed in (anonymous)'; } catch(_){}
+    });
+  </script>
+</body>
+</html>
+
+

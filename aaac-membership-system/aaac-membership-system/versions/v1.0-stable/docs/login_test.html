@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AAAC Login Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 AAAC Login System Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Session Storage Test</h2>
+        <button onclick="checkSessionStorage()">Check Session Storage</button>
+        <div id="sessionResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. File Access Test</h2>
+        <button onclick="testFileAccess()">Test File Access</button>
+        <div id="fileResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Quick Login Test</h2>
+        <p><strong>Admin Test:</strong></p>
+        <input type="text" id="adminUser" placeholder="Username" value="admin">
+        <input type="password" id="adminPass" placeholder="Password" value="admin2025">
+        <button onclick="testAdminLogin()">Test Admin Login</button>
+        
+        <p><strong>Board Test:</strong></p>
+        <input type="text" id="boardUser" placeholder="Username" value="board">
+        <input type="password" id="boardPass" placeholder="Password" value="board2025">
+        <button onclick="testBoardLogin()">Test Board Login</button>
+        
+        <p><strong>Member Test:</strong></p>
+        <input type="text" id="memberUser" placeholder="Username" value="member">
+        <input type="password" id="memberPass" placeholder="Password" value="member2025">
+        <input type="text" id="memberId" placeholder="Member ID" value="1">
+        <button onclick="testMemberLogin()">Test Member Login</button>
+        
+        <div id="loginResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Redirect Test</h2>
+        <button onclick="testRedirect()">Test Redirect to Main System</button>
+        <div id="redirectResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Clear Session</h2>
+        <button onclick="clearSession()">Clear All Session Data</button>
+        <div id="clearResult"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function checkSessionStorage() {
+            const result = document.getElementById('sessionResult');
+            const auth = sessionStorage.getItem('aaacAuthenticated');
+            const role = sessionStorage.getItem('aaacUserRole');
+            const memberId = sessionStorage.getItem('aaacMemberId');
+            const loginTime = sessionStorage.getItem('aaacLoginTime');
+            
+            let html = '<h3>Session Storage Status:</h3>';
+            html += `<p><strong>Authenticated:</strong> ${auth || 'false'}</p>`;
+            html += `<p><strong>Role:</strong> ${role || 'none'}</p>`;
+            html += `<p><strong>Member ID:</strong> ${memberId || 'none'}</p>`;
+            html += `<p><strong>Login Time:</strong> ${loginTime ? new Date(parseInt(loginTime)).toLocaleString() : 'none'}</p>`;
+            
+            if (auth === 'true') {
+                html += '<p class="success">✅ User is authenticated</p>';
+            } else {
+                html += '<p class="error">❌ User is not authenticated</p>';
+            }
+            
+            result.innerHTML = html;
+        }
+
+        function testFileAccess() {
+            const result = document.getElementById('fileResult');
+            result.innerHTML = '<p class="info">Testing file access...</p>';
+            
+            // Test if dashboard.html exists
+            fetch('dashboard.html')
+                .then(response => {
+                    if (response.ok) {
+                        result.innerHTML = '<p class="success">✅ dashboard.html is accessible</p>';
+                    } else {
+                        result.innerHTML = '<p class="error">❌ dashboard.html is not accessible</p>';
+                    }
+                })
+                .catch(error => {
+                    result.innerHTML = `<p class="error">❌ Error accessing dashboard.html: ${error.message}</p>`;
+                });
+        }
+
+        function testAdminLogin() {
+            const username = document.getElementById('adminUser').value;
+            const password = document.getElementById('adminPass').value;
+            const result = document.getElementById('loginResult');
+            
+            log(`Testing admin login: ${username}/${password}`);
+            
+            if (username === 'admin' && password === 'admin2025') {
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'admin');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                
+                result.innerHTML = '<p class="success">✅ Admin login successful! Session stored.</p>';
+                log('Admin login successful');
+            } else {
+                result.innerHTML = '<p class="error">❌ Admin login failed - invalid credentials</p>';
+                log('Admin login failed');
+            }
+        }
+
+        function testBoardLogin() {
+            const username = document.getElementById('boardUser').value;
+            const password = document.getElementById('boardPass').value;
+            const result = document.getElementById('loginResult');
+            
+            log(`Testing board login: ${username}/${password}`);
+            
+            if (username === 'board' && password === 'board2025') {
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'board');
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                
+                result.innerHTML = '<p class="success">✅ Board login successful! Session stored.</p>';
+                log('Board login successful');
+            } else {
+                result.innerHTML = '<p class="error">❌ Board login failed - invalid credentials</p>';
+                log('Board login failed');
+            }
+        }
+
+        function testMemberLogin() {
+            const username = document.getElementById('memberUser').value;
+            const password = document.getElementById('memberPass').value;
+            const memberId = document.getElementById('memberId').value;
+            const result = document.getElementById('loginResult');
+            
+            log(`Testing member login: ${username}/${password}/${memberId}`);
+            
+            if (username === 'member' && password === 'member2025' && memberId.trim() !== '') {
+                sessionStorage.setItem('aaacAuthenticated', 'true');
+                sessionStorage.setItem('aaacUserRole', 'member');
+                sessionStorage.setItem('aaacMemberId', memberId.trim());
+                sessionStorage.setItem('aaacLoginTime', new Date().getTime());
+                
+                result.innerHTML = '<p class="success">✅ Member login successful! Session stored.</p>';
+                log('Member login successful');
+            } else {
+                result.innerHTML = '<p class="error">❌ Member login failed - invalid credentials or missing member ID</p>';
+                log('Member login failed');
+            }
+        }
+
+        function testRedirect() {
+            const result = document.getElementById('redirectResult');
+            result.innerHTML = '<p class="info">Testing redirect...</p>';
+            
+            log('Testing redirect to dashboard.html');
+            
+            // Test redirect
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1000);
+        }
+
+        function clearSession() {
+            sessionStorage.removeItem('aaacAuthenticated');
+            sessionStorage.removeItem('aaacUserRole');
+            sessionStorage.removeItem('aaacMemberId');
+            sessionStorage.removeItem('aaacLoginTime');
+            
+            const result = document.getElementById('clearResult');
+            result.innerHTML = '<p class="success">✅ Session data cleared</p>';
+            log('Session data cleared');
+        }
+
+        // Auto-check session storage on page load
+        window.onload = function() {
+            checkSessionStorage();
+            testFileAccess();
+        };
+    </script>
+</body>
+</html>

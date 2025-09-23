@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AAAC Data Validator</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; 
+      padding: 20px; 
+      line-height: 1.6;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { margin-bottom: 30px; }
+    .section { 
+      margin-bottom: 30px; 
+      padding: 20px; 
+      border: 1px solid #ddd; 
+      border-radius: 8px; 
+      background: #f9f9f9;
+    }
+    .stats { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+      gap: 15px; 
+      margin-bottom: 20px;
+    }
+    .stat-card { 
+      padding: 15px; 
+      background: white; 
+      border-radius: 6px; 
+      border-left: 4px solid #007acc;
+    }
+    .stat-value { 
+      font-size: 24px; 
+      font-weight: bold; 
+      color: #333; 
+    }
+    .stat-label { 
+      color: #666; 
+      font-size: 14px; 
+    }
+    .error { color: #d32f2f; }
+    .warning { color: #f57c00; }
+    .success { color: #388e3c; }
+    .problems-list { 
+      max-height: 300px; 
+      overflow-y: auto; 
+      background: white; 
+      padding: 15px; 
+      border-radius: 4px; 
+      border: 1px solid #ddd;
+    }
+    .member-item { 
+      padding: 8px 0; 
+      border-bottom: 1px solid #eee; 
+    }
+    .member-item:last-child { border-bottom: none; }
+    .member-id { font-weight: bold; color: #007acc; }
+    .problem { color: #d32f2f; font-size: 14px; }
+    .warning-text { color: #f57c00; font-size: 14px; }
+    button { 
+      padding: 10px 20px; 
+      background: #007acc; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 16px;
+    }
+    button:hover { background: #005a9e; }
+    button:disabled { 
+      background: #ccc; 
+      cursor: not-allowed; 
+    }
+    .loading { 
+      text-align: center; 
+      padding: 20px; 
+      color: #666; 
+    }
+    pre { 
+      background: #f5f5f5; 
+      padding: 15px; 
+      border-radius: 4px; 
+      overflow-x: auto; 
+      font-size: 12px;
+    }
+    .export-section { 
+      margin-top: 20px; 
+      padding: 15px; 
+      background: #e3f2fd; 
+      border-radius: 4px; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>AAAC Data Validator</h1>
+      <p>Validate member data quality and normalize phone numbers</p>
+    </div>
+
+    <div class="section">
+      <h2>Validation Controls</h2>
+      <button id="validateBtn">Run Validation</button>
+      <button id="exportBtn" disabled>Export Normalized Data</button>
+      <button id="downloadReportBtn" disabled>Download Report</button>
+    </div>
+
+    <div id="results" style="display: none;">
+      <div class="section">
+        <h2>Validation Summary</h2>
+        <div class="stats" id="statsContainer">
+          <!-- Stats will be populated here -->
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Phone Number Normalization</h2>
+        <div class="stats" id="phoneStatsContainer">
+          <!-- Phone stats will be populated here -->
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Data Quality Issues</h2>
+        <div class="stats" id="qualityStatsContainer">
+          <!-- Quality stats will be populated here -->
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Problems by Type</h2>
+        <div id="problemsByType">
+          <!-- Problems breakdown will be populated here -->
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Invalid Members</h2>
+        <div class="problems-list" id="invalidMembersList">
+          <!-- Invalid members will be listed here -->
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Members with Warnings</h2>
+        <div class="problems-list" id="warningsList">
+          <!-- Members with warnings will be listed here -->
+        </div>
+      </div>
+
+      <div class="export-section">
+        <h3>Export Options</h3>
+        <p>Export the validated and normalized data for use in the main system.</p>
+        <button id="exportNormalizedBtn">Export Normalized JSON</button>
+        <button id="exportCleanBtn">Export Clean Data Only</button>
+      </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+      <p>Validating data...</p>
+    </div>
+  </div>
+
+  <script src="../tools/data_validator.js"></script>
+  <script>
+    let validationResults = null;
+    let normalizedData = null;
+
+    document.getElementById('validateBtn').addEventListener('click', async () => {
+      const loadingEl = document.getElementById('loading');
+      const resultsEl = document.getElementById('results');
+      const validateBtn = document.getElementById('validateBtn');
+      
+      loadingEl.style.display = 'block';
+      resultsEl.style.display = 'none';
+      validateBtn.disabled = true;
+
+      try {
+        // Load the member data
+        const response = await fetch('./cleaned_members_final_normalized.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Failed to load member data');
+        const members = await response.json();
+
+        // Run validation
+        const validator = new AAACDataValidator();
+        validationResults = validator.validateAll(members);
+        
+        // Create normalized data
+        normalizedData = members.map((member, index) => {
+          const validation = validationResults.memberResults[index];
+          return {
+            ...member,
+            ...validation.normalized,
+            originalPhone: member.phone,
+            validationStatus: {
+              isValid: validation.isValid,
+              problems: validation.problems,
+              warnings: validation.warnings
+            }
+          };
+        });
+
+        // Display results
+        displayResults(validationResults);
+        
+        loadingEl.style.display = 'none';
+        resultsEl.style.display = 'block';
+        document.getElementById('exportBtn').disabled = false;
+        document.getElementById('downloadReportBtn').disabled = false;
+
+      } catch (error) {
+        console.error('Validation failed:', error);
+        alert('Validation failed: ' + error.message);
+        loadingEl.style.display = 'none';
+      } finally {
+        validateBtn.disabled = false;
+      }
+    });
+
+    function displayResults(results) {
+      // Display summary stats
+      const statsContainer = document.getElementById('statsContainer');
+      statsContainer.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${results.totalMembers}</div>
+          <div class="stat-label">Total Members</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value success">${results.validMembers}</div>
+          <div class="stat-label">Valid (${((results.validMembers / results.totalMembers) * 100).toFixed(1)}%)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value error">${results.invalidMembers}</div>
+          <div class="stat-label">Invalid (${((results.invalidMembers / results.totalMembers) * 100).toFixed(1)}%)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value warning">${results.membersWithWarnings}</div>
+          <div class="stat-label">With Warnings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${results.totalProblems}</div>
+          <div class="stat-label">Total Problems</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">${results.totalWarnings}</div>
+          <div class="stat-label">Total Warnings</div>
+        </div>
+      `;
+
+      // Display phone normalization stats
+      const phoneStatsContainer = document.getElementById('phoneStatsContainer');
+      phoneStatsContainer.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value">${results.summary.phoneNormalization.total}</div>
+          <div class="stat-label">Total with Phone</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value success">${results.summary.phoneNormalization.normalized}</div>
+          <div class="stat-label">Normalized</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value error">${results.summary.phoneNormalization.invalid}</div>
+          <div class="stat-label">Invalid Format</div>
+        </div>
+      `;
+
+      // Display data quality stats
+      const qualityStatsContainer = document.getElementById('qualityStatsContainer');
+      qualityStatsContainer.innerHTML = `
+        <div class="stat-card">
+          <div class="stat-value error">${results.summary.dataQuality.missingMemberIds}</div>
+          <div class="stat-label">Missing Member IDs</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value error">${results.summary.dataQuality.missingNames}</div>
+          <div class="stat-label">Missing Names</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value error">${results.summary.dataQuality.invalidPayments}</div>
+          <div class="stat-label">Invalid Payments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value error">${results.summary.dataQuality.invalidDates}</div>
+          <div class="stat-label">Invalid Dates</div>
+        </div>
+      `;
+
+      // Display problems by type
+      const problemsByTypeEl = document.getElementById('problemsByType');
+      if (Object.keys(results.problemsByType).length > 0) {
+        problemsByTypeEl.innerHTML = Object.entries(results.problemsByType)
+          .map(([type, count]) => `
+            <div class="stat-card">
+              <div class="stat-value error">${count}</div>
+              <div class="stat-label">${type}</div>
+            </div>
+          `).join('');
+      } else {
+        problemsByTypeEl.innerHTML = '<p class="success">No problems found!</p>';
+      }
+
+      // Display invalid members
+      const invalidMembers = results.memberResults.filter(r => !r.isValid);
+      const invalidMembersListEl = document.getElementById('invalidMembersList');
+      if (invalidMembers.length > 0) {
+        invalidMembersListEl.innerHTML = invalidMembers.map(member => `
+          <div class="member-item">
+            <div class="member-id">${member.memberId} - ${member.fullName}</div>
+            ${member.problems.map(problem => `<div class="problem">• ${problem}</div>`).join('')}
+          </div>
+        `).join('');
+      } else {
+        invalidMembersListEl.innerHTML = '<p class="success">All members are valid!</p>';
+      }
+
+      // Display members with warnings
+      const membersWithWarnings = results.memberResults.filter(r => r.warnings.length > 0);
+      const warningsListEl = document.getElementById('warningsList');
+      if (membersWithWarnings.length > 0) {
+        warningsListEl.innerHTML = membersWithWarnings.map(member => `
+          <div class="member-item">
+            <div class="member-id">${member.memberId} - ${member.fullName}</div>
+            ${member.warnings.map(warning => `<div class="warning-text">• ${warning}</div>`).join('')}
+          </div>
+        `).join('');
+      } else {
+        warningsListEl.innerHTML = '<p class="success">No warnings!</p>';
+      }
+    }
+
+    // Export functions
+    document.getElementById('exportNormalizedBtn').addEventListener('click', () => {
+      if (!normalizedData) return;
+      downloadJSON(normalizedData, 'aaac_members_normalized.json');
+    });
+
+    document.getElementById('exportCleanBtn').addEventListener('click', () => {
+      if (!normalizedData) return;
+      const cleanData = normalizedData.filter(m => m.validationStatus.isValid);
+      downloadJSON(cleanData, 'aaac_members_clean.json');
+    });
+
+    document.getElementById('downloadReportBtn').addEventListener('click', () => {
+      if (!validationResults) return;
+      const validator = new AAACDataValidator();
+      const report = validator.generateReport(validationResults);
+      downloadText(report, 'aaac_validation_report.md');
+    });
+
+    function downloadJSON(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      downloadBlob(blob, filename);
+    }
+
+    function downloadText(text, filename) {
+      const blob = new Blob([text], { type: 'text/plain' });
+      downloadBlob(blob, filename);
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
