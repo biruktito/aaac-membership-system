@@ -339,63 +339,29 @@
       return db.collection('members').onSnapshot(async (snap) => {
         let members = [];
         snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
-
-        // If Firestore has no docs OR no payments across all docs, fallback to local JSON
-        const totalPayments = members.reduce((sum, m) => {
-          const p = m.payments || {};
-          return sum + Object.values(p).reduce((s, v) => s + Number(v || 0), 0);
-        }, 0);
-        const needsFallback = (!members.length) || (totalPayments === 0);
-        if (needsFallback) {
+        // Prefer Firestore; only fallback if there are truly no docs
+        if (!members.length && USE_LOCAL_ONLY) {
           try {
             const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
             if (res.ok) {
               const raw = await res.json();
-              // Transform JSON schema -> v2 schema
-              members = raw.map(m => {
-                const payments = m.payments || m.paymentsDues || {};
-                return {
-                  id: String(m.memberId || m.id || ''),
-                  memberId: m.memberId,
-                  fullName: m.fullName || m.name,
-                  isActive: m.isActive,
-                  startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
-                  payments: payments
-                };
-              });
-            }
-          } catch (e) { console.warn('JSON fallback load failed', e); }
-        }
-
-        window.__members = members;
-        renderStats(members);
-        renderList(members);
-      }, async (err) => {
-        console.warn('onSnapshot error; falling back to local JSON', err);
-        try {
-          const res = await fetch('cleaned_members_final.json', { cache: 'no-store' });
-          if (res.ok) {
-            const raw = await res.json();
-            const members = raw.map(m => {
-              const payments = m.payments || m.paymentsDues || {};
-              return {
+              members = (Array.isArray(raw) ? raw : (raw.members || [])).map(m => ({
                 id: String(m.memberId || m.id || ''),
                 memberId: m.memberId,
                 fullName: m.fullName || m.name,
                 isActive: m.isActive,
                 startDate: (m.startDate || '') + (m.startDate && m.startDate.length === 7 ? '-01' : ''),
-                payments
-              };
-            });
-            window.__members = members;
-            renderStats(members);
-            renderList(members);
-          } else {
-            console.error('Fallback JSON load failed', res.status);
-          }
-        } catch (e) {
-          console.error('Fallback JSON exception', e);
+                payments: m.payments || m.paymentsDues || {}
+              }));
+            }
+          } catch (e) { console.warn('JSON fallback load failed', e); }
         }
+        window.__members = members;
+        renderStats(members);
+        renderList(members);
+      }, async (err) => {
+        console.warn('onSnapshot error', err);
+        // Do not fallback to JSON in production; keep current view
       });
     }
 
@@ -592,11 +558,9 @@
           renderList(members);
         } catch(_){}
       }
-      document.getElementById('refresh').onclick = () => {
-        if (window.__members) {
-          renderStats(window.__members);
-          renderList(window.__members);
-        }
+      document.getElementById('refresh').onclick = async () => {
+        if (typeof forceRefreshMembers === 'function') { try { await forceRefreshMembers(); } catch(_) {} }
+        else if (Array.isArray(window.__members)) { renderStats(window.__members); renderList(window.__members); }
       };
       document.getElementById('search').addEventListener('input', () => {
         if (window.__members) renderList(window.__members);
