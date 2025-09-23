@@ -194,6 +194,7 @@
     }
 
     function renderStats(members) {
+      if (!Array.isArray(members)) return;
       let total = members.length;
       let current = 0; let behind = 0; let owed = 0;
 
@@ -228,10 +229,12 @@
     }
 
     function renderList(members) {
+      members = Array.isArray(members) ? members : (Array.isArray(window.__members) ? window.__members : []);
       const q = document.getElementById('search').value.trim().toLowerCase();
       const f = document.getElementById('filterStatus').value;
       const container = document.getElementById('list');
       container.innerHTML = '';
+      if (!members.length) return;
       // Sort by numeric memberId ascending for stable display
       const sorted = [...members].sort((a,b) => {
         const ai = parseInt(String(a.memberId || a.id || 0), 10) || 0;
@@ -650,31 +653,45 @@
     async function savePayment() {
       const { db, auth } = window.firebaseServices || {};
       if (!db) return alert('Firebase not initialized');
+      try { if (!auth.currentUser) await auth.signInAnonymously(); } catch(e) { return alert('Auth failed: ' + (e && e.message ? e.message : e)); }
+      const role = window.__role || 'member';
+      if (!(role === 'admin' || role === 'board')) return alert('Only admins/board can record payments');
+
       const modal = document.getElementById('paymentModal');
-      const memberId = modal.getAttribute('data-id');
-      const m = findMemberById(memberId);
+      const memberIdAttr = modal.getAttribute('data-id');
+      const members = Array.isArray(window.__members) ? window.__members : [];
+      const idx = members.findIndex(x => String(x.id) === String(memberIdAttr));
+      const m = idx >= 0 ? members[idx] : null;
       if (!m) return alert('Member not found');
+
       const amount = Number(document.getElementById('pamount').value || 0);
       const type = document.getElementById('ptype').value;
       if (!(amount > 0)) return alert('Enter a valid amount');
 
+      const docId = String(m.memberId || m.id || '').trim();
+      if (!docId) return alert('Missing memberId for this record');
+
       try {
-        const docRef = db.collection('members').doc(String(m.id));
+        const docRef = db.collection('members').doc(docId);
         if (type === 'monthly') {
-          const dist = distributeToUnpaidMonths(amount, m.payments || {});
+          const dist = distributeToUnpaidMonths(amount, m.payments || m.paymentsDues || {});
           await docRef.set({ payments: dist.map }, { merge: true });
+          // update local cache and rerender safely
+          members[idx] = { ...m, payments: dist.map };
+          window.__members = members;
+          if (Array.isArray(window.__members)) { renderStats(window.__members); renderList(window.__members); }
         } else {
-          // For incidental/registration we log to an array field for now
+          const FieldValue = (window.firebase && window.firebase.firestore && window.firebase.firestore.FieldValue);
+          if (!FieldValue) throw new Error('FieldValue not available');
           const field = type === 'registration' ? 'registrationPayments' : 'incidentalPayments';
           const entry = { amount, at: new Date().toISOString(), by: (auth && auth.currentUser && auth.currentUser.email) || 'admin' };
-          const payload = {};
-          payload[field] = firebase.firestore.FieldValue.arrayUnion(entry);
+          const payload = {}; payload[field] = FieldValue.arrayUnion(entry);
           await docRef.set(payload, { merge: true });
         }
         closePaymentModal();
       } catch (e) {
-        console.error(e);
-        alert('Failed to save payment');
+        console.error('Save payment error:', e);
+        alert('Failed to save payment: ' + (e && e.message ? e.message : e));
       }
     }
 
