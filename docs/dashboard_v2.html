@@ -399,6 +399,20 @@
       });
     }
 
+    // Manual reload of members from Firestore (used after writes)
+    async function forceRefreshMembers() {
+      try {
+        const { db } = window.firebaseServices || {};
+        if (!db) return;
+        const snap = await db.collection('members').get();
+        const members = [];
+        snap.forEach(doc => members.push({ id: doc.id, ...doc.data() }));
+        window.__members = members;
+        renderStats(members);
+        renderList(members);
+      } catch (e) { console.warn('forceRefreshMembers failed', e); }
+    }
+
     // Subscribe to a single member document (member-only view)
     function attachMemberRealtime(memberId) {
       const { db } = window.firebaseServices || {};
@@ -691,6 +705,8 @@
           window.__members = members;
           if (Array.isArray(window.__members)) { renderStats(window.__members); renderList(window.__members); }
           alert(`Payment saved. Applied ${dist.appliedMonths} months ($${dist.appliedAmount.toFixed(2)}). Remaining $${(dist.remaining||0).toFixed(2)}`);
+          // Force reload from Firestore to ensure cross-tab/role consistency
+          if (typeof forceRefreshMembers === 'function') { try { await forceRefreshMembers(); } catch(_) {} }
         } else {
           const FieldValue = (window.firebase && window.firebase.firestore && window.firebase.firestore.FieldValue);
           if (!FieldValue) throw new Error('FieldValue not available');
