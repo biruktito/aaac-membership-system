@@ -472,8 +472,13 @@
           const roleSnap = await roleRef.get();
           const existingRole = roleSnap.exists && roleSnap.data() && roleSnap.data().role;
           const privileged = existingRole === 'admin' || existingRole === 'board';
-          const payload = privileged ? { memberId: String(memberId), phone: stored } : { role: 'member', memberId: String(memberId), phone: stored };
-          await roleRef.set(payload, { merge: true });
+          // If a role doc already exists (even 'member'), DO NOT overwrite the role field here.
+          // Only set role: 'member' when creating a new roles doc for the first time.
+          if (roleSnap.exists) {
+            await roleRef.set({ memberId: String(memberId), phone: stored }, { merge: true });
+          } else {
+            await roleRef.set({ role: 'member', memberId: String(memberId), phone: stored }, { merge: true });
+          }
           alert('Verified. Loading your account...');
           if (typeof unsubscribe === 'function') try { unsubscribe(); } catch(_){ }
           if (privileged) {
