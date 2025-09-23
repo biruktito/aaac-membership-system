@@ -626,8 +626,9 @@
         const key = monthKey(future);
         const paid = Number(map[key] || 0);
         const need = Math.max(0, DUE_PER_MONTH - paid);
-        const apply = Math.min(need || DUE_PER_MONTH, remaining);
-        if (apply > 0) {
+        // Only allocate if there is unmet need; never exceed $15/month
+        if (need > 0) {
+          const apply = Math.min(need, remaining);
           map[key] = paid + apply;
           remaining -= apply;
           appliedAmount += apply;
