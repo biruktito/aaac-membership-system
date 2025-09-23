@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=dashboard_v2.html">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AAAC Membership System - Login</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
@@ -369,7 +370,7 @@
             
             if (currentTime - loginTime < sessionDuration) {
                 console.log('Already authenticated, redirecting...');
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard_v2.html';
             } else {
                 // Session expired, clear storage
                 console.log('Session expired, clearing storage');
@@ -388,7 +389,7 @@
             
             if (isAuthenticated && userRole) {
                 console.log('User is authenticated, redirecting to dashboard...');
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard_v2.html';
             } else {
                 console.log('User not authenticated, showing error...');
                 const errorMessage = document.getElementById('errorMessage');
