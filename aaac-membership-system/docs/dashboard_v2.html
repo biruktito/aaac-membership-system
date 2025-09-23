@@ -467,14 +467,27 @@
           // Link this anon user to member role for this session by writing roles/{uid}
           const uid = auth.currentUser && auth.currentUser.uid;
           if (!uid) { alert('Auth not ready'); return; }
-          // Write the exact stored phone string for rules equality check
-          await db.collection('roles').doc(uid).set({ role: 'member', memberId: String(memberId), phone: stored }, { merge: true });
+          // Preserve existing admin/board; only set role to member if no privileged role exists
+          const roleRef = db.collection('roles').doc(uid);
+          const roleSnap = await roleRef.get();
+          const existingRole = roleSnap.exists && roleSnap.data() && roleSnap.data().role;
+          const privileged = existingRole === 'admin' || existingRole === 'board';
+          const payload = privileged ? { memberId: String(memberId), phone: stored } : { role: 'member', memberId: String(memberId), phone: stored };
+          await roleRef.set(payload, { merge: true });
           alert('Verified. Loading your account...');
-          // Force re-subscribe with member-only view
-          if (typeof unsubscribe === 'function') try { unsubscribe(); } catch(_){}
-          window.__role = 'member';
-          window.__memberId = String(memberId);
-          unsubscribe = attachMemberRealtime(String(memberId));
+          if (typeof unsubscribe === 'function') try { unsubscribe(); } catch(_){ }
+          if (privileged) {
+            // Keep admin/board view; do not downgrade session role
+            window.__role = existingRole;
+            window.__memberId = String(memberId);
+            // Stay on full list view
+            unsubscribe = attachRealtime();
+          } else {
+            // Member session: single-doc view
+            window.__role = 'member';
+            window.__memberId = String(memberId);
+            unsubscribe = attachMemberRealtime(String(memberId));
+          }
         } catch (e) {
           alert('Claim failed: ' + (e && e.message ? e.message : e));
         }
