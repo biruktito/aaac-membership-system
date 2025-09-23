@@ -250,13 +250,13 @@
         })
         .slice(0, 250)
         .forEach(m => {
-          // Prefer provided JSON/computed fields from data when available
+          // Always use computed financials from payments to avoid stale stored fields
           const fc = calculateMemberFinancials(m);
           const f = {
-            balance: (m.balance !== undefined ? Number(m.balance) : fc.balance),
-            monthsBehind: (m.monthsBehind !== undefined ? Number(m.monthsBehind) : fc.monthsBehind),
-            paidUpTo: (m.paidUpTo || fc.paidUpTo),
-            status: (m.status || fc.status)
+            balance: fc.balance,
+            monthsBehind: fc.monthsBehind,
+            paidUpTo: fc.paidUpTo,
+            status: fc.status
           };
           // Updated status mapping
           const isActive = (m.isActive !== undefined) ? !!m.isActive : (fc.status !== 'inactive');
