@@ -623,6 +623,8 @@
     function distributeToUnpaidMonths(amount, payments) {
       const map = { ...(payments || {}) };
       let remaining = Number(amount) || 0;
+      let appliedAmount = 0;
+      let appliedMonths = 0;
       const iter = new Date(Date.UTC(2022,0,1));
       const end = new Date(Date.UTC(CURRENT_DATE.getUTCFullYear(), CURRENT_DATE.getUTCMonth(), 1));
       while (iter <= end && remaining >= DUE_PER_MONTH) {
@@ -631,8 +633,12 @@
         if (paid < DUE_PER_MONTH) {
           const need = DUE_PER_MONTH - paid;
           const apply = Math.min(need, remaining);
-          map[key] = paid + apply;
-          remaining -= apply;
+          if (apply > 0) {
+            map[key] = paid + apply;
+            remaining -= apply;
+            appliedAmount += apply;
+            if ((paid + apply) >= DUE_PER_MONTH) appliedMonths += 1;
+          }
         }
         iter.setUTCMonth(iter.getUTCMonth() + 1);
       }
@@ -643,11 +649,15 @@
         const paid = Number(map[key] || 0);
         const need = Math.max(0, DUE_PER_MONTH - paid);
         const apply = Math.min(need || DUE_PER_MONTH, remaining);
-        map[key] = paid + apply;
-        remaining -= apply;
+        if (apply > 0) {
+          map[key] = paid + apply;
+          remaining -= apply;
+          appliedAmount += apply;
+          if ((paid + apply) >= DUE_PER_MONTH) appliedMonths += 1;
+        }
         future.setUTCMonth(future.getUTCMonth() + 1);
       }
-      return { map, remaining };
+      return { map, remaining, appliedAmount, appliedMonths };
     }
 
     async function savePayment() {
@@ -680,6 +690,7 @@
           members[idx] = { ...m, payments: dist.map };
           window.__members = members;
           if (Array.isArray(window.__members)) { renderStats(window.__members); renderList(window.__members); }
+          alert(`Payment saved. Applied ${dist.appliedMonths} months ($${dist.appliedAmount.toFixed(2)}). Remaining $${(dist.remaining||0).toFixed(2)}`);
         } else {
           const FieldValue = (window.firebase && window.firebase.firestore && window.firebase.firestore.FieldValue);
           if (!FieldValue) throw new Error('FieldValue not available');
